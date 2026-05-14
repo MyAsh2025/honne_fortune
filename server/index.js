@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v5";
+const PHASE = "stable-paid-v6";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -252,6 +252,48 @@ function getStrengthPhrase(strength) {
   return phrases[strength] || "静かに";
 }
 
+function getEmotionTone(compound) {
+  const primaryTrait = compound.primaryTrait;
+  const secondaryTrait = compound.secondaryTrait;
+  const strength = compound.traitStrength;
+
+  if (primaryTrait === "emotional_fatigue") return "overloaded";
+  if (primaryTrait === "future_anxiety") return "anxious";
+  if (primaryTrait === "attachment_anxiety") return "anxious";
+  if (primaryTrait === "identity_confusion" && strength === "very_high") return "empty";
+  if (primaryTrait === "people_pleasing") return "suppressed";
+  if (primaryTrait === "role_pressure") return "overloaded";
+
+  if (secondaryTrait === "emotional_fatigue") return "overloaded";
+  if (secondaryTrait === "future_anxiety") return "anxious";
+
+  return "recovering";
+}
+
+function getEmotionToneLabel(tone) {
+  const labels = {
+    suppressed: "抑え込まれた本音",
+    anxious: "焦りを含んだ不安",
+    empty: "空白に近い迷い",
+    overloaded: "抱えすぎた疲労",
+    recovering: "回復前の揺れ",
+  };
+
+  return labels[tone] || "回復前の揺れ";
+}
+
+function getEmotionTonePhrase(tone) {
+  const phrases = {
+    suppressed: "本音を出す前に、先に自分を抑えてしまう温度です。",
+    anxious: "答えを急ぎたい気持ちと、失敗を恐れる気持ちが同時に動いています。",
+    empty: "何かを強く望むより先に、自分の感覚が少し見えにくくなっています。",
+    overloaded: "もう十分頑張ってきたのに、まだ止まれないような重さがあります。",
+    recovering: "苦しさの中にも、少しずつ自分に戻ろうとする流れがあります。",
+  };
+
+  return phrases[tone] || "苦しさの中にも、少しずつ自分に戻ろうとする流れがあります。";
+}
+
 function buildDynamicOpening(compound) {
   return `表面では「${getCategoryLabel(compound.primaryCategory)}」の悩みに見えます。
 けれど今回の読みでは、その奥に「${getTraitLabel(compound.primaryTrait)}」が${getStrengthPhrase(compound.traitStrength)}反応しています。`;
@@ -276,12 +318,17 @@ function stablePaidFortune(score, answers = []) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
   const compound = buildCompoundInsight(categoryResult, traitResult);
+  const emotionTone = getEmotionTone(compound);
 
   return `【さらに深い本音】
 ${buildDynamicOpening(compound)}
 
 【今のあなたが悩んでいること】
 ${buildDynamicConflict(compound)}
+
+【感情の温度】
+今回の感情温度は「${getEmotionToneLabel(emotionTone)}」です。
+${getEmotionTonePhrase(emotionTone)}
 
 【本当は求めているもの】
 ${buildDynamicHiddenNeed(compound)}
@@ -335,6 +382,8 @@ app.post("/deep-fortune", async (req, res) => {
     secondaryTrait: compound.secondaryTrait,
     traitStrength: compound.traitStrength,
     compoundSummary: compound.summary,
+    emotionTone: getEmotionTone(compound),
+    emotionToneLabel: getEmotionToneLabel(getEmotionTone(compound)),
 
     categoryRanking: categoryResult.ranking,
     traitRanking: traitResult.ranking,
@@ -357,5 +406,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
 
 
