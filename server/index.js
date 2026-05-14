@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v22";
+const PHASE = "stable-paid-v23";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -838,13 +838,21 @@ function buildDynamicSign(compound) {
 「${getTraitLabel(compound.primaryTrait)}」が出ている場所に、次のあなたへ進むための本音があります。`;
 }
 
+function buildReadingLead(compound) {
+  return `これは、あなたを決めつけるための読みではありません。
+今の心がどこで疲れ、どこでまだ耐えようとしているのかを、少し丁寧に見ていくためのものです。`;
+}
+
 function stablePaidFortune(score, answers = []) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
   const compound = buildCompoundInsight(categoryResult, traitResult);
   const emotionTone = getEmotionTone(compound);
 
-  return `【さらに深い本音】
+  return `【読みはじめ】
+${buildReadingLead(compound)}
+
+【さらに深い本音】
 ${buildDynamicOpening(compound)}
 
 【今のあなたが悩んでいること】
@@ -915,6 +923,10 @@ ${getAcceptanceSentence(compound)}
 【今回の読みの核心】
 ${getNarrativeIntegration(compound)}
 
+【最後に】
+この読みで大切なのは、無理に前向きになることではありません。
+まずは、あなたの中で起きていたことを、あなた自身が少しだけ責めずに見られることです。
+
 【次に進むためのサイン】
 ${buildDynamicSign(compound)}`;
 }
@@ -984,6 +996,8 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
 
 
 
