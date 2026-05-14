@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v4.1";
+const PHASE = "stable-paid-v5";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -241,32 +241,57 @@ function stableFortune(score) {
 その揺れも含めて、あなたらしさです。`;
 }
 
+function getStrengthPhrase(strength) {
+  const phrases = {
+    very_high: "かなり強く",
+    high: "強く",
+    middle: "静かに",
+    low: "小さく",
+  };
+
+  return phrases[strength] || "静かに";
+}
+
+function buildDynamicOpening(compound) {
+  return `表面では「${getCategoryLabel(compound.primaryCategory)}」の悩みに見えます。
+けれど今回の読みでは、その奥に「${getTraitLabel(compound.primaryTrait)}」が${getStrengthPhrase(compound.traitStrength)}反応しています。`;
+}
+
+function buildDynamicConflict(compound) {
+  return `さらに背景には「${getCategoryLabel(compound.secondaryCategory)}」と「${getTraitLabel(compound.secondaryTrait)}」の影響があります。
+つまり、今の苦しさは一つの問題ではなく、いくつかの感情が重なって生まれている可能性があります。`;
+}
+
+function buildDynamicHiddenNeed(compound) {
+  return `あなたが本当に求めているのは、表面的な正解ではありません。
+「ちゃんとしなければ」と力む前に、自分の本音を否定しなくていい安心感を求めています。`;
+}
+
+function buildDynamicSign(compound) {
+  return `今は、何を選ぶかよりも、なぜそこまで心が反応しているのかを見る時期です。
+「${getTraitLabel(compound.primaryTrait)}」が出ている場所に、次のあなたへ進むための本音があります。`;
+}
+
 function stablePaidFortune(score, answers = []) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
   const compound = buildCompoundInsight(categoryResult, traitResult);
 
   return `【さらに深い本音】
-${compound.summary}
+${buildDynamicOpening(compound)}
 
 【今のあなたが悩んでいること】
-あなたの悩みは、ひとつの出来事だけで生まれているわけではありません。
-表では「${getCategoryLabel(compound.primaryCategory)}」の問題として見えていても、心の奥では「${getTraitLabel(compound.primaryTrait)}」が反応しています。
-そのため、頑張って解決しようとするほど、別の場所で苦しさが残ってしまうのかもしれません。
+${buildDynamicConflict(compound)}
 
 【本当は求めているもの】
-あなたが本当に求めているのは、表面的な正解ではありません。
-「ちゃんとしなければ」「分かってもらわなければ」「失敗してはいけない」という力みから少し離れて、自分の本音を否定しなくていい場所です。
+${buildDynamicHiddenNeed(compound)}
 
 【隠れている根本】
-今回の読みでは、主軸は「${getCategoryLabel(compound.primaryCategory)}」です。
-ただし、裏側には「${getCategoryLabel(compound.secondaryCategory)}」の影響もあります。
-さらに本質的な反応として、「${getTraitLabel(compound.primaryTrait)}」が${compound.traitStrength === "very_high" ? "かなり強く" : compound.traitStrength === "high" ? "強く" : compound.traitStrength === "middle" ? "静かに" : "小さく"}出ています。
+今回の主軸は「${getCategoryLabel(compound.primaryCategory)}」です。
+ただし、裏側には「${getCategoryLabel(compound.secondaryCategory)}」もあり、本質的には「${getTraitLabel(compound.primaryTrait)}」が${getStrengthPhrase(compound.traitStrength)}出ています。
 
 【次に進むためのサイン】
-今すぐ大きな答えを出さなくて大丈夫です。
-まずは「何に悩んでいるか」よりも、「なぜそこまで心が反応しているのか」を見てください。
-そこに、次のあなたを動かす本音があります。`;
+${buildDynamicSign(compound)}`;
 }
 
 app.post("/fortune", async (req, res) => {
@@ -332,4 +357,5 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
