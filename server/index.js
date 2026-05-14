@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v13";
+const PHASE = "stable-paid-v14";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -292,6 +292,36 @@ function getEmotionTonePhrase(tone) {
   };
 
   return phrases[tone] || "苦しさの中にも、少しずつ自分に戻ろうとする流れがあります。";
+}
+
+function getCoreFear(compound) {
+  const trait = compound.primaryTrait;
+
+  if (trait === "people_pleasing") {
+    return "本当は、『自分を出したら嫌われるかもしれない』という怖さが心の奥にあります。";
+  }
+
+  if (trait === "attachment_anxiety") {
+    return "本当は、『大切な人に見捨てられるかもしれない』という怖さが深いところで反応しています。";
+  }
+
+  if (trait === "role_pressure") {
+    return "本当は、『役に立てなくなったら価値がなくなる』という怖さを抱えている可能性があります。";
+  }
+
+  if (trait === "future_anxiety") {
+    return "本当は、『選び間違えたら取り返しがつかない』という怖さが未来への不安を強めています。";
+  }
+
+  if (trait === "identity_confusion") {
+    return "本当は、『このまま自分が分からないまま生きてしまう』という怖さが隠れているのかもしれません。";
+  }
+
+  if (trait === "emotional_fatigue") {
+    return "本当は、『崩れたらもう戻れない』という怖さが、休むことさえ難しくしている可能性があります。";
+  }
+
+  return "本当は、心の奥で何かを失う怖さが静かに反応しているようです。";
 }
 
 function getEmotionalDefense(compound) {
@@ -585,6 +615,9 @@ ${getSelfPerceptionGap(compound).outside}
 【あなた自身が感じていること】
 ${getSelfPerceptionGap(compound).inside}
 
+【心の奥にある怖さ】
+${getCoreFear(compound)}
+
 【あなたが無意識に続けてきた防衛反応】
 ${getEmotionalDefense(compound)}
 
@@ -663,6 +696,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
