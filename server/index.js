@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v21";
+const PHASE = "stable-paid-v22";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -292,6 +292,36 @@ function getEmotionTonePhrase(tone) {
   };
 
   return phrases[tone] || "苦しさの中にも、少しずつ自分に戻ろうとする流れがあります。";
+}
+
+function getNarrativeIntegration(compound) {
+  const trait = compound.primaryTrait;
+
+  if (trait === "people_pleasing") {
+    return "あなたの今回の本音は、『嫌われないように頑張ること』ではなく、『安心して本音を出せる場所がほしい』という気持ちに近いようです。";
+  }
+
+  if (trait === "attachment_anxiety") {
+    return "あなたの今回の本音は、『傷つかないように距離を取ること』ではなく、『不安になっても離れなくていい関係を求めている』ところにあるようです。";
+  }
+
+  if (trait === "role_pressure") {
+    return "あなたの今回の本音は、『期待に応え続けること』ではなく、『頑張らなくても価値が消えない感覚を持ちたい』ところにあるようです。";
+  }
+
+  if (trait === "future_anxiety") {
+    return "あなたの今回の本音は、『正しい未来を見つけること』より、『少し安心できる今を持ちたい』という気持ちに近いようです。";
+  }
+
+  if (trait === "identity_confusion") {
+    return "あなたの今回の本音は、『正しい自分を探すこと』ではなく、『無理に合わせなくてもいい感覚を取り戻したい』ところにあるようです。";
+  }
+
+  if (trait === "emotional_fatigue") {
+    return "あなたの今回の本音は、『まだ頑張ること』ではなく、『もう限界に近い自分を少し休ませたい』ところにあるようです。";
+  }
+
+  return "あなたの今回の本音は、『無理を続けること』ではなく、『少し安心して生きたい』という気持ちに近いようです。";
 }
 
 function getFutureSelf(compound) {
@@ -882,6 +912,9 @@ ${getHopeFragment(compound)}
 【あなたが責めなくていいこと】
 ${getAcceptanceSentence(compound)}
 
+【今回の読みの核心】
+${getNarrativeIntegration(compound)}
+
 【次に進むためのサイン】
 ${buildDynamicSign(compound)}`;
 }
@@ -951,6 +984,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
