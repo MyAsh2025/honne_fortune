@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v17";
+const PHASE = "stable-paid-v18";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -292,6 +292,36 @@ function getEmotionTonePhrase(tone) {
   };
 
   return phrases[tone] || "苦しさの中にも、少しずつ自分に戻ろうとする流れがあります。";
+}
+
+function getSoulConflict(compound) {
+  const trait = compound.primaryTrait;
+
+  if (trait === "people_pleasing") {
+    return "『本音で生きたい気持ち』と、『嫌われないように合わせ続けたい気持ち』が心の中で衝突しています。";
+  }
+
+  if (trait === "attachment_anxiety") {
+    return "『誰かと深く繋がりたい気持ち』と、『傷つく前に距離を取りたい気持ち』が同時に存在しています。";
+  }
+
+  if (trait === "role_pressure") {
+    return "『本当は休みたい気持ち』と、『期待に応え続けなければならない感覚』が強くぶつかっています。";
+  }
+
+  if (trait === "future_anxiety") {
+    return "『前に進みたい気持ち』と、『失敗して壊れたくない気持ち』が同時に未来を引っ張っています。";
+  }
+
+  if (trait === "identity_confusion") {
+    return "『自分らしく生きたい気持ち』と、『周囲に合わせなければ不安になる感覚』が衝突しているようです。";
+  }
+
+  if (trait === "emotional_fatigue") {
+    return "『もう休みたい気持ち』と、『ここで止まったら崩れてしまう怖さ』が心の中で綱引きしています。";
+  }
+
+  return "心の中で、進みたい気持ちと守りたい気持ちが同時に動いているようです。";
 }
 
 function getLifeTheme(compound) {
@@ -717,6 +747,9 @@ ${getUnspokenDesire(compound)}
 【回復へ向かうための方向】
 ${getHealingDirection(compound)}
 
+【心の奥で衝突している2つの気持ち】
+${getSoulConflict(compound)}
+
 【あなたが人生の中で繰り返してきたテーマ】
 ${getLifeTheme(compound)}
 
@@ -795,6 +828,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
