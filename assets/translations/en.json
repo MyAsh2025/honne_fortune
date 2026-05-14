@@ -1,0 +1,69 @@
+{
+  "app_title": "Inner Fortune",
+  "app_subtitle": "Slowly reveal what your heart really feels",
+  "start": "Start Fortune Reading",
+  "minutes": "Takes only a few minutes",
+  "diagnosis": "First Reading",
+  "result": "Result",
+
+  "yes": "Yes",
+  "maybe_yes": "Maybe Yes",
+  "neutral": "Neutral",
+  "maybe_no": "Maybe No",
+  "no": "No",
+
+  "exit_title": "Stop the reading?",
+  "exit_message": "Your answers will not be saved.\nIf you restart, the reading begins again from the first question.",
+  "continue": "Continue",
+  "restart": "Restart",
+  "back_home": "Back to Home",
+
+  "payment_error": "Payment is currently disabled",
+
+  "preview": "You are someone who values relationships.\nBut that kindness may be pushing your feelings aside.",
+
+  "hook": "Beyond this point, your hidden inner truth appears",
+
+  "warning": "You may need a little courage",
+
+  "daily_limit": "This reading is available once per day",
+
+  "paid_button": "Reveal Your Inner Truth",
+  "paid_sub": "We will read your emotional flow",
+
+  "loading_1": "Reading your essence...",
+  "loading_2": "Checking past patterns...",
+  "loading_3": "Calculating emotional flow...",
+
+  "type_self_abandon": "You tend to abandon your own needs too much.",
+  "type_empathy": "You tend to prioritize others too much.",
+  "type_suppression": "You tend to suppress your feelings.",
+  "type_overthink": "You tend to overthink.",
+  "type_guarded": "You tend to protect your true feelings too deeply.",
+
+  "result_self_abandon": "[Essence]\nYou are sensitive to people's feelings and good at reading the atmosphere.\n\n[Hidden Truth]\nDeep down, you want to prioritize yourself a little more.\n\n[Problem]\nYour kindness is so strong that you no longer notice your own limits.\n\n[Advice]\nBefore responding to someone's expectations, check your own exhaustion first.\n\nYou can still reclaim yourself.",
+
+  "result_empathy": "[Essence]\nYou value relationships.\n\n[Hidden Truth]\nYou don't truly want approval.\nYou simply want safe human connection.\n\n[Problem]\nYou adjust yourself too much.\n\n[Advice]\nStart with small NOs.\n\nYou are still growing.",
+
+  "result_suppression": "[Essence]\nYou tend to store emotions inside.\n\n[Hidden Truth]\nPart of you wants someone to truly understand you.\n\n[Problem]\nYour true feelings have become difficult to see.\n\n[Advice]\nDo not search for perfect words.\nWrite just one honest sentence.\n\nYou are not completely closed off.",
+
+  "result_overthink": "[Essence]\nYou have the ability to think deeply.\n\n[Hidden Truth]\nMore than avoiding mistakes, you truly want peace of mind.\n\n[Problem]\nYou think so much that you stop moving.\n\n[Advice]\nTake one small action before finding the perfect answer.\n\nYou can still move forward.",
+
+  "result_guarded": "[Essence]\nYou do not easily show your inner self.\n\n[Hidden Truth]\nYou want to be understood without being hurt.\n\n[Problem]\nWhen your guard becomes too strong, even support feels distant.\n\n[Advice]\nYou do not need to say everything.\nJust choose one honest word.\n\nLittle by little, you can open up.",
+
+  "q1": "Are you afraid of being disliked?",
+  "q2": "Do you often hide your true feelings?",
+  "q3": "Do you tend to carry problems alone?",
+  "q4": "Do you overthink at night?",
+  "q5": "Is it hard for you to rely on others?",
+  "q6": "Do you put yourself last?",
+  "q7": "Do you feel guilty saying no?",
+  "q8": "Do you feel emotionally exhausted?",
+  "q9": "Do you try too hard to meet expectations?",
+  "q10": "Do you worry too much about others?",
+  "q11": "Do you dwell on failures for a long time?",
+  "q12": "Do you hide your emotions?",
+  "q13": "Do you pretend to be okay in front of others?",
+  "q14": "Do you keep thinking without finding answers?",
+  "q15": "Do you sometimes lose sight of who you really are?"
+}
