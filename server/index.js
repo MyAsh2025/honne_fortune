@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v10";
+const PHASE = "stable-paid-v11";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -294,6 +294,57 @@ function getEmotionTonePhrase(tone) {
   return phrases[tone] || "苦しさの中にも、少しずつ自分に戻ろうとする流れがあります。";
 }
 
+function getSelfPerceptionGap(compound) {
+  const trait = compound.primaryTrait;
+
+  if (trait === "people_pleasing") {
+    return {
+      outside: "周囲からは『気配りができる優しい人』に見えています。",
+      inside: "けれど内側では、『嫌われないように頑張っている感覚』が強く残っています。",
+    };
+  }
+
+  if (trait === "attachment_anxiety") {
+    return {
+      outside: "周囲からは『愛情深い人』に見えています。",
+      inside: "けれど内側では、『見捨てられないか』をずっと警戒している部分があります。",
+    };
+  }
+
+  if (trait === "role_pressure") {
+    return {
+      outside: "周囲からは『責任感が強い人』に見えています。",
+      inside: "けれど内側では、『止まったら価値を失う』怖さを抱えている可能性があります。",
+    };
+  }
+
+  if (trait === "future_anxiety") {
+    return {
+      outside: "周囲からは『真面目に将来を考えている人』に見えています。",
+      inside: "けれど内側では、『間違えたら終わる』ような不安が大きくなっています。",
+    };
+  }
+
+  if (trait === "identity_confusion") {
+    return {
+      outside: "周囲からは『普通に過ごしている人』に見えているかもしれません。",
+      inside: "けれど内側では、『自分が何者なのか分からない感覚』が静かに続いています。",
+    };
+  }
+
+  if (trait === "emotional_fatigue") {
+    return {
+      outside: "周囲からは『まだ頑張れている人』に見えています。",
+      inside: "けれど内側では、『本当はかなり限界に近い』感覚が積み重なっています。",
+    };
+  }
+
+  return {
+    outside: "周囲からは落ち着いて見えているかもしれません。",
+    inside: "けれど内側では、言葉にならない揺れが続いているようです。",
+  };
+}
+
 function getHealingDirection(compound) {
   const trait = compound.primaryTrait;
 
@@ -468,6 +519,12 @@ ${buildDynamicHiddenNeed(compound)}
 今回の主軸は「${getCategoryLabel(compound.primaryCategory)}」です。
 ただし、裏側には「${getCategoryLabel(compound.secondaryCategory)}」もあり、本質的には「${getTraitLabel(compound.primaryTrait)}」が${getStrengthPhrase(compound.traitStrength)}出ています。
 
+【周囲から見えているあなた】
+${getSelfPerceptionGap(compound).outside}
+
+【あなた自身が感じていること】
+${getSelfPerceptionGap(compound).inside}
+
 【回復へ向かうための方向】
 ${getHealingDirection(compound)}
 
@@ -540,6 +597,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
