@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v11";
+const PHASE = "stable-paid-v12";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -294,6 +294,36 @@ function getEmotionTonePhrase(tone) {
   return phrases[tone] || "苦しさの中にも、少しずつ自分に戻ろうとする流れがあります。";
 }
 
+function getUnspokenDesire(compound) {
+  const trait = compound.primaryTrait;
+
+  if (trait === "people_pleasing") {
+    return "本当は、『嫌われないこと』より『安心して素を出せる場所』を求めている可能性があります。";
+  }
+
+  if (trait === "attachment_anxiety") {
+    return "本当は、『離れない保証』より、『不安になっても受け止めてもらえる感覚』を求めているのかもしれません。";
+  }
+
+  if (trait === "role_pressure") {
+    return "本当は、『期待に応え続けること』より、『頑張らなくても価値が消えない感覚』を求めている可能性があります。";
+  }
+
+  if (trait === "future_anxiety") {
+    return "本当は、『正しい未来』より、『少し安心できる今』を求めているのかもしれません。";
+  }
+
+  if (trait === "identity_confusion") {
+    return "本当は、『自分を見つけること』より、『無理に演じなくていい時間』を求めている可能性があります。";
+  }
+
+  if (trait === "emotional_fatigue") {
+    return "本当は、『もっと頑張ること』より、『安心して休める感覚』を求めているのかもしれません。";
+  }
+
+  return "本当は、無理をしなくても安心できる場所を求めているようです。";
+}
+
 function getSelfPerceptionGap(compound) {
   const trait = compound.primaryTrait;
 
@@ -525,6 +555,9 @@ ${getSelfPerceptionGap(compound).outside}
 【あなた自身が感じていること】
 ${getSelfPerceptionGap(compound).inside}
 
+【まだ言葉になっていない願い】
+${getUnspokenDesire(compound)}
+
 【回復へ向かうための方向】
 ${getHealingDirection(compound)}
 
@@ -597,6 +630,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
