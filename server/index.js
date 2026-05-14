@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v12";
+const PHASE = "stable-paid-v13";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -294,6 +294,36 @@ function getEmotionTonePhrase(tone) {
   return phrases[tone] || "苦しさの中にも、少しずつ自分に戻ろうとする流れがあります。";
 }
 
+function getEmotionalDefense(compound) {
+  const trait = compound.primaryTrait;
+
+  if (trait === "people_pleasing") {
+    return "空気を読み、先回りして合わせることで、人間関係を壊さないように心を守ってきた可能性があります。";
+  }
+
+  if (trait === "attachment_anxiety") {
+    return "深く傷つく前に距離を取ったり、不安を隠して平静を装うことで心を守ってきたようです。";
+  }
+
+  if (trait === "role_pressure") {
+    return "止まらず頑張り続けることで、『必要とされなくなる怖さ』から自分を守ってきた可能性があります。";
+  }
+
+  if (trait === "future_anxiety") {
+    return "考え続けることで失敗を避けようとし、不安そのものをコントロールしようとしてきた流れがあります。";
+  }
+
+  if (trait === "identity_confusion") {
+    return "周囲に合わせ続けることで、否定されたり浮いてしまう怖さから自分を守ってきたのかもしれません。";
+  }
+
+  if (trait === "emotional_fatigue") {
+    return "『大丈夫なふり』を続けることで、崩れてしまう怖さから心を支えてきた可能性があります。";
+  }
+
+  return "自分なりの方法で、心が壊れないように守り続けてきたようです。";
+}
+
 function getUnspokenDesire(compound) {
   const trait = compound.primaryTrait;
 
@@ -555,6 +585,9 @@ ${getSelfPerceptionGap(compound).outside}
 【あなた自身が感じていること】
 ${getSelfPerceptionGap(compound).inside}
 
+【あなたが無意識に続けてきた防衛反応】
+${getEmotionalDefense(compound)}
+
 【まだ言葉になっていない願い】
 ${getUnspokenDesire(compound)}
 
@@ -630,6 +663,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
