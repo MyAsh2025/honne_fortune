@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v19";
+const PHASE = "stable-paid-v20";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -292,6 +292,36 @@ function getEmotionTonePhrase(tone) {
   };
 
   return phrases[tone] || "苦しさの中にも、少しずつ自分に戻ろうとする流れがあります。";
+}
+
+function getRelationshipMirror(compound) {
+  const trait = compound.primaryTrait;
+
+  if (trait === "people_pleasing") {
+    return "人間関係の中で、自分の気持ちより相手を優先し、『合わせる側』に回りやすい傾向があります。";
+  }
+
+  if (trait === "attachment_anxiety") {
+    return "人間関係の中で、強く繋がりたい気持ちと、傷つく前に距離を取る反応を繰り返しやすいようです。";
+  }
+
+  if (trait === "role_pressure") {
+    return "人間関係の中で、『頼られる側』『支える側』になりやすく、自分の負担を後回しにしやすい傾向があります。";
+  }
+
+  if (trait === "future_anxiety") {
+    return "人間関係の中で、相手の反応や評価を気にしすぎて、自分の選択に強い不安を感じやすいようです。";
+  }
+
+  if (trait === "identity_confusion") {
+    return "人間関係の中で、相手ごとに自分を合わせ続け、本音が分からなくなりやすい傾向があります。";
+  }
+
+  if (trait === "emotional_fatigue") {
+    return "人間関係の中で、『大丈夫な人』を続けようとして、一人で抱え込みやすい傾向があります。";
+  }
+
+  return "人との関係の中で、自分を守るための役回りを自然に選びやすいようです。";
 }
 
 function getPastScar(compound) {
@@ -777,6 +807,9 @@ ${getUnspokenDesire(compound)}
 【回復へ向かうための方向】
 ${getHealingDirection(compound)}
 
+【人間関係で繰り返しやすい役回り】
+${getRelationshipMirror(compound)}
+
 【昔から続いている傷の傾向】
 ${getPastScar(compound)}
 
@@ -861,6 +894,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
