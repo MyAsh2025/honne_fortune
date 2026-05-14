@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v7";
+const PHASE = "stable-paid-v8";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -294,6 +294,37 @@ function getEmotionTonePhrase(tone) {
   return phrases[tone] || "苦しさの中にも、少しずつ自分に戻ろうとする流れがあります。";
 }
 
+function getMemoryEcho(compound) {
+  const trait = compound.primaryTrait;
+  const tone = getEmotionTone(compound);
+
+  if (trait === "people_pleasing") {
+    return "気づかないうちに、“嫌われないこと”を優先する時間が長く続いていたのかもしれません。";
+  }
+
+  if (trait === "attachment_anxiety") {
+    return "大切なものを失わないようにする緊張感が、ずっと心の奥で続いていた可能性があります。";
+  }
+
+  if (trait === "role_pressure") {
+    return "期待に応え続けることが当たり前になり、自分を休ませる感覚を後回しにしてきたのかもしれません。";
+  }
+
+  if (trait === "future_anxiety") {
+    return "『このままで大丈夫なのか』という問いが、何度も心の中を巡ってきた流れがあります。";
+  }
+
+  if (trait === "identity_confusion") {
+    return "周囲に合わせる時間が長くなるほど、自分自身の輪郭が少し曖昧になっていったのかもしれません。";
+  }
+
+  if (trait === "emotional_fatigue") {
+    return "平気なふりを続けるうちに、疲れていることさえ後回しにしてきた可能性があります。";
+  }
+
+  return "長い時間をかけて、自分を守る反応が積み重なってきたようです。";
+}
+
 function getInnerNarrative(compound) {
   const trait = compound.primaryTrait;
   const tone = getEmotionTone(compound);
@@ -363,6 +394,9 @@ ${getEmotionTonePhrase(emotionTone)}
 
 【心の奥で続いてきた流れ】
 ${getInnerNarrative(compound)}
+
+【記憶の奥に残っている反応】
+${getMemoryEcho(compound)}
 
 【本当は求めているもの】
 ${buildDynamicHiddenNeed(compound)}
@@ -440,6 +474,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
