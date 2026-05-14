@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v20";
+const PHASE = "stable-paid-v21";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -292,6 +292,57 @@ function getEmotionTonePhrase(tone) {
   };
 
   return phrases[tone] || "苦しさの中にも、少しずつ自分に戻ろうとする流れがあります。";
+}
+
+function getFutureSelf(compound) {
+  const trait = compound.primaryTrait;
+
+  if (trait === "people_pleasing") {
+    return {
+      current: "このまま相手を優先し続けると、自分の本音がさらに分からなくなっていく可能性があります。",
+      healing: "少しずつ『自分の気持ちも大切にしていい』感覚を持てると、安心できる関係が増えていくかもしれません。"
+    };
+  }
+
+  if (trait === "attachment_anxiety") {
+    return {
+      current: "このまま不安を抱え込み続けると、人との距離にさらに疲れやすくなる可能性があります。",
+      healing: "少しずつ『不安があっても繋がっていていい』感覚を持てると、人との関係が少し楽になっていくかもしれません。"
+    };
+  }
+
+  if (trait === "role_pressure") {
+    return {
+      current: "このまま頑張り続けると、『休むことへの怖さ』がさらに強くなっていく可能性があります。",
+      healing: "少しずつ『止まっても価値は消えない』感覚を持てると、肩の力を抜ける時間が増えていくかもしれません。"
+    };
+  }
+
+  if (trait === "future_anxiety") {
+    return {
+      current: "このまま正解を探し続けると、不安が先に動き、自分の感覚を信じにくくなる可能性があります。",
+      healing: "少しずつ『安心できる選択』を増やせると、未来への怖さが静かに和らいでいくかもしれません。"
+    };
+  }
+
+  if (trait === "identity_confusion") {
+    return {
+      current: "このまま周囲に合わせ続けると、自分の感覚をさらに見失いやすくなる可能性があります。",
+      healing: "少しずつ『違和感を無視しない』感覚を持てると、自分らしさを取り戻していけるかもしれません。"
+    };
+  }
+
+  if (trait === "emotional_fatigue") {
+    return {
+      current: "このまま耐え続けると、少しずつ感情が動きにくくなっていく可能性があります。",
+      healing: "少しずつ『安心して休む感覚』を取り戻せると、頑張るためではなく、自分を大切にする時間が増えていくかもしれません。"
+    };
+  }
+
+  return {
+    current: "このまま無理を続けると、心の疲れがさらに深くなっていく可能性があります。",
+    healing: "少しずつ自分を守る感覚を持てると、心の重さが和らいでいくかもしれません。"
+  };
 }
 
 function getRelationshipMirror(compound) {
@@ -819,6 +870,12 @@ ${getSoulConflict(compound)}
 【あなたが人生の中で繰り返してきたテーマ】
 ${getLifeTheme(compound)}
 
+【このまま進んだ未来】
+${getFutureSelf(compound).current}
+
+【少し回復した先にある未来】
+${getFutureSelf(compound).healing}
+
 【それでも残っている小さな希望】
 ${getHopeFragment(compound)}
 
@@ -894,6 +951,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
