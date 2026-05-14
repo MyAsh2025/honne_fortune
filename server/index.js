@@ -6,6 +6,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const PHASE = "stable-paid-v4.1";
+
 function getScoreType(score) {
   const n = Number(score || 0);
 
@@ -14,6 +16,10 @@ function getScoreType(score) {
   if (n <= 24) return "hidden_longing";
 
   return "emotionally_open";
+}
+
+function sortScores(scores) {
+  return Object.entries(scores).sort((a, b) => b[1] - a[1]);
 }
 
 function getPrimaryCategory(answers) {
@@ -52,17 +58,13 @@ function getPrimaryCategory(answers) {
     }
   }
 
-  let primary = "self";
-
-  for (const key of Object.keys(scores)) {
-    if (scores[key] > scores[primary]) {
-      primary = key;
-    }
-  }
+  const sorted = sortScores(scores);
 
   return {
-    primary,
+    primary: sorted[0]?.[0] || "self",
+    secondary: sorted[1]?.[0] || "mental",
     scores,
+    ranking: sorted.map(([key, value]) => ({ key, value })),
   };
 }
 
@@ -98,23 +100,97 @@ function getPrimaryTrait(answers) {
     for (const answer of answers) {
       const trait = map[answer.questionKey];
       if (!trait) continue;
-      scores[trait] += Number(answer.value || 0);
+            const value = Number(answer.value || 0);
+
+      const weightMap = {
+        q6: 1.35,
+        q11: 1.35,
+        q9: 1.2,
+        q15: 1.2,
+        q3: 1.15,
+        q8: 1.15,
+        q14: 1.15,
+      };
+
+      scores[trait] += value * (weightMap[answer.questionKey] || 1);
     }
   }
 
-  let primary = "identity_confusion";
-
-  for (const key of Object.keys(scores)) {
-    if (scores[key] > scores[primary]) {
-      primary = key;
-    }
-  }
+  const sorted = sortScores(scores);
 
   return {
-    primary,
+    primary: sorted[0]?.[0] || "identity_confusion",
+    secondary: sorted[1]?.[0] || "emotional_fatigue",
     scores,
+    ranking: sorted.map(([key, value]) => ({ key, value })),
   };
 }
+
+function getTraitStrength(traitScores, primaryTrait) {
+  const value = Number(traitScores?.[primaryTrait] || 0);
+
+  if (value >= 6) return "very_high";
+  if (value >= 4) return "high";
+  if (value >= 2) return "middle";
+
+  return "low";
+}
+
+function getCategoryLabel(category) {
+  const labels = {
+    relationship: "人間関係",
+    love: "恋愛",
+    work: "仕事・役割",
+    future: "未来・進路",
+    self: "自分自身",
+    mental: "心の疲れ",
+  };
+
+  return labels[category] || "自分自身";
+}
+
+function getTraitLabel(trait) {
+  const labels = {
+    people_pleasing: "人に合わせすぎる癖",
+    attachment_anxiety: "見捨てられ不安",
+    role_pressure: "役割への重圧",
+    future_anxiety: "未来への不安",
+    identity_confusion: "自分らしさの迷子",
+    emotional_fatigue: "感情の疲労",
+  };
+
+  return labels[trait] || "自分らしさの迷子";
+}
+
+function buildCompoundInsight(categoryResult, traitResult) {
+  const primaryCategory = categoryResult.primary;
+  const secondaryCategory = categoryResult.secondary;
+  const primaryTrait = traitResult.primary;
+  const secondaryTrait = traitResult.secondary;
+  const strength = getTraitStrength(traitResult.scores, primaryTrait);
+
+  const categoryLabel = getCategoryLabel(primaryCategory);
+  const secondaryCategoryLabel = getCategoryLabel(secondaryCategory);
+  const traitLabel = getTraitLabel(primaryTrait);
+  const secondaryTraitLabel = getTraitLabel(secondaryTrait);
+
+  const strengthText = {
+    very_high: "かなり強く出ています",
+    high: "強めに出ています",
+    middle: "静かに出ています",
+    low: "まだ小さく出ています",
+  }[strength];
+
+  return {
+    primaryCategory,
+    secondaryCategory,
+    primaryTrait,
+    secondaryTrait,
+    traitStrength: strength,
+    summary: `表面では「${categoryLabel}」の悩みに見えますが、奥には「${traitLabel}」が${strengthText}。さらに背景には「${secondaryCategoryLabel}」や「${secondaryTraitLabel}」も影響しています。`,
+  };
+}
+
 function stableFortune(score) {
   const type = getScoreType(score);
 
@@ -166,238 +242,31 @@ function stableFortune(score) {
 }
 
 function stablePaidFortune(score, answers = []) {
-  const type = getScoreType(score);
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
-  const category = categoryResult.primary;
-  const trait = traitResult.primary;
+  const compound = buildCompoundInsight(categoryResult, traitResult);
 
-  if (category === "work" && trait === "role_pressure") {
-    return `【さらに深い本音】
-あなたは、求められる役割に応えようとして、自分の本音を後回しにしてきた人です。
-ちゃんとやらなければと思うほど、心のどこかで「これは本当に自分の望みなのか」と揺れているのかもしれません。
-
-【今のあなたが悩んでいること】
-頑張っているのに、満たされない。
-評価されても安心できず、むしろ次も応えなければと、重さだけが増えているようです。
-
-【本当は求めているもの】
-あなたが欲しいのは、ただ認められることではありません。
-自分の力を使いながらも、自分自身を失わずにいられる場所です。
-
-【次に進むためのサイン】
-違和感は、逃げたい気持ちではなく、本音が戻ってきている合図です。
-小さくても、自分の意思で選ぶ時間を取り戻してください。`;
-  }
-  if (category === "work") {
-    return `【さらに深い本音】
-あなたが今いちばん揺れているのは、仕事や役割の中で「自分はこのままでいいのか」と感じる部分です。
-求められることに応えながら、本当の自分の望みを後回しにしてきたのかもしれません。
-
-【今のあなたが悩んでいること】
-頑張っているのに、どこか満たされない感覚があります。
-評価されたい気持ちと、無理を続けたくない気持ちが、心の中でぶつかっています。
-
-【本当は求めているもの】
-あなたが欲しいのは、ただ忙しくなることではありません。
-自分の力がちゃんと意味を持ち、誰かの役に立っていると感じられる場所です。
-
-【次に進むためのサイン】
-違和感を無視しないことが、次の流れを変えていきます。
-小さくても「これは自分の本音に近い」と思える選択を増やしてください。`;
-  }
-
-  if (category === "future" && trait === "future_anxiety") {
-    return `【さらに深い本音】
-あなたは、未来を考えるほど心が固まってしまうところがあります。
-変わりたい気持ちはあるのに、失敗した時のことまで先に想像して、動く前から疲れてしまうのかもしれません。
-
-【今のあなたが悩んでいること】
-このままでいいとは思っていない。
-でも、何を選べば正解なのか分からず、時間だけが過ぎていくような焦りがあります。
-
-【本当は求めているもの】
-あなたが欲しいのは、完璧な答えではありません。
-不安があっても一歩進めるだけの、小さな確信です。
-
-【次に進むためのサイン】
-未来は一度に決めなくて大丈夫です。
-今の自分が少し呼吸しやすくなる選択の中に、次の道が隠れています。`;
-  }
-  if (category === "future") {
-    return `【さらに深い本音】
-あなたの奥には、未来に対する期待と不安が同時にあります。
-変わりたい気持ちはあるのに、失敗した時のことを考えて、足が止まってしまうのかもしれません。
-
-【今のあなたが悩んでいること】
-このまま進んでいいのか、どこかで道を変えるべきなのか。
-答えが出ないまま、心だけが先に疲れているようです。
-
-【本当は求めているもの】
-あなたが欲しいのは、完璧な未来ではありません。
-不安があっても進めるだけの、小さな確信です。
-
-【次に進むためのサイン】
-一気に人生を変えようとしなくて大丈夫です。
-今の自分が少し呼吸しやすくなる方向に、次の答えがあります。`;
-  }
-
-  if (category === "mental" && trait === "emotional_fatigue") {
-    return `【さらに深い本音】
-あなたの疲れは、ただ休めば消える種類のものではないようです。
-ずっと気を張りながら、平気な顔で日常を回してきたぶん、心の奥が静かにすり減ってきたのかもしれません。
-
-【今のあなたが悩んでいること】
-何がつらいのかを聞かれても、うまく言葉にできない。
-でも、ひとりになると急に力が抜けたり、何もしていないのに涙が近くなるような感覚があるはずです。
-
-【本当は求めているもの】
-あなたが本当に欲しいのは、励ましではなく安心です。
-頑張れと言われるより、今のまま少し休んでも責められない場所を求めています。
-
-【次に進むためのサイン】
-まずは前向きになろうとしなくて大丈夫です。
-心が戻ってくるのを待つ時間も、あなたが自分を取り戻すための大切な一歩です。`;
-  }
-
-  if (category === "mental") {
-    return `【さらに深い本音】
-あなたは今、自分でも説明しきれない疲れを抱えているようです。
-何か大きな出来事がなくても、心が静かにすり減ってきたのかもしれません。
-
-【今のあなたが悩んでいること】
-平気なふりはできるのに、ひとりになると急に力が抜ける。
-本当は誰かに気づいてほしいのに、うまく言葉にできない状態です。
-
-【本当は求めているもの】
-あなたが欲しいのは、正論ではなく安心です。
-頑張れと言われるより、少し休んでもいいと思える場所です。
-
-【次に進むためのサイン】
-まずは無理に前向きにならなくて大丈夫です。
-心が落ち着く時間を取り戻すことが、今のあなたの最初の答えです。`;
-  }
-
-  if (category === "relationship" && trait === "people_pleasing") {
-    return `【さらに深い本音】
-あなたは、人に嫌われないように空気を読み続けてきた人です。
-その優しさは本物ですが、いつの間にか「自分を消すこと」に近くなっていたのかもしれません。
-
-【今のあなたが悩んでいること】
-相手に合わせているうちに、自分が何を感じていたのか分からなくなる。
-本当は苦しかったことまで、「仕方ない」で飲み込んできたようです。
-
-【本当は求めているもの】
-あなたが欲しいのは、気を遣わなくても安心できる関係です。
-嫌われないことではなく、無理をしなくても離れないつながりを求めています。
-
-【次に進むためのサイン】
-少し本音を出しただけで壊れる関係なら、あなたが無理をして支えていただけかもしれません。
-これからは、自分を消さなくても続く関係を選んで大丈夫です。`;
-  }
-
-  if (category === "relationship" && trait === "people_pleasing") {
-    return `【さらに深い本音】
-あなたは、人に嫌われないように空気を読み続けてきた人です。
-その優しさは本物ですが、いつの間にか「自分を消すこと」に近くなっていたのかもしれません。
-
-【今のあなたが悩んでいること】
-相手に合わせているうちに、自分が何を感じていたのか分からなくなる。
-本当は苦しかったことまで、「仕方ない」で飲み込んできたようです。
-
-【本当は求めているもの】
-あなたが欲しいのは、気を遣わなくても安心できる関係です。
-嫌われないことではなく、無理をしなくても離れないつながりを求めています。
-
-【次に進むためのサイン】
-少し本音を出しただけで壊れる関係なら、あなたが無理をして支えていただけかもしれません。
-これからは、自分を消さなくても続く関係を選んで大丈夫です。`;
-  }
-  if (category === "relationship") {
-    return `【さらに深い本音】
-あなたが今強く反応しているのは、人との距離感です。
-近づきたいのに疲れる、離れたいのに寂しい、その両方を抱えているのかもしれません。
-
-【今のあなたが悩んでいること】
-相手に合わせすぎるほど、自分の気持ちが分からなくなることがあります。
-本当は嫌だったことまで、あとから飲み込んできたようです。
-
-【本当は求めているもの】
-あなたが欲しいのは、無理に笑わなくても続く関係です。
-気を遣ったあなたではなく、本音に近いあなたを受け止めてくれるつながりです。
-
-【次に進むためのサイン】
-少しだけ距離を置いても壊れない関係が、本当に残る関係です。
-あなたが自分を消さなくても、そばにいる人を選んでください。`;
-  }
-
-  if (category === "love" && trait === "attachment_anxiety") {
-    return `【さらに深い本音】
-あなたは、大切な人ほど失うのが怖くなる人です。
-近づきたい気持ちと、傷つく前に距離を置きたくなる気持ちが、心の中で何度も揺れてきたのかもしれません。
-
-【今のあなたが悩んでいること】
-愛されたいのに、求めすぎると嫌われそうで怖い。
-相手の反応ひとつで安心したり不安になったりして、心が落ち着かなくなることがあります。
-
-【本当は求めているもの】
-あなたが欲しいのは、駆け引きではありません。
-不安になった時ほど、ちゃんと向き合ってくれる安心感です。
-
-【次に進むためのサイン】
-追いかけ続けないと消える関係ではなく、安心して待てる関係を選んで大丈夫です。
-あなたが無理をしなくても続く愛は、ちゃんと存在します。`;
-  }
-  if (category === "love") {
-    return `【さらに深い本音】
-あなたの中には、ちゃんと大切にされたいという願いがあります。
-ただ、その気持ちを見せすぎるのが怖くて、平気なふりをしてしまうようです。
-
-【今のあなたが悩んでいること】
-求めたいのに、求めるほど重いと思われそうで止まってしまう。
-本当は言葉にしたい寂しさを、何度も飲み込んできたのかもしれません。
-
-【本当は求めているもの】
-あなたが欲しいのは、駆け引きではなく安心です。
-不安にさせる人ではなく、不安になった時に向き合ってくれる人です。
-
-【次に進むためのサイン】
-愛されるために自分を小さくしなくて大丈夫です。
-あなたの本音を大切にできる人だけが、次の関係に残っていきます。`;
-  }
-
-  if (category === "self" && trait === "identity_confusion") {
-    return `【さらに深い本音】
-あなたは、自分の本音を感じる前に「こうするべき」を選んできた人です。
-だから今、何が好きで、何が苦しくて、どこへ進みたいのかが少し見えにくくなっているのかもしれません。
-
-【今のあなたが悩んでいること】
-周りから見れば普通に進んでいるようでも、心の中では「これは本当に自分の人生なのか」と問い続けています。
-答えを出そうとするほど、余計に分からなくなる時があるようです。
-
-【本当は求めているもの】
-あなたが欲しいのは、誰かに正解を決めてもらうことではありません。
-自分の感覚を信じてもいいと思える、静かな確信です。
-
-【次に進むためのサイン】
-大きな決断より先に、小さな違和感を見逃さないでください。
-その違和感の中に、あなたが本当に戻りたい場所が隠れています。`;
-  }
   return `【さらに深い本音】
-あなたが今向き合っているのは、誰かとの関係よりも、自分自身の本音です。
-本当は分かっているのに、まだ言葉にしきれていない気持ちが残っています。
+${compound.summary}
 
 【今のあなたが悩んでいること】
-自分は何を望んでいるのか、何に疲れているのか。
-答えを急ぐほど、心の声が遠くなってしまうことがあります。
+あなたの悩みは、ひとつの出来事だけで生まれているわけではありません。
+表では「${getCategoryLabel(compound.primaryCategory)}」の問題として見えていても、心の奥では「${getTraitLabel(compound.primaryTrait)}」が反応しています。
+そのため、頑張って解決しようとするほど、別の場所で苦しさが残ってしまうのかもしれません。
 
 【本当は求めているもの】
-あなたが欲しいのは、誰かに決めてもらう答えではありません。
-自分の感覚を信じてもいいと思える、静かな確信です。
+あなたが本当に求めているのは、表面的な正解ではありません。
+「ちゃんとしなければ」「分かってもらわなければ」「失敗してはいけない」という力みから少し離れて、自分の本音を否定しなくていい場所です。
+
+【隠れている根本】
+今回の読みでは、主軸は「${getCategoryLabel(compound.primaryCategory)}」です。
+ただし、裏側には「${getCategoryLabel(compound.secondaryCategory)}」の影響もあります。
+さらに本質的な反応として、「${getTraitLabel(compound.primaryTrait)}」が${compound.traitStrength === "very_high" ? "かなり強く" : compound.traitStrength === "high" ? "強く" : compound.traitStrength === "middle" ? "静かに" : "小さく"}出ています。
 
 【次に進むためのサイン】
-迷っている自分を責めなくて大丈夫です。
-小さな違和感を見逃さないことが、次のあなたを導いていきます。`;
+今すぐ大きな答えを出さなくて大丈夫です。
+まずは「何に悩んでいるか」よりも、「なぜそこまで心が反応しているのか」を見てください。
+そこに、次のあなたを動かす本音があります。`;
 }
 
 app.post("/fortune", async (req, res) => {
@@ -414,21 +283,38 @@ app.post("/fortune", async (req, res) => {
 
 app.post("/deep-fortune", async (req, res) => {
   const { score, answers } = req.body || {};
-  const categoryResult = getPrimaryCategory(answers || []);
-  const traitResult = getPrimaryTrait(answers || []);
+  const safeAnswers = answers || [];
+
+  const categoryResult = getPrimaryCategory(safeAnswers);
+  const traitResult = getPrimaryTrait(safeAnswers);
+  const compound = buildCompoundInsight(categoryResult, traitResult);
 
   res.json({
     ok: true,
     mode: "stable-paid-template",
-    phase: "stable-paid-v3",
+    phase: PHASE,
     fallback: false,
     model: "stable-template",
+
     type: getScoreType(score || 0),
+
     category: categoryResult.primary,
     categoryScores: categoryResult.scores,
+
     trait: traitResult.primary,
     traitScores: traitResult.scores,
-    text: stablePaidFortune(score || 0, answers || []),
+
+    primaryCategory: compound.primaryCategory,
+    secondaryCategory: compound.secondaryCategory,
+    primaryTrait: compound.primaryTrait,
+    secondaryTrait: compound.secondaryTrait,
+    traitStrength: compound.traitStrength,
+    compoundSummary: compound.summary,
+
+    categoryRanking: categoryResult.ranking,
+    traitRanking: traitResult.ranking,
+
+    text: stablePaidFortune(score || 0, safeAnswers),
   });
 });
 
@@ -436,7 +322,7 @@ const server = app.listen(8787, "127.0.0.1", () => {
   console.log("=================================");
   console.log("FREE: /fortune stable-free-template");
   console.log("DEEP: /deep-fortune stable-paid-template");
-  console.log("Phase: stable-paid-v3");
+  console.log(`Phase: ${PHASE}`);
   console.log("Listening: http://127.0.0.1:8787");
   console.log("=================================");
 });
@@ -446,11 +332,4 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
-
-
-
-
-
-
-
 
