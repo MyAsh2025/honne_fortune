@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v14";
+const PHASE = "stable-paid-v15";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -292,6 +292,36 @@ function getEmotionTonePhrase(tone) {
   };
 
   return phrases[tone] || "苦しさの中にも、少しずつ自分に戻ろうとする流れがあります。";
+}
+
+function getAcceptanceSentence(compound) {
+  const trait = compound.primaryTrait;
+
+  if (trait === "people_pleasing") {
+    return "あなたが苦しいのは弱いからではなく、人との関係を壊さないようにずっと気を張ってきたからです。";
+  }
+
+  if (trait === "attachment_anxiety") {
+    return "あなたが不安になるのは弱いからではなく、大切なものを失いたくない気持ちを強く抱えてきたからです。";
+  }
+
+  if (trait === "role_pressure") {
+    return "あなたが止まれないのは弱いからではなく、期待に応え続けながら自分を支えてきた時間が長かったからです。";
+  }
+
+  if (trait === "future_anxiety") {
+    return "あなたが迷うのは弱いからではなく、ちゃんと生きようとしてきたからこそ不安が大きくなっているのです。";
+  }
+
+  if (trait === "identity_confusion") {
+    return "あなたが苦しいのは弱いからではなく、自分を見失うほど周囲に合わせ続けてきたからかもしれません。";
+  }
+
+  if (trait === "emotional_fatigue") {
+    return "あなたが限界を感じるのは弱いからではなく、ずっと耐えながら頑張り続けてきたからです。";
+  }
+
+  return "あなたが苦しいのは弱いからではなく、自分なりに心を守り続けてきたからです。";
 }
 
 function getCoreFear(compound) {
@@ -627,6 +657,9 @@ ${getUnspokenDesire(compound)}
 【回復へ向かうための方向】
 ${getHealingDirection(compound)}
 
+【あなたが責めなくていいこと】
+${getAcceptanceSentence(compound)}
+
 【次に進むためのサイン】
 ${buildDynamicSign(compound)}`;
 }
@@ -696,6 +729,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
