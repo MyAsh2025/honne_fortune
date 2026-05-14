@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v8";
+const PHASE = "stable-paid-v9";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -294,6 +294,36 @@ function getEmotionTonePhrase(tone) {
   return phrases[tone] || "苦しさの中にも、少しずつ自分に戻ろうとする流れがあります。";
 }
 
+function getContradiction(compound) {
+  const trait = compound.primaryTrait;
+
+  if (trait === "people_pleasing") {
+    return "本当は自分を優先したいのに、嫌われる怖さが先に動いてしまう矛盾があります。";
+  }
+
+  if (trait === "attachment_anxiety") {
+    return "近づきたい気持ちと、傷つく前に離れたい気持ちが同時に存在しています。";
+  }
+
+  if (trait === "role_pressure") {
+    return "休みたい気持ちがあるのに、止まった瞬間に価値を失うような怖さがあります。";
+  }
+
+  if (trait === "future_anxiety") {
+    return "前に進みたいのに、失敗を想像すると動けなくなる矛盾があります。";
+  }
+
+  if (trait === "identity_confusion") {
+    return "自分らしく生きたいのに、“本当の自分”が分からなくなる瞬間があります。";
+  }
+
+  if (trait === "emotional_fatigue") {
+    return "もう限界に近いのに、『まだ頑張れる』と言い聞かせてしまう矛盾があります。";
+  }
+
+  return "心の中で、逆向きの感情が同時に動いているようです。";
+}
+
 function getMemoryEcho(compound) {
   const trait = compound.primaryTrait;
   const tone = getEmotionTone(compound);
@@ -398,6 +428,9 @@ ${getInnerNarrative(compound)}
 【記憶の奥に残っている反応】
 ${getMemoryEcho(compound)}
 
+【心の中にある矛盾】
+${getContradiction(compound)}
+
 【本当は求めているもの】
 ${buildDynamicHiddenNeed(compound)}
 
@@ -474,6 +507,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
