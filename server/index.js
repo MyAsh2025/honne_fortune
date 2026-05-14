@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v18";
+const PHASE = "stable-paid-v19";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -292,6 +292,36 @@ function getEmotionTonePhrase(tone) {
   };
 
   return phrases[tone] || "苦しさの中にも、少しずつ自分に戻ろうとする流れがあります。";
+}
+
+function getPastScar(compound) {
+  const trait = compound.primaryTrait;
+
+  if (trait === "people_pleasing") {
+    return "昔から、『空気を乱さないようにしなければ』という感覚を抱えてきた可能性があります。";
+  }
+
+  if (trait === "attachment_anxiety") {
+    return "昔から、『離れていかれないようにしなければ』という不安をどこかで抱えてきたのかもしれません。";
+  }
+
+  if (trait === "role_pressure") {
+    return "昔から、『頑張らないと認められない』感覚を抱えてきた可能性があります。";
+  }
+
+  if (trait === "future_anxiety") {
+    return "昔から、『間違えてはいけない』という緊張感を強く持ちながら進んできたのかもしれません。";
+  }
+
+  if (trait === "identity_confusion") {
+    return "昔から、『周囲に合わせた方が安全』という感覚を優先してきた可能性があります。";
+  }
+
+  if (trait === "emotional_fatigue") {
+    return "昔から、『無理をしてでも耐えること』を当たり前にしてきた流れがあるのかもしれません。";
+  }
+
+  return "昔から、自分を守るための感覚を静かに抱えてきたようです。";
 }
 
 function getSoulConflict(compound) {
@@ -747,6 +777,9 @@ ${getUnspokenDesire(compound)}
 【回復へ向かうための方向】
 ${getHealingDirection(compound)}
 
+【昔から続いている傷の傾向】
+${getPastScar(compound)}
+
 【心の奥で衝突している2つの気持ち】
 ${getSoulConflict(compound)}
 
@@ -828,6 +861,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
