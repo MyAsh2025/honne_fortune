@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v23";
+const PHASE = "stable-paid-v24";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -843,7 +843,7 @@ function buildReadingLead(compound) {
 今の心がどこで疲れ、どこでまだ耐えようとしているのかを、少し丁寧に見ていくためのものです。`;
 }
 
-function stablePaidFortune(score, answers = []) {
+function stablePaidFortune(score, answers = [], depth = "deep") {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
   const compound = buildCompoundInsight(categoryResult, traitResult);
@@ -944,7 +944,7 @@ app.post("/fortune", async (req, res) => {
 });
 
 app.post("/deep-fortune", async (req, res) => {
-  const { score, answers } = req.body || {};
+  const { score, answers, depth } = req.body || {};
   const safeAnswers = answers || [];
 
   const categoryResult = getPrimaryCategory(safeAnswers);
@@ -978,7 +978,8 @@ app.post("/deep-fortune", async (req, res) => {
     categoryRanking: categoryResult.ranking,
     traitRanking: traitResult.ranking,
 
-    text: stablePaidFortune(score || 0, safeAnswers),
+    depth: depth || "deep",
+    text: stablePaidFortune(score || 0, safeAnswers, depth || "deep"),
   });
 });
 
@@ -996,6 +997,8 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
 
 
 
