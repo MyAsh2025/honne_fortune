@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v9";
+const PHASE = "stable-paid-v10";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -294,6 +294,36 @@ function getEmotionTonePhrase(tone) {
   return phrases[tone] || "苦しさの中にも、少しずつ自分に戻ろうとする流れがあります。";
 }
 
+function getHealingDirection(compound) {
+  const trait = compound.primaryTrait;
+
+  if (trait === "people_pleasing") {
+    return "『嫌われないこと』ではなく、『自分が安心できる関係』を基準にしてもいい時期です。";
+  }
+
+  if (trait === "attachment_anxiety") {
+    return "失わない努力より、『離れても自分は壊れない』感覚を少しずつ育てる時期かもしれません。";
+  }
+
+  if (trait === "role_pressure") {
+    return "『止まったら価値がなくなる』という感覚を、そのまま信じ続けなくてもいい段階に来ています。";
+  }
+
+  if (trait === "future_anxiety") {
+    return "正しい未来を急いで探すより、『今の自分が少し安心できる選択』を増やす方が大切な時期です。";
+  }
+
+  if (trait === "identity_confusion") {
+    return "『本当の自分を見つけなければ』ではなく、『違和感を無視しない』ことから始めても大丈夫です。";
+  }
+
+  if (trait === "emotional_fatigue") {
+    return "『まだ頑張れる』ではなく、『もう十分頑張ってきた』視点を少し取り戻す時期かもしれません。";
+  }
+
+  return "今は、自分を守る反応を責めるより、少し理解してあげることが大切な時期です。";
+}
+
 function getContradiction(compound) {
   const trait = compound.primaryTrait;
 
@@ -438,6 +468,9 @@ ${buildDynamicHiddenNeed(compound)}
 今回の主軸は「${getCategoryLabel(compound.primaryCategory)}」です。
 ただし、裏側には「${getCategoryLabel(compound.secondaryCategory)}」もあり、本質的には「${getTraitLabel(compound.primaryTrait)}」が${getStrengthPhrase(compound.traitStrength)}出ています。
 
+【回復へ向かうための方向】
+${getHealingDirection(compound)}
+
 【次に進むためのサイン】
 ${buildDynamicSign(compound)}`;
 }
@@ -507,6 +540,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
