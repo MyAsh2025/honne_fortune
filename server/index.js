@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v15";
+const PHASE = "stable-paid-v17";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -292,6 +292,66 @@ function getEmotionTonePhrase(tone) {
   };
 
   return phrases[tone] || "苦しさの中にも、少しずつ自分に戻ろうとする流れがあります。";
+}
+
+function getLifeTheme(compound) {
+  const trait = compound.primaryTrait;
+
+  if (trait === "people_pleasing") {
+    return "これまでの人生で、『嫌われないこと』を優先しながら人との関係を保とうとしてきた流れがあります。";
+  }
+
+  if (trait === "attachment_anxiety") {
+    return "これまでの人生で、『失わないこと』を強く意識しながら人との距離を測ってきた可能性があります。";
+  }
+
+  if (trait === "role_pressure") {
+    return "これまでの人生で、『必要とされること』を通して自分の価値を支え続けてきた流れがあります。";
+  }
+
+  if (trait === "future_anxiety") {
+    return "これまでの人生で、『間違えないこと』を優先しながら未来を選び続けてきたのかもしれません。";
+  }
+
+  if (trait === "identity_confusion") {
+    return "これまでの人生で、『周囲に合わせること』を優先するうちに、自分自身の感覚を後ろへ置いてきた可能性があります。";
+  }
+
+  if (trait === "emotional_fatigue") {
+    return "これまでの人生で、『耐え続けること』を当たり前にしながら、自分を支えてきた流れがあります。";
+  }
+
+  return "これまでの人生の中で、自分なりの方法で心を守りながら進んできたようです。";
+}
+
+function getHopeFragment(compound) {
+  const trait = compound.primaryTrait;
+
+  if (trait === "people_pleasing") {
+    return "全部を変えられなくても、『少しは自分の本音を大切にしたい』気持ちはまだ残っています。";
+  }
+
+  if (trait === "attachment_anxiety") {
+    return "不安が消えなくても、『本当は誰かと安心して繋がりたい』気持ちは心の奥に残っています。";
+  }
+
+  if (trait === "role_pressure") {
+    return "今すぐ止まれなくても、『本当は少し休みたい』という感覚はまだ消えていません。";
+  }
+
+  if (trait === "future_anxiety") {
+    return "未来が怖くても、『どこかで少しでも安心したい』気持ちはまだ残っています。";
+  }
+
+  if (trait === "identity_confusion") {
+    return "自分が分からなくなっていても、『本当の感覚を取り戻したい』気持ちはまだ静かに残っています。";
+  }
+
+  if (trait === "emotional_fatigue") {
+    return "今は疲れ切っていても、『本当は安心したい』気持ちはまだ心の奥で消えていません。";
+  }
+
+  return "苦しさの中でも、少しだけ前を向こうとする感覚はまだ残っているようです。";
 }
 
 function getAcceptanceSentence(compound) {
@@ -657,6 +717,12 @@ ${getUnspokenDesire(compound)}
 【回復へ向かうための方向】
 ${getHealingDirection(compound)}
 
+【あなたが人生の中で繰り返してきたテーマ】
+${getLifeTheme(compound)}
+
+【それでも残っている小さな希望】
+${getHopeFragment(compound)}
+
 【あなたが責めなくていいこと】
 ${getAcceptanceSentence(compound)}
 
@@ -729,6 +795,8 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
 
 
 
