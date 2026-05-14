@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v6";
+const PHASE = "stable-paid-v7";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -294,6 +294,37 @@ function getEmotionTonePhrase(tone) {
   return phrases[tone] || "苦しさの中にも、少しずつ自分に戻ろうとする流れがあります。";
 }
 
+function getInnerNarrative(compound) {
+  const trait = compound.primaryTrait;
+  const tone = getEmotionTone(compound);
+
+  if (trait === "people_pleasing") {
+    return "嫌われないように先回りしながら、自分の気持ちを後ろへ置いてきた流れがあります。";
+  }
+
+  if (trait === "attachment_anxiety") {
+    return "大切な人ほど失うのが怖くなり、傷つく前に距離を取ろうとしてきた流れがあります。";
+  }
+
+  if (trait === "role_pressure") {
+    return "期待に応え続けるうちに、止まり方が分からなくなってきた流れがあります。";
+  }
+
+  if (trait === "future_anxiety") {
+    return "失敗しない未来を探し続けるうちに、安心より不安が先に動くようになってきた流れがあります。";
+  }
+
+  if (trait === "identity_confusion") {
+    return "周囲に合わせる時間が長すぎて、本当の自分の感覚が少し見えにくくなっている流れがあります。";
+  }
+
+  if (trait === "emotional_fatigue") {
+    return "頑張り続けることが普通になり、疲れていることにも気づきにくくなっている流れがあります。";
+  }
+
+  return "長い時間をかけて、自分を守るための反応が積み重なってきた流れがあります。";
+}
+
 function buildDynamicOpening(compound) {
   return `表面では「${getCategoryLabel(compound.primaryCategory)}」の悩みに見えます。
 けれど今回の読みでは、その奥に「${getTraitLabel(compound.primaryTrait)}」が${getStrengthPhrase(compound.traitStrength)}反応しています。`;
@@ -329,6 +360,9 @@ ${buildDynamicConflict(compound)}
 【感情の温度】
 今回の感情温度は「${getEmotionToneLabel(emotionTone)}」です。
 ${getEmotionTonePhrase(emotionTone)}
+
+【心の奥で続いてきた流れ】
+${getInnerNarrative(compound)}
 
 【本当は求めているもの】
 ${buildDynamicHiddenNeed(compound)}
@@ -406,6 +440,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
