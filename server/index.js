@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v29";
+const PHASE = "stable-paid-v30";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -868,7 +868,10 @@ ${getNarrativeIntegration(compound)}
 さらに深く読むことで、
 『なぜそこまで耐えてしまうのか』
 『心の奥で本当に怖れているもの』
-まで見えてくる可能性があります。`;
+まで見えてくる可能性があります。
+
+【余韻】
+${getAfterglowMessage("short")}`;
 }
 
 function buildStandardFortune(compound) {
@@ -1015,6 +1018,31 @@ app.post("/fortune", async (req, res) => {
   });
 });
 
+function getAfterglowMessage(depth) {
+  if (depth === "short") {
+    return `今すぐ何かを変えなくても大丈夫です。
+
+ただ、
+あなたの心がここまで耐えてきたことだけは、
+ちゃんと本当だったのだと思います。`;
+  }
+
+  if (depth === "standard") {
+    return `焦って答えを出さなくても大丈夫です。
+
+今はまだ、
+『ここまで頑張ってきた自分』を、
+少し静かに認めてあげるだけでも十分なのかもしれません。`;
+  }
+
+  return `今すぐ人生を変えようとしなくても大丈夫です。
+
+けれど、
+あなたの心がここまで耐えながら、
+ずっと何かを守ろうとしてきたことだけは、
+どうか否定しなくていいのだと思います。`;
+}
+
 function generateReadingId() {
   const now = new Date();
 
@@ -1099,6 +1127,9 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
+
 
 
 
