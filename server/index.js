@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v27";
+const PHASE = "stable-paid-v28";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -861,7 +861,14 @@ ${getNarrativeIntegration(compound)}
 
 【最後に】
 今は、無理に変わろうとするより、
-まず『今までかなり頑張ってきた』ことを、自分自身が少し認めてあげる時期なのかもしれません。`;
+まず『今までかなり頑張ってきた』ことを、自分自身が少し認めてあげる時期なのかもしれません。
+
+【この先をさらに深く読むと】
+この読みは、まだあなたの本音の入口です。
+さらに深く読むことで、
+『なぜそこまで耐えてしまうのか』
+『心の奥で本当に怖れているもの』
+まで見えてくる可能性があります。`;
 }
 
 function buildStandardFortune(compound) {
@@ -891,7 +898,13 @@ ${getNarrativeIntegration(compound)}
 
 【最後に】
 焦って答えを出そうとしなくても大丈夫です。
-今はまず、『本当はかなり頑張ってきた』自分に気づくことが大切な時期なのかもしれません。`;
+今はまず、『本当はかなり頑張ってきた』自分に気づくことが大切な時期なのかもしれません。
+
+【さらに深く読み進めると】
+この先では、
+『なぜ同じ苦しさを繰り返しやすいのか』
+『心の奥で抱え続けてきたテーマ』
+まで、さらに深く見えてくる可能性があります。`;
 }
 
 function stablePaidFortune(score, answers = [], depth = "deep") {
@@ -1073,6 +1086,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
