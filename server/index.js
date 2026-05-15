@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v25";
+const PHASE = "stable-paid-v26";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -864,6 +864,36 @@ ${getNarrativeIntegration(compound)}
 まず『今までかなり頑張ってきた』ことを、自分自身が少し認めてあげる時期なのかもしれません。`;
 }
 
+function buildStandardFortune(compound) {
+  const emotionTone = getEmotionTone(compound);
+
+  return `【読みはじめ】
+${buildReadingLead(compound)}
+
+【さらに深い本音】
+${buildDynamicOpening(compound)}
+
+【感情の温度】
+今回の感情温度は「${getEmotionToneLabel(emotionTone)}」です。
+${getEmotionTonePhrase(emotionTone)}
+
+【心の中にある矛盾】
+${getContradiction(compound)}
+
+【まだ言葉になっていない願い】
+${getUnspokenDesire(compound)}
+
+【回復へ向かうための方向】
+${getHealingDirection(compound)}
+
+【今回の読みの核心】
+${getNarrativeIntegration(compound)}
+
+【最後に】
+焦って答えを出そうとしなくても大丈夫です。
+今はまず、『本当はかなり頑張ってきた』自分に気づくことが大切な時期なのかもしれません。`;
+}
+
 function stablePaidFortune(score, answers = [], depth = "deep") {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
@@ -872,6 +902,10 @@ function stablePaidFortune(score, answers = [], depth = "deep") {
 
   if (depth === "short") {
     return buildShortFortune(compound);
+  }
+
+  if (depth === "standard") {
+    return buildStandardFortune(compound);
   }
 
   return `【読みはじめ】
@@ -1022,6 +1056,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
