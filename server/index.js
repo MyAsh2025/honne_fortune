@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v26";
+const PHASE = "stable-paid-v27";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -1002,6 +1002,22 @@ app.post("/fortune", async (req, res) => {
   });
 });
 
+function getRecommendedPrice(depth) {
+  if (depth === "short") {
+    return 100;
+  }
+
+  if (depth === "standard") {
+    return 300;
+  }
+
+  if (depth === "deep") {
+    return 500;
+  }
+
+  return 300;
+}
+
 app.post("/deep-fortune", async (req, res) => {
   const { score, answers, depth } = req.body || {};
   const safeAnswers = answers || [];
@@ -1037,6 +1053,7 @@ app.post("/deep-fortune", async (req, res) => {
     categoryRanking: categoryResult.ranking,
     traitRanking: traitResult.ranking,
 
+    recommendedPrice: getRecommendedPrice(depth || "deep"),
     depth: depth || "deep",
     text: stablePaidFortune(score || 0, safeAnswers, depth || "deep"),
   });
@@ -1056,6 +1073,8 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
 
 
 
