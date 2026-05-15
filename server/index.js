@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v24";
+const PHASE = "stable-paid-v25";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -843,11 +843,36 @@ function buildReadingLead(compound) {
 今の心がどこで疲れ、どこでまだ耐えようとしているのかを、少し丁寧に見ていくためのものです。`;
 }
 
+function buildShortFortune(compound) {
+  return `【読みはじめ】
+${buildReadingLead(compound)}
+
+【さらに深い本音】
+${buildDynamicOpening(compound)}
+
+【心の中にある矛盾】
+${getContradiction(compound)}
+
+【まだ言葉になっていない願い】
+${getUnspokenDesire(compound)}
+
+【今回の読みの核心】
+${getNarrativeIntegration(compound)}
+
+【最後に】
+今は、無理に変わろうとするより、
+まず『今までかなり頑張ってきた』ことを、自分自身が少し認めてあげる時期なのかもしれません。`;
+}
+
 function stablePaidFortune(score, answers = [], depth = "deep") {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
   const compound = buildCompoundInsight(categoryResult, traitResult);
   const emotionTone = getEmotionTone(compound);
+
+  if (depth === "short") {
+    return buildShortFortune(compound);
+  }
 
   return `【読みはじめ】
 ${buildReadingLead(compound)}
@@ -997,6 +1022,10 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
+
+
 
 
 
