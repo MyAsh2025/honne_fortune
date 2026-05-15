@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v30";
+const PHASE = "stable-paid-v31";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -1003,7 +1003,10 @@ ${getNarrativeIntegration(compound)}
 まずは、あなたの中で起きていたことを、あなた自身が少しだけ責めずに見られることです。
 
 【次に進むためのサイン】
-${buildDynamicSign(compound)}`;
+${buildDynamicSign(compound)}
+
+【余韻】
+${getAfterglowMessage("deep")}`;
 }
 
 app.post("/fortune", async (req, res) => {
@@ -1127,6 +1130,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
