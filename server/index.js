@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v28";
+const PHASE = "stable-paid-v29";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -1015,6 +1015,18 @@ app.post("/fortune", async (req, res) => {
   });
 });
 
+function generateReadingId() {
+  const now = new Date();
+
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+
+  const random = Math.floor(1000 + Math.random() * 9000);
+
+  return `HF-${yyyy}${mm}${dd}-${random}`;
+}
+
 function getRecommendedPrice(depth) {
   if (depth === "short") {
     return 100;
@@ -1043,6 +1055,7 @@ app.post("/deep-fortune", async (req, res) => {
     ok: true,
     mode: "stable-paid-template",
     phase: PHASE,
+    readingId: generateReadingId(),
     fallback: false,
     model: "stable-template",
 
@@ -1086,6 +1099,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
