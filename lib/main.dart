@@ -1225,6 +1225,7 @@ class ResultPage extends StatelessWidget {
                             MaterialPageRoute(
                               builder: (_) => DeepReadingPage(
                                 deepText: deepText,
+                                score: score,
                               ),
                             ),
                           );
@@ -1264,6 +1265,8 @@ class ResultPage extends StatelessWidget {
     );
   }
 }
+
+
 
 
 
