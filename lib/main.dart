@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:http/http.dart' as http;
+import 'deep_reading_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -1219,59 +1220,13 @@ class ResultPage extends StatelessWidget {
 
                           if (!context.mounted) return;
 
-                          showDialog(
-                            context: context,
-                            barrierColor: Colors.black.withOpacity(0.82),
-                            builder: (_) {
-                              return Dialog(
-                                backgroundColor: const Color(0xFF17162A),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(28),
-                                ),
-                                child: Container(
-                                  constraints: const BoxConstraints(
-                                    maxWidth: 640,
-                                  ),
-                                  padding: const EdgeInsets.all(28),
-                                  child: SingleChildScrollView(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Center(
-                                          child: Icon(
-                                            Icons.auto_awesome,
-                                            color: AppColors.purple1,
-                                            size: 34,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 20),
-                                        Text(
-                                          deepText,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            height: 1.95,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 28),
-                                        SizedBox(
-                                          width: double.infinity,
-                                          child: PrimaryGradientButton(
-                                            label: '閉じる',
-                                            onTap: () {
-                                              Navigator.pop(context);
-                                            },
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DeepReadingPage(
+                                deepText: deepText,
+                              ),
+                            ),
                           );
                         } catch (_) {
                           if (!context.mounted) return;
@@ -1309,6 +1264,7 @@ class ResultPage extends StatelessWidget {
     );
   }
 }
+
 
 
 
