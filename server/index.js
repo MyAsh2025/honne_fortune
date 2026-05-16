@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v31";
+const PHASE = "stable-paid-v32";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -907,7 +907,10 @@ ${getNarrativeIntegration(compound)}
 この先では、
 『なぜ同じ苦しさを繰り返しやすいのか』
 『心の奥で抱え続けてきたテーマ』
-まで、さらに深く見えてくる可能性があります。`;
+まで、さらに深く見えてくる可能性があります。
+
+【余韻】
+${getAfterglowMessage("standard")}`;
 }
 
 function stablePaidFortune(score, answers = [], depth = "deep") {
@@ -1130,6 +1133,9 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
+
 
 
 
