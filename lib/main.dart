@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'deep_reading_page.dart';
 
 Future<void> main() async {
@@ -1220,6 +1221,29 @@ class ResultPage extends StatelessWidget {
 
                           final readingId =
                               (data['readingId'] ?? '').toString().trim();
+
+                          final prefs =
+                              await SharedPreferences.getInstance();
+
+                          await prefs.setString(
+                            'last_reading_id',
+                            readingId,
+                          );
+
+                          await prefs.setString(
+                            'last_deep_text',
+                            deepText,
+                          );
+
+                          await prefs.setInt(
+                            'last_score',
+                            score,
+                          );
+
+                          await prefs.setString(
+                            'last_created_at',
+                            DateTime.now().toIso8601String(),
+                          );
 
                           if (!context.mounted) return;
 

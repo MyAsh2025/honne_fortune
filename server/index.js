@@ -871,7 +871,7 @@ ${getNarrativeIntegration(compound)}
 まで見えてくる可能性があります。
 
 【余韻】
-${getAfterglowMessage("short")}`;
+${getAfterglowMessage("short", compound)}`;
 }
 
 function buildStandardFortune(compound) {
@@ -910,7 +910,7 @@ ${getNarrativeIntegration(compound)}
 まで、さらに深く見えてくる可能性があります。
 
 【余韻】
-${getAfterglowMessage("standard")}`;
+${getAfterglowMessage("standard", compound)}`;
 }
 
 function stablePaidFortune(score, answers = [], depth = "deep") {
@@ -953,7 +953,7 @@ ${getNarrativeIntegration(compound)}
 ${buildDynamicSign(compound)}
 
 【余韻】
-${getAfterglowMessage("deep")}`;
+${getAfterglowMessage("deep", compound)}`;
 }
 
 app.post("/fortune", async (req, res) => {
@@ -968,7 +968,9 @@ app.post("/fortune", async (req, res) => {
   });
 });
 
-function getAfterglowMessage(depth) {
+function getAfterglowMessage(depth, compound = null) {
+  const trait = compound?.primaryTrait || "";
+
   if (depth === "short") {
     return `今すぐ何かを変えなくても大丈夫です。
 
@@ -983,6 +985,55 @@ function getAfterglowMessage(depth) {
 今はまだ、
 『ここまで頑張ってきた自分』を、
 少し静かに認めてあげるだけでも十分なのかもしれません。`;
+  }
+
+  if (trait === "emotional_fatigue") {
+    return `今すぐ、もっと頑張らなくても大丈夫です。
+
+あなたの心は、
+怠けていたのではなく、
+ずっと何かを支え続けてきたのだと思います。`;
+  }
+
+  if (trait === "attachment_anxiety") {
+    return `不安になる自分を、
+責めなくても大丈夫です。
+
+本当はただ、
+安心して繋がっていられる場所が、
+ほしかっただけなのかもしれません。`;
+  }
+
+  if (trait === "people_pleasing") {
+    return `誰かを大切にしてきたあなたが、
+自分の本音まで後回しにしなくても大丈夫です。
+
+少しずつ、
+あなた自身の声も戻していけます。`;
+  }
+
+  if (trait === "identity_confusion") {
+    return `今すぐ、
+正しい自分を見つけなくても大丈夫です。
+
+分からなさの中にも、
+あなたがあなたに戻るための小さな手がかりは残っています。`;
+  }
+
+  if (trait === "future_anxiety") {
+    return `未来が怖いのは、
+弱いからではありません。
+
+それだけ真剣に、
+自分のこれからを守ろうとしているからなのだと思います。`;
+  }
+
+  if (trait === "role_pressure") {
+    return `役割を果たそうとしてきた時間の中で、
+あなた自身の声が少し遠くなっていたのかもしれません。
+
+もう少しだけ、
+自分の重さを下ろしても大丈夫です。`;
   }
 
   return `今すぐ人生を変えようとしなくても大丈夫です。
@@ -1077,6 +1128,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
