@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class DeepReadingPage extends StatelessWidget {
   final String deepText;
   final int score;
+  final String? readingId;
 
   const DeepReadingPage({
     super.key,
     required this.deepText,
     required this.score,
+    this.readingId,
   });
 
   String getAfterglowMain() {
@@ -234,6 +236,20 @@ class DeepReadingPage extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (readingId != null && readingId!.isNotEmpty) ...[
+                    const SizedBox(height: 42),
+                    Center(
+                      child: Text(
+                        'Reading ID  $readingId',
+                        style: TextStyle(
+                          fontSize: 11,
+                          letterSpacing: 1.2,
+                          color: Colors.white.withOpacity(0.22),
+                        ),
+                      ),
+                    ),
+                  ],
+
                   const SizedBox(height: 78),
                   SizedBox(
                     width: double.infinity,
