@@ -1218,6 +1218,9 @@ class ResultPage extends StatelessWidget {
                           final deepText =
                               (data['text'] ?? '').toString().trim();
 
+                          final readingId =
+                              (data['readingId'] ?? '').toString().trim();
+
                           if (!context.mounted) return;
 
                           Navigator.push(
@@ -1226,6 +1229,7 @@ class ResultPage extends StatelessWidget {
                               builder: (_) => DeepReadingPage(
                                 deepText: deepText,
                                 score: score,
+                                readingId: readingId,
                               ),
                             ),
                           );
