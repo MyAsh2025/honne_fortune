@@ -847,16 +847,16 @@ function buildShortFortune(compound) {
   return `【読みはじめ】
 ${buildReadingLead(compound)}
 
-【さらに深い本音】
+【奥にある本音】
 ${buildDynamicOpening(compound)}
 
-【心の中にある矛盾】
+【揺れているもの】
 ${getContradiction(compound)}
 
-【まだ言葉になっていない願い】
+【言葉になる前の願い】
 ${getUnspokenDesire(compound)}
 
-【今回の読みの核心】
+【本音の中心】
 ${getNarrativeIntegration(compound)}
 
 【最後に】
@@ -880,23 +880,23 @@ function buildStandardFortune(compound) {
   return `【読みはじめ】
 ${buildReadingLead(compound)}
 
-【さらに深い本音】
+【奥にある本音】
 ${buildDynamicOpening(compound)}
 
-【感情の温度】
+【今の心】
 今回の感情温度は「${getEmotionToneLabel(emotionTone)}」です。
 ${getEmotionTonePhrase(emotionTone)}
 
-【心の中にある矛盾】
+【揺れているもの】
 ${getContradiction(compound)}
 
-【まだ言葉になっていない願い】
+【言葉になる前の願い】
 ${getUnspokenDesire(compound)}
 
 【回復へ向かうための方向】
 ${getHealingDirection(compound)}
 
-【今回の読みの核心】
+【本音の中心】
 ${getNarrativeIntegration(compound)}
 
 【最後に】
@@ -930,82 +930,26 @@ function stablePaidFortune(score, answers = [], depth = "deep") {
   return `【読みはじめ】
 ${buildReadingLead(compound)}
 
-【さらに深い本音】
+【奥にある本音】
 ${buildDynamicOpening(compound)}
 
-【今のあなたが悩んでいること】
-${buildDynamicConflict(compound)}
-
-【感情の温度】
+【今の心】
 今回の感情温度は「${getEmotionToneLabel(emotionTone)}」です。
 ${getEmotionTonePhrase(emotionTone)}
 
-【心の奥で続いてきた流れ】
+【ずっと残っていたもの】
 ${getInnerNarrative(compound)}
 
-【記憶の奥に残っている反応】
-${getMemoryEcho(compound)}
-
-【心の中にある矛盾】
+【揺れているもの】
 ${getContradiction(compound)}
 
-【本当は求めているもの】
-${buildDynamicHiddenNeed(compound)}
-
-【隠れている根本】
-今回の主軸は「${getCategoryLabel(compound.primaryCategory)}」です。
-ただし、裏側には「${getCategoryLabel(compound.secondaryCategory)}」もあり、本質的には「${getTraitLabel(compound.primaryTrait)}」が${getStrengthPhrase(compound.traitStrength)}出ています。
-
-【周囲から見えているあなた】
-${getSelfPerceptionGap(compound).outside}
-
-【あなた自身が感じていること】
-${getSelfPerceptionGap(compound).inside}
-
-【心の奥にある怖さ】
-${getCoreFear(compound)}
-
-【あなたが無意識に続けてきた防衛反応】
-${getEmotionalDefense(compound)}
-
-【まだ言葉になっていない願い】
+【言葉になる前の願い】
 ${getUnspokenDesire(compound)}
 
-【回復へ向かうための方向】
-${getHealingDirection(compound)}
-
-【人間関係で繰り返しやすい役回り】
-${getRelationshipMirror(compound)}
-
-【昔から続いている傷の傾向】
-${getPastScar(compound)}
-
-【心の奥で衝突している2つの気持ち】
-${getSoulConflict(compound)}
-
-【あなたが人生の中で繰り返してきたテーマ】
-${getLifeTheme(compound)}
-
-【このまま進んだ未来】
-${getFutureSelf(compound).current}
-
-【少し回復した先にある未来】
-${getFutureSelf(compound).healing}
-
-【それでも残っている小さな希望】
-${getHopeFragment(compound)}
-
-【あなたが責めなくていいこと】
-${getAcceptanceSentence(compound)}
-
-【今回の読みの核心】
+【本音の中心】
 ${getNarrativeIntegration(compound)}
 
-【最後に】
-この読みで大切なのは、無理に前向きになることではありません。
-まずは、あなたの中で起きていたことを、あなた自身が少しだけ責めずに見られることです。
-
-【次に進むためのサイン】
+【次へ向かうサイン】
 ${buildDynamicSign(compound)}
 
 【余韻】
@@ -1133,6 +1077,8 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
 
 
 

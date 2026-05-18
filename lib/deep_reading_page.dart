@@ -50,17 +50,22 @@ class DeepReadingPage extends StatelessWidget {
       final trimmed = line.trim();
       final isSection = trimmed.startsWith('【') && trimmed.endsWith('】');
 
+      if (trimmed.isEmpty) {
+        spans.add(const TextSpan(text: '\n'));
+        continue;
+      }
+
       if (isSection) {
         spans.add(const TextSpan(text: '\n'));
         spans.add(
           TextSpan(
             text: '$trimmed\n',
-            style: const TextStyle(
-              fontSize: 17,
-              height: 2.25,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              letterSpacing: 0.2,
+            style: TextStyle(
+              fontSize: 15,
+              height: 2.05,
+              fontWeight: FontWeight.w700,
+              color: Colors.white.withOpacity(0.86),
+              letterSpacing: 0.12,
             ),
           ),
         );
@@ -68,11 +73,12 @@ class DeepReadingPage extends StatelessWidget {
         spans.add(
           TextSpan(
             text: '$line\n',
-            style: const TextStyle(
-              fontSize: 16,
-              height: 2.15,
+            style: TextStyle(
+              fontSize: 15.5,
+              height: 2.08,
               fontWeight: FontWeight.w500,
-              color: Colors.white,
+              color: Colors.white.withOpacity(0.82),
+              letterSpacing: 0.04,
             ),
           ),
         );
@@ -85,20 +91,22 @@ class DeepReadingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
-    final contentWidth = width > 900 ? 760.0 : double.infinity;
+    final contentWidth = width > 900 ? 740.0 : double.infinity;
+    final horizontalPadding = width > 700 ? 30.0 : 22.0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F1020),
+      backgroundColor: const Color(0xFF0D0E1C),
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: const Color(0xFF0D0E1C).withOpacity(0.92),
         elevation: 0,
-        foregroundColor: Colors.white,
-        title: const Text(
+        foregroundColor: Colors.white.withOpacity(0.92),
+        title: Text(
           '深層リーディング',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.4,
+            color: Colors.white.withOpacity(0.88),
           ),
         ),
       ),
@@ -108,49 +116,51 @@ class DeepReadingPage extends StatelessWidget {
             constraints: BoxConstraints(maxWidth: contentWidth),
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(30, 18, 30, 90),
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                18,
+                horizontalPadding,
+                88,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                   Center(
                     child: Container(
-                      width: 92,
-                      height: 92,
+                      width: 90,
+                      height: 90,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFF8B6BFF),
-                            Color(0xFF6246EA),
-                          ],
+                          colors: [Color(0xFF8B6BFF), Color(0xFF6246EA)],
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF7F5AF0).withOpacity(0.36),
-                            blurRadius: 40,
-                            spreadRadius: 2,
-                            offset: const Offset(0, 16),
+                            color: const Color(0xFF7F5AF0).withOpacity(0.34),
+                            blurRadius: 42,
+                            spreadRadius: 1,
+                            offset: const Offset(0, 18),
                           ),
                         ],
                       ),
                       child: const Icon(
                         Icons.auto_awesome,
                         color: Colors.white,
-                        size: 42,
+                        size: 40,
                       ),
                     ),
                   ),
                   const SizedBox(height: 42),
-                  const Text(
+                  Text(
                     'あなたの深層リーディング',
                     style: TextStyle(
-                      fontSize: 28,
+                      fontSize: width > 700 ? 28 : 25,
                       fontWeight: FontWeight.w800,
-                      height: 1.5,
-                      color: Colors.white,
+                      height: 1.45,
+                      color: Colors.white.withOpacity(0.94),
                       letterSpacing: 0.2,
                     ),
                   ),
@@ -160,66 +170,71 @@ class DeepReadingPage extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       height: 1.9,
-                      color: Colors.white.withOpacity(0.50),
+                      color: Colors.white.withOpacity(0.46),
                     ),
                   ),
-                  const SizedBox(height: 34),
+                  const SizedBox(height: 36),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(26, 28, 26, 34),
+                    padding: EdgeInsets.fromLTRB(
+                      width > 700 ? 30 : 24,
+                      30,
+                      width > 700 ? 30 : 24,
+                      36,
+                    ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1A1B31),
-                      borderRadius: BorderRadius.circular(34),
+                      color: const Color(0xFF18192E).withOpacity(0.92),
+                      borderRadius: BorderRadius.circular(32),
                       border: Border.all(
-                        color: const Color(0xFF7F5AF0).withOpacity(0.16),
+                        color: const Color(0xFF7F5AF0).withOpacity(0.14),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.22),
-                          blurRadius: 24,
-                          offset: const Offset(0, 16),
+                          color: Colors.black.withOpacity(0.20),
+                          blurRadius: 26,
+                          offset: const Offset(0, 18),
                         ),
                       ],
                     ),
                     child: RichText(
-                      text: TextSpan(
-                        children: _buildFormattedText(),
-                      ),
+                      text: TextSpan(children: _buildFormattedText()),
                     ),
                   ),
-                  const SizedBox(height: 52),
+                  const SizedBox(height: 58),
                   Center(
                     child: Container(
                       width: 42,
                       height: 1,
-                      color: Colors.white12,
+                      color: Colors.white.withOpacity(0.12),
                     ),
                   ),
-                  const SizedBox(height: 34),
+                  const SizedBox(height: 36),
                   Center(
                     child: Text(
                       getAfterglowMain(),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 15,
-                        height: 2.2,
-                        color: Colors.white.withOpacity(0.56),
+                        height: 2.22,
+                        color: Colors.white.withOpacity(0.58),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 22),
+                  const SizedBox(height: 24),
                   Center(
                     child: Text(
                       getAfterglowSub(),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,
-                        height: 2,
-                        color: Colors.white.withOpacity(0.36),
+                        height: 2.08,
+                        color: Colors.white.withOpacity(0.34),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 74),
+                  const SizedBox(height: 78),
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
@@ -230,7 +245,7 @@ class DeepReadingPage extends StatelessWidget {
                         backgroundColor: const Color(0xFF7F5AF0),
                         foregroundColor: Colors.white,
                         elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        padding: const EdgeInsets.symmetric(vertical: 19),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(36),
                         ),
