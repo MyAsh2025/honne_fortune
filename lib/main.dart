@@ -13,10 +13,7 @@ Future<void> main() async {
 
   runApp(
     EasyLocalization(
-      supportedLocales: const [
-        Locale('ja'),
-        Locale('en'),
-      ],
+      supportedLocales: const [Locale('ja'), Locale('en')],
       path: 'assets/translations',
       fallbackLocale: const Locale('ja'),
       child: const HonneApp(),
@@ -87,9 +84,7 @@ class HonneFortuneApi {
     final response = await http
         .post(
           Uri.parse(endpoint),
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'score': score,
             'locale': locale,
@@ -210,11 +205,7 @@ class FadeInSection extends StatefulWidget {
   final Widget child;
   final int delayMs;
 
-  const FadeInSection({
-    super.key,
-    required this.child,
-    required this.delayMs,
-  });
+  const FadeInSection({super.key, required this.child, required this.delayMs});
 
   @override
   State<FadeInSection> createState() => _FadeInSectionState();
@@ -326,8 +317,58 @@ class _PressableAnswerButtonState extends State<PressableAnswerButton> {
   }
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  String? lastReadingId;
+  String? lastDeepText;
+  int? lastScore;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLastReading();
+  }
+
+  Future<void> _loadLastReading() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    if (!mounted) return;
+
+    setState(() {
+      lastReadingId = prefs.getString('last_reading_id');
+      lastDeepText = prefs.getString('last_deep_text');
+      lastScore = prefs.getInt('last_score');
+    });
+  }
+
+  bool get hasLastReading {
+    return lastReadingId != null &&
+        lastReadingId!.isNotEmpty &&
+        lastDeepText != null &&
+        lastDeepText!.isNotEmpty &&
+        lastScore != null;
+  }
+
+  void openLastReading() {
+    if (!hasLastReading) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DeepReadingPage(
+          deepText: lastDeepText!,
+          score: lastScore!,
+          readingId: lastReadingId,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -396,6 +437,47 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (hasLastReading) ...[
+                  const SizedBox(height: 34),
+                  FadeInSection(
+                    delayMs: 320,
+                    child: GestureDetector(
+                      onTap: openLastReading,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.045),
+                          borderRadius: BorderRadius.circular(26),
+                          border: Border.all(
+                            color: AppColors.purple1.withOpacity(0.18),
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              '前回の本音',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white.withOpacity(0.72),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              lastReadingId ?? '',
+                              style: TextStyle(
+                                fontSize: 11,
+                                letterSpacing: 1.1,
+                                color: Colors.white.withOpacity(0.34),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 46),
                 FadeInSection(
                   delayMs: 380,
@@ -404,9 +486,7 @@ class HomePage extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => const QuestionPage(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const QuestionPage()),
                       );
                     },
                   ),
@@ -501,9 +581,7 @@ class _QuestionPageState extends State<QuestionPage> {
     Navigator.pop(context);
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(
-        builder: (_) => const HomePage(),
-      ),
+      MaterialPageRoute(builder: (_) => const HomePage()),
       (route) => false,
     );
   }
@@ -585,9 +663,7 @@ class _QuestionPageState extends State<QuestionPage> {
                       backgroundColor: Colors.white.withOpacity(0.06),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(24),
-                        side: BorderSide(
-                          color: Colors.white.withOpacity(0.09),
-                        ),
+                        side: BorderSide(color: Colors.white.withOpacity(0.09)),
                       ),
                     ),
                     child: Text(
@@ -708,9 +784,7 @@ class _QuestionPageState extends State<QuestionPage> {
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.035),
                     borderRadius: BorderRadius.circular(28),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.08),
-                    ),
+                    border: Border.all(color: Colors.white.withOpacity(0.08)),
                   ),
                   child: Text(
                     questions[index].tr(),
@@ -742,11 +816,7 @@ class ReadingPage extends StatefulWidget {
   final int score;
   final List<FortuneAnswer> answers;
 
-  const ReadingPage({
-    super.key,
-    required this.score,
-    required this.answers,
-  });
+  const ReadingPage({super.key, required this.score, required this.answers});
 
   @override
   State<ReadingPage> createState() => _ReadingPageState();
@@ -757,11 +827,7 @@ class _ReadingPageState extends State<ReadingPage>
   int step = 0;
   late final AnimationController _pulseController;
 
-  final readingKeys = const [
-    'loading_1',
-    'loading_2',
-    'loading_3',
-  ];
+  final readingKeys = const ['loading_1', 'loading_2', 'loading_3'];
 
   @override
   void initState() {
@@ -1067,9 +1133,7 @@ class ResultPage extends StatelessWidget {
           onPressed: () {
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(
-                builder: (_) => const HomePage(),
-              ),
+              MaterialPageRoute(builder: (_) => const HomePage()),
               (route) => false,
             );
           },
@@ -1141,10 +1205,7 @@ class ResultPage extends StatelessWidget {
                 ),
                 child: Text(
                   resultText,
-                  style: const TextStyle(
-                    fontSize: 14.5,
-                    height: 1.68,
-                  ),
+                  style: const TextStyle(fontSize: 14.5, height: 1.68),
                 ),
               ),
             ),
@@ -1204,41 +1265,33 @@ class ResultPage extends StatelessWidget {
                         try {
                           final response = await http.post(
                             Uri.parse('http://127.0.0.1:8787/deep-fortune'),
-                            headers: {
-                              'Content-Type': 'application/json',
-                            },
+                            headers: {'Content-Type': 'application/json'},
                             body: jsonEncode({
                               'score': score,
-                              'answers': answers.map((answer) => answer.toJson()).toList(),
+                              'answers': answers
+                                  .map((answer) => answer.toJson())
+                                  .toList(),
                             }),
                           );
 
                           final data =
                               jsonDecode(response.body) as Map<String, dynamic>;
 
-                          final deepText =
-                              (data['text'] ?? '').toString().trim();
+                          final deepText = (data['text'] ?? '')
+                              .toString()
+                              .trim();
 
-                          final readingId =
-                              (data['readingId'] ?? '').toString().trim();
+                          final readingId = (data['readingId'] ?? '')
+                              .toString()
+                              .trim();
 
-                          final prefs =
-                              await SharedPreferences.getInstance();
+                          final prefs = await SharedPreferences.getInstance();
 
-                          await prefs.setString(
-                            'last_reading_id',
-                            readingId,
-                          );
+                          await prefs.setString('last_reading_id', readingId);
 
-                          await prefs.setString(
-                            'last_deep_text',
-                            deepText,
-                          );
+                          await prefs.setString('last_deep_text', deepText);
 
-                          await prefs.setInt(
-                            'last_score',
-                            score,
-                          );
+                          await prefs.setInt('last_score', score);
 
                           await prefs.setString(
                             'last_created_at',
@@ -1261,11 +1314,7 @@ class ResultPage extends StatelessWidget {
                           if (!context.mounted) return;
 
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                '有料鑑定の取得に失敗しました。',
-                              ),
-                            ),
+                            const SnackBar(content: Text('有料鑑定の取得に失敗しました。')),
                           );
                         }
                       },
@@ -1293,11 +1342,5 @@ class ResultPage extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
-
 
 
