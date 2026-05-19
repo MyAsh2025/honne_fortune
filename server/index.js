@@ -1235,6 +1235,36 @@ function buildRecoveryTrajectory(responsePattern, previousResponseStyle = null) 
 
   return "心の反応には、少しずつ変化の流れが出始めています。";
 }
+
+function buildTrustProgression(responsePattern, previousResponseStyle = null) {
+  if (!responsePattern || !previousResponseStyle) {
+    return "";
+  }
+
+  const current = responsePattern.responseStyle;
+
+  if (previousResponseStyle === "shallow" && current === "fluctuating") {
+    return "前回よりも、心が少しだけ読みの中で動き始めています。深く踏み込まない距離から、揺れを少し見せられる距離へ近づいているのかもしれません。";
+  }
+
+  if (previousResponseStyle === "shallow" && current === "unstable") {
+    return "前回よりも、隠れていた迷いが表に出てきています。心が少しずつ、本音に近い場所まで降りてきている可能性があります。";
+  }
+
+  if (previousResponseStyle === "defensive" && current === "shallow") {
+    return "強く守っていた状態から、少しだけ距離を取って眺める状態へ変わっています。まだ深くは触れなくても、心が安全な見方を探しているのかもしれません。";
+  }
+
+  if (previousResponseStyle === "defensive" && current === "unstable") {
+    return "前回よりも、守りの奥にあった葛藤が表に出始めています。強く閉じていた心が、少しだけ本音の揺れを見せ始めている可能性があります。";
+  }
+
+  if (previousResponseStyle === "suppressed" && current === "unstable") {
+    return "抑えていた感情が、迷いや葛藤として少し表に出てきています。これは乱れではなく、心が沈黙だけでは抱えきれなくなってきたサインかもしれません。";
+  }
+
+  return "";
+}
 function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
@@ -1271,6 +1301,9 @@ ${buildContinuityNarrative(responsePattern, previousResponseStyle, previousEmoti
 
 【回復の流れ】
 ${buildRecoveryTrajectory(responsePattern, previousResponseStyle)}
+
+【読みへの近づき方】
+${buildTrustProgression(responsePattern, previousResponseStyle)}
 
 【ずっと残っていたもの】
 ${getInnerNarrative(compound)}
@@ -1467,6 +1500,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
