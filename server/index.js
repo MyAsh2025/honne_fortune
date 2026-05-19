@@ -1166,7 +1166,38 @@ function buildResponseStyleTraitNarrative(responsePattern, compound) {
 
   return "今回の回答には、今の心が自分を守ろうとする反応も含まれています。大切なのは、その反応を責めることではなく、なぜそう答えたくなったのかを静かに見ていくことです。";
 }
-function stablePaidFortune(score, answers = [], depth = "deep") {
+
+function buildContinuityNarrative(responsePattern, previousResponseStyle = null, previousEmotionTone = null) {
+  if (!responsePattern || (!previousResponseStyle && !previousEmotionTone)) {
+    return "今回は、今この瞬間の心の反応を中心に読んでいます。次にまた読みを重ねることで、感情がどこで揺れ、どこで少し動き始めたのかが見えやすくなります。";
+  }
+
+  const currentStyle = responsePattern.responseStyle;
+  const currentTone = responsePattern.temperature;
+
+  if (previousResponseStyle === "defensive" && currentStyle === "fluctuating") {
+    return "前回よりも、心の反応に少し幅が出てきています。ひとつの答えで守る段階から、揺れそのものを少し見られる段階へ移り始めているのかもしれません。";
+  }
+
+  if (previousResponseStyle === "shallow" && currentStyle === "unstable") {
+    return "前回よりも、感情の奥にあった迷いが表に出てきています。静かに距離を取っていた心が、少しずつ本音の近くで揺れ始めている可能性があります。";
+  }
+
+  if (previousResponseStyle === "unstable" && currentStyle === "defensive") {
+    return "前回は揺れが表に出ていましたが、今回は心が少し守りを強めているようです。感情が消えたのではなく、見つめるには少し負荷が大きくなっているのかもしれません。";
+  }
+
+  if (previousResponseStyle === currentStyle) {
+    return "前回と似た反応が続いています。同じ場所で心が反応しているなら、そこにはまだ言葉になりきっていない本音が残っている可能性があります。";
+  }
+
+  if (previousEmotionTone && previousEmotionTone !== currentTone) {
+    return "前回とは、感情の温度に少し変化があります。大きな変化ではなくても、心が同じ場所に留まり続けていないサインかもしれません。";
+  }
+
+  return "前回とは少し違う反応が出ています。答えが変わったことよりも、どこで心が動いたのかを見ることが、今の本音に近づく手がかりになります。";
+}
+function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
   const compound = buildCompoundInsight(categoryResult, traitResult);
@@ -1196,6 +1227,9 @@ ${buildResponsePatternNarrative(responsePattern)}
 
 【心を守る反応】
 ${buildResponseStyleTraitNarrative(responsePattern, compound)}
+
+【変化の流れ】
+${buildContinuityNarrative(responsePattern, previousResponseStyle, previousEmotionTone)}
 
 【ずっと残っていたもの】
 ${getInnerNarrative(compound)}
@@ -1333,7 +1367,7 @@ function getRecommendedPrice(depth) {
 }
 
 app.post("/deep-fortune", async (req, res) => {
-  const { score, answers, depth } = req.body || {};
+  const { score, answers, depth, previousResponseStyle, previousEmotionTone } = req.body || {};
   const safeAnswers = answers || [];
 
   const categoryResult = getPrimaryCategory(safeAnswers);
@@ -1358,6 +1392,7 @@ app.post("/deep-fortune", async (req, res) => {
     traitScores: traitResult.scores,
 
     responsePattern,
+    continuity: buildContinuityNarrative(responsePattern, previousResponseStyle || null, previousEmotionTone || null),
 
     primaryCategory: compound.primaryCategory,
     secondaryCategory: compound.secondaryCategory,
@@ -1373,7 +1408,7 @@ app.post("/deep-fortune", async (req, res) => {
 
     recommendedPrice: getRecommendedPrice(depth || "deep"),
     depth: depth || "deep",
-    text: stablePaidFortune(score || 0, safeAnswers, depth || "deep"),
+    text: stablePaidFortune(score || 0, safeAnswers, depth || "deep", previousResponseStyle || null, previousEmotionTone || null),
   });
 });
 
@@ -1391,6 +1426,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
