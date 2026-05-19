@@ -1311,6 +1311,78 @@ function buildEmotionalMaskingNarrative(responsePattern) {
 
   return "今回の回答には、感情を守りながら見せている部分と、まだ隠している部分が同時に含まれているようです。";
 }
+
+function getOpennessState(responsePattern) {
+  if (!responsePattern) {
+    return "unknown";
+  }
+
+  const style = responsePattern.responseStyle;
+  const confidence = responsePattern.confidence;
+  const hesitation = Number(responsePattern.hesitation || 0);
+  const uniformity = Number(responsePattern.uniformity || 0);
+
+  if (style === "defensive" || (uniformity === 1 && confidence === "low")) {
+    return "guarded";
+  }
+
+  if (style === "shallow" || hesitation >= 5) {
+    return "distant";
+  }
+
+  if (style === "fluctuating") {
+    return "opening";
+  }
+
+  if (style === "unstable") {
+    return "exposed";
+  }
+
+  if (style === "suppressed") {
+    return "quiet";
+  }
+
+  return "opening";
+}
+
+function getOpennessLabel(opennessState) {
+  const labels = {
+    guarded: "守りながら近づいている状態",
+    distant: "まだ距離を保っている状態",
+    opening: "少しずつ開き始めている状態",
+    exposed: "本音の近くで揺れている状態",
+    quiet: "静かに抑えている状態",
+    unknown: "まだ読み取る途中の状態",
+  };
+
+  return labels[opennessState] || labels.unknown;
+}
+
+function buildOpennessNarrative(responsePattern) {
+  const opennessState = getOpennessState(responsePattern);
+
+  if (opennessState === "guarded") {
+    return "今の心は、本音に近づきたい気持ちを持ちながらも、まだ強く自分を守っています。無理に開くより、守っている理由を静かに見る段階です。";
+  }
+
+  if (opennessState === "distant") {
+    return "今はまだ、深く踏み込むより少し距離を保ちながら見ている状態です。その距離は拒絶ではなく、心が安全を確かめている時間なのかもしれません。";
+  }
+
+  if (opennessState === "opening") {
+    return "心は少しずつ、本音の近くへ動き始めています。まだ揺れはありますが、その揺れを感じられていること自体が、開き始めのサインかもしれません。";
+  }
+
+  if (opennessState === "exposed") {
+    return "本音に近い場所まで感情が出てきています。少し不安定に感じるとしても、それは心が隠しきれなくなった大切な反応かもしれません。";
+  }
+
+  if (opennessState === "quiet") {
+    return "心はまだ静かに抑えながら反応しています。大きく揺れていないように見えても、奥では小さな本音が動いている可能性があります。";
+  }
+
+  return "今の心は、まだ読み取る途中にあります。焦らず、反応の強さよりも、どこに違和感が残るかを見ることが大切です。";
+}
 function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
@@ -1353,6 +1425,10 @@ ${buildTrustProgression(responsePattern, previousResponseStyle)}
 
 【隠れている感情】
 ${buildEmotionalMaskingNarrative(responsePattern)}
+
+【本音への近さ】
+${getOpennessLabel(getOpennessState(responsePattern))}
+${buildOpennessNarrative(responsePattern)}
 
 【ずっと残っていたもの】
 ${getInnerNarrative(compound)}
@@ -1515,6 +1591,8 @@ app.post("/deep-fortune", async (req, res) => {
     traitScores: traitResult.scores,
 
     responsePattern,
+    opennessState: getOpennessState(responsePattern),
+    opennessLabel: getOpennessLabel(getOpennessState(responsePattern)),
     continuity: buildContinuityNarrative(responsePattern, previousResponseStyle || null, previousEmotionTone || null),
 
     primaryCategory: compound.primaryCategory,
@@ -1549,6 +1627,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
