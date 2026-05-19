@@ -1441,6 +1441,77 @@ function buildRepeatSessionMemoryNarrative(responsePattern, previousPatterns = [
 
   return "過去の読みと今回の読みを比べると、心の反応には少しずつ違いが出ています。大切なのは、答えが変わったことより、どの感情が繰り返し出ているかを見ることです。";
 }
+
+function getTrustDepthState(responsePattern, previousPatterns = []) {
+  if (!responsePattern) {
+    return "unknown";
+  }
+
+  const currentStyle = responsePattern.responseStyle;
+  const opennessState = getOpennessState(responsePattern);
+  const styles = Array.isArray(previousPatterns)
+    ? previousPatterns.map((p) => p?.responseStyle || p?.style || null).filter(Boolean)
+    : [];
+
+  if (currentStyle === "defensive" || opennessState === "guarded") {
+    return "cautious";
+  }
+
+  if (currentStyle === "shallow" || opennessState === "distant") {
+    return "surface";
+  }
+
+  if (
+    styles.includes("defensive") &&
+    (currentStyle === "fluctuating" || currentStyle === "unstable")
+  ) {
+    return "deepening";
+  }
+
+  if (currentStyle === "fluctuating" || opennessState === "opening") {
+    return "engaged";
+  }
+
+  if (currentStyle === "unstable" || opennessState === "exposed") {
+    return "deepening";
+  }
+
+  return "engaged";
+}
+
+function getTrustDepthLabel(trustDepthState) {
+  const labels = {
+    surface: "まだ浅い距離で見ている段階",
+    cautious: "慎重に心を守りながら見ている段階",
+    engaged: "少しずつ読みの中に入っている段階",
+    deepening: "本音の近くまで降りてきている段階",
+    unknown: "まだ判断途中の段階",
+  };
+
+  return labels[trustDepthState] || labels.unknown;
+}
+
+function buildTrustDepthNarrative(responsePattern, previousPatterns = []) {
+  const trustDepthState = getTrustDepthState(responsePattern, previousPatterns);
+
+  if (trustDepthState === "surface") {
+    return "今はまだ、深く入り込むよりも少し離れた場所から自分を見る段階です。その距離は悪いものではなく、心が安全を確かめるための余白です。";
+  }
+
+  if (trustDepthState === "cautious") {
+    return "今の心は、読みへ近づきたい気持ちを持ちながらも、まだ慎重に自分を守っています。無理に開くより、守りながら見ていること自体を大切にしてよさそうです。";
+  }
+
+  if (trustDepthState === "engaged") {
+    return "心は少しずつ、読みの中で動き始めています。まだ全部を見せているわけではなくても、自分の揺れを見ようとする力が出てきています。";
+  }
+
+  if (trustDepthState === "deepening") {
+    return "今回は、本音の近くまで心が降りてきている可能性があります。少し不安定に感じるとしても、それは深い場所に触れ始めているサインかもしれません。";
+  }
+
+  return "今の心は、まだ読みとの距離を探している途中です。焦らず、どこまで見ても大丈夫そうかを確かめることが大切です。";
+}
 function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null, previousPrimaryTrait = null, previousPatterns = []) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
@@ -1493,6 +1564,10 @@ ${buildContradictionPersistence(compound, previousPrimaryTrait)}
 
 【感情履歴の流れ】
 ${buildRepeatSessionMemoryNarrative(responsePattern, previousPatterns)}
+
+【読みの深さ】
+${getTrustDepthLabel(getTrustDepthState(responsePattern, previousPatterns))}
+${buildTrustDepthNarrative(responsePattern, previousPatterns)}
 
 【ずっと残っていたもの】
 ${getInnerNarrative(compound)}
@@ -1660,6 +1735,8 @@ app.post("/deep-fortune", async (req, res) => {
     continuity: buildContinuityNarrative(responsePattern, previousResponseStyle || null, previousEmotionTone || null),
     contradictionPersistence: buildContradictionPersistence(compound, previousPrimaryTrait || null),
     repeatSessionMemory: buildRepeatSessionMemoryNarrative(responsePattern, Array.isArray(previousPatterns) ? previousPatterns : []),
+    trustDepthState: getTrustDepthState(responsePattern, Array.isArray(previousPatterns) ? previousPatterns : []),
+    trustDepthLabel: getTrustDepthLabel(getTrustDepthState(responsePattern, Array.isArray(previousPatterns) ? previousPatterns : [])),
 
     primaryCategory: compound.primaryCategory,
     secondaryCategory: compound.secondaryCategory,
@@ -1693,6 +1770,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
