@@ -1111,6 +1111,61 @@ function buildResponsePatternNarrative(responsePattern) {
 その違和感を無かったことにしないことなのかもしれません。`;
 }
 
+
+function buildResponseStyleTraitNarrative(responsePattern, compound) {
+  if (!responsePattern || !compound) {
+    return "";
+  }
+
+  const style = responsePattern.responseStyle;
+  const trait = compound.primaryTrait;
+
+  if (style === "defensive" && trait === "people_pleasing") {
+    return "嫌われないように、答えをひとつの方向へ揃えている可能性があります。本音より先に、関係を壊さないための反応が動いているのかもしれません。";
+  }
+
+  if (style === "defensive" && trait === "future_anxiety") {
+    return "間違えないように、心が答えを固定しようとしている可能性があります。不安が強いときほど、揺れるより先に正解を探そうとしてしまうのかもしれません。";
+  }
+
+  if (style === "defensive" && trait === "emotional_fatigue") {
+    return "もう揺れる余裕がなくて、心がひとつの答えに寄りかかっている可能性があります。強い答えの裏に、疲れを隠す反応が残っているのかもしれません。";
+  }
+
+  if (style === "shallow" && trait === "identity_confusion") {
+    return "深く答えようとしても、自分の輪郭がまだ少し見えにくい状態かもしれません。曖昧さは弱さではなく、今の心がまだ安全な距離を探しているサインです。";
+  }
+
+  if (style === "shallow" && trait === "emotional_fatigue") {
+    return "深く感じる前に、心が少し反応を薄くしている可能性があります。疲れが強いとき、人は苦しささえ静かに遠ざけようとすることがあります。";
+  }
+
+  if (style === "unstable" && trait === "attachment_anxiety") {
+    return "近づきたい気持ちと、傷つく前に離れたい気持ちが交互に動いている可能性があります。揺れているのは、誰かを求める気持ちがまだ消えていないからかもしれません。";
+  }
+
+  if (style === "unstable" && trait === "future_anxiety") {
+    return "進みたい気持ちと、失敗を避けたい気持ちが同時に動いているようです。未来を考えるほど、心が前後に揺れやすくなっているのかもしれません。";
+  }
+
+  if (style === "fluctuating" && trait === "identity_confusion") {
+    return "答えが揺れているのは、自分の本音がないからではなく、いくつもの自分が同時に反応しているからかもしれません。今はひとつに絞るより、揺れの幅を見ることが大切です。";
+  }
+
+  if (style === "fluctuating" && trait === "people_pleasing") {
+    return "相手に合わせる自分と、本当は自分を優先したい自分が交互に顔を出している可能性があります。その揺れの中に、今まで後回しにしてきた本音が残っています。";
+  }
+
+  if (style === "suppressed" && trait === "people_pleasing") {
+    return "本音を出す前に、先に空気を読んでしまう反応があるようです。感じていないのではなく、感じたことを表に出す前に抑えているのかもしれません。";
+  }
+
+  if (style === "suppressed" && trait === "role_pressure") {
+    return "弱音を出す前に、役割を優先してしまう反応があるようです。本当は休みたいのに、止まることへの怖さが先に立っているのかもしれません。";
+  }
+
+  return "今回の回答には、今の心が自分を守ろうとする反応も含まれています。大切なのは、その反応を責めることではなく、なぜそう答えたくなったのかを静かに見ていくことです。";
+}
 function stablePaidFortune(score, answers = [], depth = "deep") {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
@@ -1138,6 +1193,9 @@ ${getEmotionTonePhrase(emotionTone)}
 
 【感情の揺れ方】
 ${buildResponsePatternNarrative(responsePattern)}
+
+【心を守る反応】
+${buildResponseStyleTraitNarrative(responsePattern, compound)}
 
 【ずっと残っていたもの】
 ${getInnerNarrative(compound)}
@@ -1333,6 +1391,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
