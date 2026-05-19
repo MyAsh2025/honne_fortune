@@ -1197,6 +1197,44 @@ function buildContinuityNarrative(responsePattern, previousResponseStyle = null,
 
   return "前回とは少し違う反応が出ています。答えが変わったことよりも、どこで心が動いたのかを見ることが、今の本音に近づく手がかりになります。";
 }
+
+function buildRecoveryTrajectory(responsePattern, previousResponseStyle = null) {
+  if (!responsePattern || !previousResponseStyle) {
+    return "";
+  }
+
+  const current = responsePattern.responseStyle;
+
+  if (previousResponseStyle === "defensive" && current === "fluctuating") {
+    return "心は、強く閉じる段階から、少しずつ揺れを見始める段階へ移り始めている可能性があります。";
+  }
+
+  if (previousResponseStyle === "suppressed" && current === "fluctuating") {
+    return "静かに抑えていた感情が、少しずつ表に近づいている流れがあります。";
+  }
+
+  if (previousResponseStyle === "fluctuating" && current === "unstable") {
+    return "感情の揺れが、より具体的な迷いや葛藤として表に出始めている可能性があります。";
+  }
+
+  if (previousResponseStyle === "unstable" && current === "defensive") {
+    return "揺れが大きくなったぶん、心が再び防御を強めている可能性があります。ただ、それは後退ではなく、見え始めた本音をもう一度守ろうとする自然な揺り戻しかもしれません。";
+  }
+
+  if (previousResponseStyle === "fluctuating" && current === "defensive") {
+    return "前回は揺れを見られていた心が、今回は少し守りを強めています。これは悪化というより、触れた本音が大きかったぶん、一度距離を取り直している状態かもしれません。";
+  }
+
+  if (previousResponseStyle === "shallow" && current === "defensive") {
+    return "前回は浅い距離で保っていた心が、今回は少し強く守りに入っています。まだ本音に触れるには怖さがあり、心が安全な場所を探しているのかもしれません。";
+  }
+
+  if (previousResponseStyle === current) {
+    return "大きな変化はまだありませんが、同じ場所で心が反応し続けている状態かもしれません。";
+  }
+
+  return "心の反応には、少しずつ変化の流れが出始めています。";
+}
 function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
@@ -1230,6 +1268,9 @@ ${buildResponseStyleTraitNarrative(responsePattern, compound)}
 
 【変化の流れ】
 ${buildContinuityNarrative(responsePattern, previousResponseStyle, previousEmotionTone)}
+
+【回復の流れ】
+${buildRecoveryTrajectory(responsePattern, previousResponseStyle)}
 
 【ずっと残っていたもの】
 ${getInnerNarrative(compound)}
@@ -1426,6 +1467,8 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
 
 
 
