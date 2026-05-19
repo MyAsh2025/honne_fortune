@@ -1200,7 +1200,7 @@ function buildContinuityNarrative(responsePattern, previousResponseStyle = null,
 
 function buildRecoveryTrajectory(responsePattern, previousResponseStyle = null) {
   if (!responsePattern || !previousResponseStyle) {
-    return "";
+    return "今回はまだ前回との比較ではなく、今の心の反応を静かに見ている段階です。読みを重ねることで、回復の方向や揺り戻しが少しずつ見えやすくなります。";
   }
 
   const current = responsePattern.responseStyle;
@@ -1238,7 +1238,7 @@ function buildRecoveryTrajectory(responsePattern, previousResponseStyle = null) 
 
 function buildTrustProgression(responsePattern, previousResponseStyle = null) {
   if (!responsePattern || !previousResponseStyle) {
-    return "";
+    return "今回はまだ、読みへの近づき方を判断するための前回情報がありません。次にまた読みを重ねることで、心がどれくらい本音に近づけているかを見やすくなります。";
   }
 
   const current = responsePattern.responseStyle;
@@ -1264,6 +1264,52 @@ function buildTrustProgression(responsePattern, previousResponseStyle = null) {
   }
 
   return "";
+}
+
+function buildEmotionalMaskingNarrative(responsePattern) {
+  if (!responsePattern) {
+    return "";
+  }
+
+  const {
+    responseStyle,
+    confidence,
+    intensity,
+    temperature,
+    hesitation,
+  } = responsePattern;
+
+  if (
+    responseStyle === "defensive" &&
+    confidence === "low" &&
+    intensity >= 1.5
+  ) {
+    return "感情は強く出ていますが、その一方で、本音そのものはまだ深い場所に隠れている可能性があります。強い答えは、『本当の気持ち』というより、『そうであろうとする心』の反応なのかもしれません。";
+  }
+
+  if (
+    responseStyle === "shallow" &&
+    hesitation >= 3 &&
+    temperature === "low"
+  ) {
+    return "今は感情を感じていないというより、感じる前に少し距離を置いている状態に近いようです。心が静かなままなのは、安全な距離を保とうとしているからかもしれません。";
+  }
+
+  if (
+    responseStyle === "unstable" &&
+    confidence === "high"
+  ) {
+    return "揺れている感情を、今回は比較的そのまま見せられている状態かもしれません。迷いはありますが、心は以前より本音を隠し切らなくなってきています。";
+  }
+
+  if (
+    responseStyle === "fluctuating" &&
+    confidence === "high"
+  ) {
+    return "感情はまだ揺れていますが、その揺れ自体を少しずつ認識でき始めている可能性があります。隠すことより、『何に揺れているのか』を見る段階へ近づいているのかもしれません。";
+  }
+
+  return "今回の回答には、感情を守りながら見せている部分と、まだ隠している部分が同時に含まれているようです。";
 }
 function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null) {
   const categoryResult = getPrimaryCategory(answers);
@@ -1304,6 +1350,9 @@ ${buildRecoveryTrajectory(responsePattern, previousResponseStyle)}
 
 【読みへの近づき方】
 ${buildTrustProgression(responsePattern, previousResponseStyle)}
+
+【隠れている感情】
+${buildEmotionalMaskingNarrative(responsePattern)}
 
 【ずっと残っていたもの】
 ${getInnerNarrative(compound)}
@@ -1500,6 +1549,9 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
+
 
 
 
