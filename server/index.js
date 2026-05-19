@@ -1383,7 +1383,29 @@ function buildOpennessNarrative(responsePattern) {
 
   return "今の心は、まだ読み取る途中にあります。焦らず、反応の強さよりも、どこに違和感が残るかを見ることが大切です。";
 }
-function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null) {
+
+function buildContradictionPersistence(compound, previousPrimaryTrait = null) {
+  if (!compound) {
+    return "";
+  }
+
+  const currentTrait = compound.primaryTrait;
+
+  if (!previousPrimaryTrait) {
+    return "今回はまだ、前回から続いている矛盾までは判断していません。ただ、今回強く反応しているテーマは、今の心が見落とせない場所を示している可能性があります。";
+  }
+
+  if (previousPrimaryTrait === currentTrait) {
+    return "前回と同じ本音のテーマが続いています。これは停滞ではなく、心が同じ場所を何度も見ようとしているサインかもしれません。今の中心課題として、少し丁寧に扱う価値があります。";
+  }
+
+  if (previousPrimaryTrait !== currentTrait) {
+    return "前回とは違う本音のテーマが表に出ています。心の中心が変わったというより、別の層にあった違和感が今回は前に出てきた可能性があります。";
+  }
+
+  return "今回の矛盾は、今の心が何を守り、何を求めているかを知るための手がかりになりそうです。";
+}
+function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null, previousPrimaryTrait = null) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
   const compound = buildCompoundInsight(categoryResult, traitResult);
@@ -1429,6 +1451,9 @@ ${buildEmotionalMaskingNarrative(responsePattern)}
 【本音への近さ】
 ${getOpennessLabel(getOpennessState(responsePattern))}
 ${buildOpennessNarrative(responsePattern)}
+
+【続いている矛盾】
+${buildContradictionPersistence(compound, previousPrimaryTrait)}
 
 【ずっと残っていたもの】
 ${getInnerNarrative(compound)}
@@ -1566,7 +1591,7 @@ function getRecommendedPrice(depth) {
 }
 
 app.post("/deep-fortune", async (req, res) => {
-  const { score, answers, depth, previousResponseStyle, previousEmotionTone } = req.body || {};
+  const { score, answers, depth, previousResponseStyle, previousEmotionTone, previousPrimaryTrait } = req.body || {};
   const safeAnswers = answers || [];
 
   const categoryResult = getPrimaryCategory(safeAnswers);
@@ -1594,6 +1619,7 @@ app.post("/deep-fortune", async (req, res) => {
     opennessState: getOpennessState(responsePattern),
     opennessLabel: getOpennessLabel(getOpennessState(responsePattern)),
     continuity: buildContinuityNarrative(responsePattern, previousResponseStyle || null, previousEmotionTone || null),
+    contradictionPersistence: buildContradictionPersistence(compound, previousPrimaryTrait || null),
 
     primaryCategory: compound.primaryCategory,
     secondaryCategory: compound.secondaryCategory,
@@ -1609,7 +1635,7 @@ app.post("/deep-fortune", async (req, res) => {
 
     recommendedPrice: getRecommendedPrice(depth || "deep"),
     depth: depth || "deep",
-    text: stablePaidFortune(score || 0, safeAnswers, depth || "deep", previousResponseStyle || null, previousEmotionTone || null),
+    text: stablePaidFortune(score || 0, safeAnswers, depth || "deep", previousResponseStyle || null, previousEmotionTone || null, previousPrimaryTrait || null),
   });
 });
 
@@ -1627,6 +1653,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
