@@ -1512,11 +1512,57 @@ function buildTrustDepthNarrative(responsePattern, previousPatterns = []) {
 
   return "今の心は、まだ読みとの距離を探している途中です。焦らず、どこまで見ても大丈夫そうかを確かめることが大切です。";
 }
-function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null, previousPrimaryTrait = null, previousPatterns = []) {
+
+function analyzeSilencePattern(answers = [], expectedCount = 15) {
+  const safeAnswers = Array.isArray(answers) ? answers : [];
+  const answeredCount = safeAnswers.length;
+  const missingCount = Math.max(0, expectedCount - answeredCount);
+  const missingRatio = expectedCount > 0 ? missingCount / expectedCount : 0;
+
+  let silenceStyle = "none";
+
+  if (missingRatio >= 0.6) {
+    silenceStyle = "strong_avoidance";
+  } else if (missingRatio >= 0.35) {
+    silenceStyle = "partial_avoidance";
+  } else if (missingRatio > 0) {
+    silenceStyle = "light_gap";
+  }
+
+  return {
+    expectedCount,
+    answeredCount,
+    missingCount,
+    missingRatio,
+    silenceStyle,
+  };
+}
+
+function buildSilencePatternNarrative(silencePattern) {
+  if (!silencePattern || silencePattern.silenceStyle === "none") {
+    return "今回は、答えなかった場所よりも、答えた反応の中に今の心の動きが出ています。";
+  }
+
+  if (silencePattern.silenceStyle === "strong_avoidance") {
+    return "今回は、答えがまだ届いていない部分が多くあります。それは拒否ではなく、心がまだ深く触れる準備をしていない場所があるというサインかもしれません。";
+  }
+
+  if (silencePattern.silenceStyle === "partial_avoidance") {
+    return "いくつかの問いには、まだ心が距離を置いているようです。答えなかった場所にも、今は言葉にしきれない本音が残っている可能性があります。";
+  }
+
+  if (silencePattern.silenceStyle === "light_gap") {
+    return "一部に、まだ言葉になっていない余白があります。その小さな抜けは、見落としではなく、心が少しだけ守っている場所かもしれません。";
+  }
+
+  return "答えた場所と答えなかった場所の両方に、今の心の反応が残っています。";
+}
+function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null, previousPrimaryTrait = null, previousPatterns = [], expectedQuestionCount = 15) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
   const compound = buildCompoundInsight(categoryResult, traitResult);
   const responsePattern = analyzeResponsePattern(answers);
+  const silencePattern = analyzeSilencePattern(answers, expectedQuestionCount);
   const emotionTone = getEmotionTone(compound);
 
   if (depth === "short") {
@@ -1568,6 +1614,9 @@ ${buildRepeatSessionMemoryNarrative(responsePattern, previousPatterns)}
 【読みの深さ】
 ${getTrustDepthLabel(getTrustDepthState(responsePattern, previousPatterns))}
 ${buildTrustDepthNarrative(responsePattern, previousPatterns)}
+
+【答えなかった余白】
+${buildSilencePatternNarrative(silencePattern)}
 
 【ずっと残っていたもの】
 ${getInnerNarrative(compound)}
@@ -1705,13 +1754,14 @@ function getRecommendedPrice(depth) {
 }
 
 app.post("/deep-fortune", async (req, res) => {
-  const { score, answers, depth, previousResponseStyle, previousEmotionTone, previousPrimaryTrait, previousPatterns } = req.body || {};
+  const { score, answers, depth, previousResponseStyle, previousEmotionTone, previousPrimaryTrait, previousPatterns, expectedQuestionCount } = req.body || {};
   const safeAnswers = answers || [];
 
   const categoryResult = getPrimaryCategory(safeAnswers);
   const traitResult = getPrimaryTrait(safeAnswers);
   const compound = buildCompoundInsight(categoryResult, traitResult);
-  const responsePattern = analyzeResponsePattern(answers);
+  const responsePattern = analyzeResponsePattern(safeAnswers);
+  const silencePattern = analyzeSilencePattern(safeAnswers, Number(expectedQuestionCount || 15));
 
   res.json({
     ok: true,
@@ -1730,6 +1780,8 @@ app.post("/deep-fortune", async (req, res) => {
     traitScores: traitResult.scores,
 
     responsePattern,
+    silencePattern,
+    silenceNarrative: buildSilencePatternNarrative(silencePattern),
     opennessState: getOpennessState(responsePattern),
     opennessLabel: getOpennessLabel(getOpennessState(responsePattern)),
     continuity: buildContinuityNarrative(responsePattern, previousResponseStyle || null, previousEmotionTone || null),
@@ -1752,7 +1804,7 @@ app.post("/deep-fortune", async (req, res) => {
 
     recommendedPrice: getRecommendedPrice(depth || "deep"),
     depth: depth || "deep",
-    text: stablePaidFortune(score || 0, safeAnswers, depth || "deep", previousResponseStyle || null, previousEmotionTone || null, previousPrimaryTrait || null, Array.isArray(previousPatterns) ? previousPatterns : []),
+    text: stablePaidFortune(score || 0, safeAnswers, depth || "deep", previousResponseStyle || null, previousEmotionTone || null, previousPrimaryTrait || null, Array.isArray(previousPatterns) ? previousPatterns : [], Number(expectedQuestionCount || 15)),
   });
 });
 
@@ -1770,6 +1822,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
