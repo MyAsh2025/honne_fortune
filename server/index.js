@@ -1405,7 +1405,43 @@ function buildContradictionPersistence(compound, previousPrimaryTrait = null) {
 
   return "今回の矛盾は、今の心が何を守り、何を求めているかを知るための手がかりになりそうです。";
 }
-function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null, previousPrimaryTrait = null) {
+
+function buildRepeatSessionMemoryNarrative(responsePattern, previousPatterns = []) {
+  if (!responsePattern || !Array.isArray(previousPatterns) || previousPatterns.length === 0) {
+    return "今回はまだ、過去の読みとの連続までは見ていません。読みを重ねることで、心がどこで繰り返し反応し、どこで少し変わり始めているのかが見えやすくなります。";
+  }
+
+  const currentStyle = responsePattern.responseStyle;
+  const styles = previousPatterns
+    .map((p) => p?.responseStyle || p?.style || null)
+    .filter(Boolean);
+
+  if (styles.length === 0) {
+    return "過去の読みはありますが、まだ反応の型までは十分に比較できません。次の読みから、心の動き方が少しずつ見えやすくなります。";
+  }
+
+  const allStyles = [...styles, currentStyle];
+  const uniqueStyles = new Set(allStyles);
+
+  if (uniqueStyles.size === 1) {
+    return "過去から今回まで、似た反応が続いています。これは停滞ではなく、心が同じ場所を何度も確認しようとしている可能性があります。";
+  }
+
+  if (styles.includes("defensive") && currentStyle === "fluctuating") {
+    return "これまで守りが強かった心に、今回は少し揺れが出ています。閉じていた場所が、少しずつ動き始めている流れかもしれません。";
+  }
+
+  if (styles.includes("shallow") && (currentStyle === "fluctuating" || currentStyle === "unstable")) {
+    return "これまで距離を保っていた心が、今回は少し深い反応を見せ始めています。読みを重ねる中で、本音の近くまで降りてきている可能性があります。";
+  }
+
+  if (styles.includes("fluctuating") && currentStyle === "defensive") {
+    return "以前は揺れを見せていた心が、今回は少し守りを強めています。これは後退ではなく、本音に近づいたあとに一度距離を取り直す自然な流れかもしれません。";
+  }
+
+  return "過去の読みと今回の読みを比べると、心の反応には少しずつ違いが出ています。大切なのは、答えが変わったことより、どの感情が繰り返し出ているかを見ることです。";
+}
+function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null, previousPrimaryTrait = null, previousPatterns = []) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
   const compound = buildCompoundInsight(categoryResult, traitResult);
@@ -1454,6 +1490,9 @@ ${buildOpennessNarrative(responsePattern)}
 
 【続いている矛盾】
 ${buildContradictionPersistence(compound, previousPrimaryTrait)}
+
+【感情履歴の流れ】
+${buildRepeatSessionMemoryNarrative(responsePattern, previousPatterns)}
 
 【ずっと残っていたもの】
 ${getInnerNarrative(compound)}
@@ -1591,7 +1630,7 @@ function getRecommendedPrice(depth) {
 }
 
 app.post("/deep-fortune", async (req, res) => {
-  const { score, answers, depth, previousResponseStyle, previousEmotionTone, previousPrimaryTrait } = req.body || {};
+  const { score, answers, depth, previousResponseStyle, previousEmotionTone, previousPrimaryTrait, previousPatterns } = req.body || {};
   const safeAnswers = answers || [];
 
   const categoryResult = getPrimaryCategory(safeAnswers);
@@ -1620,6 +1659,7 @@ app.post("/deep-fortune", async (req, res) => {
     opennessLabel: getOpennessLabel(getOpennessState(responsePattern)),
     continuity: buildContinuityNarrative(responsePattern, previousResponseStyle || null, previousEmotionTone || null),
     contradictionPersistence: buildContradictionPersistence(compound, previousPrimaryTrait || null),
+    repeatSessionMemory: buildRepeatSessionMemoryNarrative(responsePattern, Array.isArray(previousPatterns) ? previousPatterns : []),
 
     primaryCategory: compound.primaryCategory,
     secondaryCategory: compound.secondaryCategory,
@@ -1635,7 +1675,7 @@ app.post("/deep-fortune", async (req, res) => {
 
     recommendedPrice: getRecommendedPrice(depth || "deep"),
     depth: depth || "deep",
-    text: stablePaidFortune(score || 0, safeAnswers, depth || "deep", previousResponseStyle || null, previousEmotionTone || null, previousPrimaryTrait || null),
+    text: stablePaidFortune(score || 0, safeAnswers, depth || "deep", previousResponseStyle || null, previousEmotionTone || null, previousPrimaryTrait || null, Array.isArray(previousPatterns) ? previousPatterns : []),
   });
 });
 
@@ -1653,6 +1693,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
