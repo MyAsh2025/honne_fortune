@@ -1263,7 +1263,7 @@ function buildTrustProgression(responsePattern, previousResponseStyle = null) {
     return "抑えていた感情が、迷いや葛藤として少し表に出てきています。これは乱れではなく、心が沈黙だけでは抱えきれなくなってきたサインかもしれません。";
   }
 
-  return "";
+  return "前回と比べて、読みへの近づき方には小さな変化があります。大きく開いたわけではなくても、心は自分の反応を少しずつ確かめながら、今見ても大丈夫な距離を探しているようです。";
 }
 
 function buildEmotionalMaskingNarrative(responsePattern) {
@@ -1557,6 +1557,200 @@ function buildSilencePatternNarrative(silencePattern) {
 
   return "答えた場所と答えなかった場所の両方に、今の心の反応が残っています。";
 }
+
+function getLastPreviousPattern(previousPatterns = []) {
+  if (!Array.isArray(previousPatterns) || previousPatterns.length === 0) {
+    return null;
+  }
+
+  return previousPatterns[previousPatterns.length - 1] || null;
+}
+
+function getOpennessDrift(currentOpennessState, previousOpennessState = null) {
+  if (!previousOpennessState) {
+    return "first_observation";
+  }
+
+  const order = {
+    guarded: 1,
+    distant: 2,
+    quiet: 2,
+    opening: 3,
+    exposed: 4,
+    unknown: 0,
+  };
+
+  const current = order[currentOpennessState] || 0;
+  const previous = order[previousOpennessState] || 0;
+
+  if (current === 0 || previous === 0) {
+    return "unclear";
+  }
+
+  if (current > previous) {
+    return "slightly_opening";
+  }
+
+  if (current < previous) {
+    return "protective_retreat";
+  }
+
+  if (currentOpennessState === "guarded") {
+    return "stable_guarded";
+  }
+
+  if (currentOpennessState === "distant" || currentOpennessState === "quiet") {
+    return "stable_distance";
+  }
+
+  return "stable_opening";
+}
+
+function getTrustDrift(currentTrustDepthState, previousTrustDepthState = null) {
+  if (!previousTrustDepthState) {
+    return "first_observation";
+  }
+
+  const order = {
+    surface: 1,
+    cautious: 1,
+    engaged: 2,
+    deepening: 3,
+    unknown: 0,
+  };
+
+  const current = order[currentTrustDepthState] || 0;
+  const previous = order[previousTrustDepthState] || 0;
+
+  if (current === 0 || previous === 0) {
+    return "unclear";
+  }
+
+  if (current > previous) {
+    return "closer_to_reading";
+  }
+
+  if (current < previous) {
+    return "needs_more_safety";
+  }
+
+  return "stable_distance";
+}
+
+function getSilenceDrift(currentSilencePattern, previousSilencePattern = null) {
+  if (!previousSilencePattern) {
+    return "first_observation";
+  }
+
+  const order = {
+    none: 0,
+    light_gap: 1,
+    partial_avoidance: 2,
+    strong_avoidance: 3,
+  };
+
+  const currentStyle = currentSilencePattern?.silenceStyle || "none";
+  const previousStyle = previousSilencePattern?.silenceStyle || previousSilencePattern || "none";
+
+  const current = order[currentStyle] ?? 0;
+  const previous = order[previousStyle] ?? 0;
+
+  if (current > previous) {
+    return "more_silence";
+  }
+
+  if (current < previous) {
+    return "less_silence";
+  }
+
+  if (currentStyle === "strong_avoidance") {
+    return "stable_deep_silence";
+  }
+
+  if (currentStyle === "partial_avoidance" || currentStyle === "light_gap") {
+    return "stable_partial_silence";
+  }
+
+  return "stable_answering";
+}
+
+function analyzeEmotionalDrift(responsePattern, silencePattern, previousPatterns = []) {
+  const previous = getLastPreviousPattern(previousPatterns);
+
+  const currentOpennessState = getOpennessState(responsePattern);
+  const currentTrustDepthState = getTrustDepthState(responsePattern, previousPatterns);
+
+  const previousOpennessState =
+    previous?.opennessState ||
+    previous?.openness ||
+    null;
+
+  const previousTrustDepthState =
+    previous?.trustDepthState ||
+    previous?.trustDepth ||
+    null;
+
+  const previousSilencePattern =
+    previous?.silencePattern ||
+    previous?.silenceStyle ||
+    null;
+
+  const opennessDrift = getOpennessDrift(currentOpennessState, previousOpennessState);
+  const trustDrift = getTrustDrift(currentTrustDepthState, previousTrustDepthState);
+  const silenceDrift = getSilenceDrift(silencePattern, previousSilencePattern);
+
+  return {
+    currentOpennessState,
+    previousOpennessState,
+    opennessDrift,
+    currentTrustDepthState,
+    previousTrustDepthState,
+    trustDrift,
+    currentSilenceStyle: silencePattern?.silenceStyle || "none",
+    previousSilenceStyle:
+      previousSilencePattern?.silenceStyle ||
+      previousSilencePattern ||
+      null,
+    silenceDrift,
+  };
+}
+
+function buildEmotionalDriftNarrative(emotionalDrift) {
+  if (!emotionalDrift || emotionalDrift.opennessDrift === "first_observation") {
+    return "今回はまだ、前回からの移動ではなく、今この瞬間の心の距離を見ています。次に読みを重ねることで、心が近づいたのか、距離を取ったのか、静かに見えやすくなります。";
+  }
+
+  if (
+    emotionalDrift.opennessDrift === "slightly_opening" &&
+    emotionalDrift.trustDrift === "closer_to_reading"
+  ) {
+    return "前回よりも、心が少しだけ本音の近くへ動いているようです。ただし、それは無理に開いたというより、安全を確かめながら、ほんの少し触れられる場所が増えた状態かもしれません。";
+  }
+
+  if (
+    emotionalDrift.opennessDrift === "protective_retreat" ||
+    emotionalDrift.trustDrift === "needs_more_safety"
+  ) {
+    return "前回よりも、心が少し距離を取り直しているようです。これは悪化ではなく、触れた感情が大きかったぶん、もう一度安全な場所を確かめている反応かもしれません。";
+  }
+
+  if (emotionalDrift.silenceDrift === "more_silence") {
+    return "今回は、前回よりも答えない余白が少し増えています。それは拒否ではなく、まだ言葉にするには早い場所を、心が静かに守っている可能性があります。";
+  }
+
+  if (emotionalDrift.silenceDrift === "less_silence") {
+    return "前回よりも、少しだけ答えられる場所が増えています。大きな変化ではなくても、心が完全には閉じず、触れてもよい範囲を探し始めているのかもしれません。";
+  }
+
+  if (
+    emotionalDrift.opennessDrift === "stable_guarded" ||
+    emotionalDrift.silenceDrift === "stable_deep_silence"
+  ) {
+    return "前回と同じように、心はまだ慎重に自分を守っています。同じ場所に留まっているように見えても、そこにはまだ急がず扱うべき本音が残っている可能性があります。";
+  }
+
+  return "前回と今回を比べると、心の距離には小さな移動があります。大切なのは、良くなったか悪くなったかではなく、どこで近づき、どこで守り直したのかを静かに見ることです。";
+}
 function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null, previousPrimaryTrait = null, previousPatterns = [], expectedQuestionCount = 15) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
@@ -1564,6 +1758,25 @@ function stablePaidFortune(score, answers = [], depth = "deep", previousResponse
   const responsePattern = analyzeResponsePattern(answers);
   const silencePattern = analyzeSilencePattern(answers, expectedQuestionCount);
   const emotionTone = getEmotionTone(compound);
+  const previousPattern = getLastPreviousPattern(previousPatterns);
+
+  const resolvedPreviousResponseStyle =
+    previousResponseStyle ||
+    previousPattern?.responseStyle ||
+    previousPattern?.style ||
+    null;
+
+  const resolvedPreviousEmotionTone =
+    previousEmotionTone ||
+    previousPattern?.emotionTone ||
+    previousPattern?.temperature ||
+    null;
+
+  const resolvedPreviousPrimaryTrait =
+    previousPrimaryTrait ||
+    previousPattern?.primaryTrait ||
+    previousPattern?.trait ||
+    null;
 
   if (depth === "short") {
     return buildShortFortune(compound);
@@ -1590,13 +1803,13 @@ ${buildResponsePatternNarrative(responsePattern)}
 ${buildResponseStyleTraitNarrative(responsePattern, compound)}
 
 【変化の流れ】
-${buildContinuityNarrative(responsePattern, previousResponseStyle, previousEmotionTone)}
+${buildContinuityNarrative(responsePattern, resolvedPreviousResponseStyle, resolvedPreviousEmotionTone)}
 
 【回復の流れ】
-${buildRecoveryTrajectory(responsePattern, previousResponseStyle)}
+${buildRecoveryTrajectory(responsePattern, resolvedPreviousResponseStyle)}
 
 【読みへの近づき方】
-${buildTrustProgression(responsePattern, previousResponseStyle)}
+${buildTrustProgression(responsePattern, resolvedPreviousResponseStyle)}
 
 【隠れている感情】
 ${buildEmotionalMaskingNarrative(responsePattern)}
@@ -1606,10 +1819,13 @@ ${getOpennessLabel(getOpennessState(responsePattern))}
 ${buildOpennessNarrative(responsePattern)}
 
 【続いている矛盾】
-${buildContradictionPersistence(compound, previousPrimaryTrait)}
+${buildContradictionPersistence(compound, resolvedPreviousPrimaryTrait)}
 
 【感情履歴の流れ】
 ${buildRepeatSessionMemoryNarrative(responsePattern, previousPatterns)}
+
+【感情の移動】
+${buildEmotionalDriftNarrative(analyzeEmotionalDrift(responsePattern, silencePattern, previousPatterns))}
 
 【読みの深さ】
 ${getTrustDepthLabel(getTrustDepthState(responsePattern, previousPatterns))}
@@ -1789,6 +2005,8 @@ app.post("/deep-fortune", async (req, res) => {
     repeatSessionMemory: buildRepeatSessionMemoryNarrative(responsePattern, Array.isArray(previousPatterns) ? previousPatterns : []),
     trustDepthState: getTrustDepthState(responsePattern, Array.isArray(previousPatterns) ? previousPatterns : []),
     trustDepthLabel: getTrustDepthLabel(getTrustDepthState(responsePattern, Array.isArray(previousPatterns) ? previousPatterns : [])),
+    emotionalDrift: analyzeEmotionalDrift(responsePattern, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : []),
+    emotionalDriftNarrative: buildEmotionalDriftNarrative(analyzeEmotionalDrift(responsePattern, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : [])),
 
     primaryCategory: compound.primaryCategory,
     secondaryCategory: compound.secondaryCategory,
@@ -1822,6 +2040,11 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
+
+
+
 
 
 
