@@ -926,19 +926,21 @@ function analyzeResponsePattern(answers = []) {
       polarity: "neutral",
       temperature: "low",
       confidence: "low",
+      responseStyle: "shallow",
     };
   }
 
   const uniqueCount = new Set(values).size;
-
   const neutralCount = values.filter((v) => v === 0).length;
-
   const positiveCount = values.filter((v) => v > 0).length;
-
   const negativeCount = values.filter((v) => v < 0).length;
 
   const average =
     values.reduce((sum, v) => sum + v, 0) / values.length;
+
+  const intensity =
+    values.reduce((sum, v) => sum + Math.abs(v), 0) /
+    values.length;
 
   let polarity = "neutral";
 
@@ -949,10 +951,6 @@ function analyzeResponsePattern(answers = []) {
   }
 
   let temperature = "middle";
-
-  const intensity =
-    values.reduce((sum, v) => sum + Math.abs(v), 0) /
-    values.length;
 
   if (intensity >= 1.6) {
     temperature = "high";
@@ -970,23 +968,108 @@ function analyzeResponsePattern(answers = []) {
     confidence = "middle";
   }
 
+  let responseStyle = "emotionally_open";
+
+  if (uniformity === 1 && intensity >= 1.5) {
+    responseStyle = "defensive";
+    confidence = "low";
+  } else if (neutralCount >= values.length * 0.6) {
+    responseStyle = "shallow";
+    confidence = "middle";
+  } else if (uniqueCount >= 5 && neutralCount >= 1) {
+    responseStyle = "fluctuating";
+  } else if (positiveCount > 0 && negativeCount > 0 && uniqueCount >= 3) {
+    responseStyle = "unstable";
+  } else if (uniqueCount >= 4) {
+    responseStyle = "fluctuating";
+  } else if (temperature === "low") {
+    responseStyle = "suppressed";
+  }
+
   return {
     uniformity,
     hesitation: neutralCount,
     polarity,
     temperature,
     confidence,
+    responseStyle,
     average,
     positiveCount,
     negativeCount,
+    neutralCount,
+    uniqueCount,
+    intensity,
   };
 }
-
 
 
 function buildResponsePatternNarrative(responsePattern) {
   if (!responsePattern) {
     return "";
+  }
+
+  if (responsePattern.responseStyle === "defensive") {
+    return `今回の回答には、
+同じ方向へ強くそろう反応が出ています。
+
+ただしそれは、
+必ずしも感情がはっきりしているという意味ではありません。
+
+むしろ今は、
+迷いや弱さを見せないように、
+心がひとつの答えに寄せている可能性もあります。
+
+本音は、
+強い答えの中ではなく、
+その答えを選び続けた理由の奥に残っているのかもしれません。`;
+  }
+
+  if (responsePattern.responseStyle === "shallow") {
+    return `今回の回答には、
+まだ深く踏み込みきれない静かな距離感があります。
+
+はっきり苦しいとも言い切れない。
+でも、何も感じていないわけでもない。
+
+そんな浅い揺れの奥に、
+まだ言葉になる前の本音が眠っている可能性があります。`;
+  }
+
+  if (responsePattern.responseStyle === "unstable") {
+    return `今回の回答には、
+前に進みたい気持ちと、
+立ち止まりたい気持ちが同時に出ています。
+
+肯定と否定が混ざっているとき、
+心はまだ一つの答えにまとまりきっていません。
+
+でもその揺れは、
+迷っている証拠であると同時に、
+本音が動き始めているサインでもあります。`;
+  }
+
+  if (responsePattern.responseStyle === "fluctuating") {
+    return `今回の回答には、
+一定ではない感情の揺れが出ています。
+
+ひとつの気持ちだけで答えているというより、
+場面によって反応が変わる状態に近いようです。
+
+その揺らぎの中に、
+今のあなたが本当に見つめるべき違和感が隠れているのかもしれません。`;
+  }
+
+  if (responsePattern.responseStyle === "suppressed") {
+    return `今回の回答には、
+大きく動く感情よりも、
+静かに抑えられた反応が見えます。
+
+本当は感じているのに、
+それを強い言葉にする前に、
+心が少し距離を取っているのかもしれません。
+
+今は無理に掘り起こすより、
+その小さな反応を消さずに置いておくことが大切です。`;
   }
 
   if (responsePattern.confidence === "low") {
@@ -1250,6 +1333,8 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
 
 
 
