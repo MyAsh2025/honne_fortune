@@ -913,10 +913,126 @@ ${getNarrativeIntegration(compound)}
 ${getAfterglowMessage("standard", compound)}`;
 }
 
+
+function analyzeResponsePattern(answers = []) {
+  const values = answers
+    .map((a) => Number(a.value || 0))
+    .filter((v) => !Number.isNaN(v));
+
+  if (values.length === 0) {
+    return {
+      uniformity: 1,
+      hesitation: 0,
+      polarity: "neutral",
+      temperature: "low",
+      confidence: "low",
+    };
+  }
+
+  const uniqueCount = new Set(values).size;
+
+  const neutralCount = values.filter((v) => v === 0).length;
+
+  const positiveCount = values.filter((v) => v > 0).length;
+
+  const negativeCount = values.filter((v) => v < 0).length;
+
+  const average =
+    values.reduce((sum, v) => sum + v, 0) / values.length;
+
+  let polarity = "neutral";
+
+  if (average >= 1) {
+    polarity = "positive";
+  } else if (average <= -1) {
+    polarity = "negative";
+  }
+
+  let temperature = "middle";
+
+  const intensity =
+    values.reduce((sum, v) => sum + Math.abs(v), 0) /
+    values.length;
+
+  if (intensity >= 1.6) {
+    temperature = "high";
+  } else if (intensity <= 0.6) {
+    temperature = "low";
+  }
+
+  const uniformity = uniqueCount === 1 ? 1 : 0;
+
+  let confidence = "high";
+
+  if (uniformity === 1) {
+    confidence = "low";
+  } else if (neutralCount >= values.length * 0.5) {
+    confidence = "middle";
+  }
+
+  return {
+    uniformity,
+    hesitation: neutralCount,
+    polarity,
+    temperature,
+    confidence,
+    average,
+    positiveCount,
+    negativeCount,
+  };
+}
+
+
+
+function buildResponsePatternNarrative(responsePattern) {
+  if (!responsePattern) {
+    return "";
+  }
+
+  if (responsePattern.confidence === "low") {
+    return `まだ感情の輪郭がはっきり定まっていない可能性があります。
+
+直感的に選んだ部分や、
+まだ整理されていない気持ちも含まれているのかもしれません。
+
+だからこそ今は、
+無理に答えを断定するより、
+心の揺れ方そのものを静かに見つめることが大切な段階のようです。`;
+  }
+
+  if (responsePattern.hesitation >= 5) {
+    return `今のあなたは、
+まだ自分の気持ちを完全には言葉にしきれていないようです。
+
+苦しいとも言い切れない。
+でも何もないとも言い切れない。
+
+そんな曖昧な揺れが、
+心の奥に静かに残っているのかもしれません。`;
+  }
+
+  if (responsePattern.temperature === "high") {
+    return `今回の回答には、
+比較的強い感情反応が表れていました。
+
+見ないようにしてきた気持ちや、
+抑え込んできた感情が、
+少しずつ表に近づいている状態なのかもしれません。`;
+  }
+
+  return `今のあなたの心には、
+まだ小さな揺れが残っています。
+
+すぐに答えを決めなくても大丈夫です。
+大切なのは、
+その違和感を無かったことにしないことなのかもしれません。`;
+}
+
 function stablePaidFortune(score, answers = [], depth = "deep") {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
   const compound = buildCompoundInsight(categoryResult, traitResult);
+  const responsePattern = analyzeResponsePattern(answers);
   const emotionTone = getEmotionTone(compound);
 
   if (depth === "short") {
@@ -936,6 +1052,9 @@ ${buildDynamicOpening(compound)}
 【今の心】
 今回の感情温度は「${getEmotionToneLabel(emotionTone)}」です。
 ${getEmotionTonePhrase(emotionTone)}
+
+【感情の揺れ方】
+${buildResponsePatternNarrative(responsePattern)}
 
 【ずっと残っていたもの】
 ${getInnerNarrative(compound)}
@@ -1079,6 +1198,7 @@ app.post("/deep-fortune", async (req, res) => {
   const categoryResult = getPrimaryCategory(safeAnswers);
   const traitResult = getPrimaryTrait(safeAnswers);
   const compound = buildCompoundInsight(categoryResult, traitResult);
+  const responsePattern = analyzeResponsePattern(answers);
 
   res.json({
     ok: true,
@@ -1095,6 +1215,8 @@ app.post("/deep-fortune", async (req, res) => {
 
     trait: traitResult.primary,
     traitScores: traitResult.scores,
+
+    responsePattern,
 
     primaryCategory: compound.primaryCategory,
     secondaryCategory: compound.secondaryCategory,
@@ -1128,6 +1250,12 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
+
+
+
+
 
 
 
