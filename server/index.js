@@ -2794,6 +2794,59 @@ function analyzeEmotionalEcho(
   };
 }
 
+
+function buildIntegratedEmotionalAfterwaveNarrative(
+  echoState,
+  afterimageState,
+  residueState
+) {
+  const parts = [];
+
+  if (
+    echoState &&
+    echoState.state !== "no_signal"
+  ) {
+    parts.push(
+`最近の読みでは、
+以前触れた感情の余波が、
+まだ静かに残っているようです。`
+    );
+  }
+
+  if (
+    afterimageState &&
+    afterimageState.state !== "no_afterimage"
+  ) {
+    parts.push(
+`強い感情そのものは少し落ち着いていても、
+『自分を守る距離感』だけが
+輪郭のように残っているのかもしれません。`
+    );
+  }
+
+  if (
+    residueState &&
+    residueState.state !== "no_residue"
+  ) {
+    parts.push(
+`大きな防御感情は弱まりながらも、
+少し先回りして自分を守ろうとする反応が、
+まだ小さく残っているようです。`
+    );
+  }
+
+  if (parts.length === 0) {
+    return `最近の読みでは、
+感情が大きく動いたあとに残る反応は、
+まだはっきりとは見えていません。`;
+  }
+
+  return `${parts.join("\n\n")}
+
+それは未回復というより、
+心がまだ慎重に余韻を抱えながら、
+安全な距離を確かめている流れなのかもしれません。`;
+}
 function buildEmotionalEchoNarrative(echoState) {
   if (!echoState || echoState.state === "not_enough_history") {
     return "今はまだ、感情の残響として読むほどの流れは見えていません。まずは、その時々の揺れ方を静かに見ている段階です。";
@@ -3331,14 +3384,12 @@ ${buildEmotionalResonanceNarrative(analyzeEmotionalResonance(responsePattern, co
 【戻りやすい感情速度】
 ${buildEmotionalInertiaNarrative(analyzeEmotionalInertia(responsePattern, compound, silencePattern, previousPatterns))}
 
-【まだ響いている感情】
-${buildEmotionalEchoNarrative(analyzeEmotionalEcho(responsePattern, compound, silencePattern, previousPatterns))}
-
-【感情が通ったあとに残る輪郭】
-${buildEmotionalAfterimageNarrative(analyzeEmotionalAfterimage(responsePattern, compound, silencePattern, previousPatterns))}
-
-【感情のあとに残る小さな反応】
-${buildEmotionalResidueNarrative(analyzeEmotionalResidue(responsePattern, compound, silencePattern, previousPatterns))}
+【感情の余波】
+${buildIntegratedEmotionalAfterwaveNarrative(
+  analyzeEmotionalEcho(responsePattern, compound, silencePattern, previousPatterns),
+  analyzeEmotionalAfterimage(responsePattern, compound, silencePattern, previousPatterns),
+  analyzeEmotionalResidue(responsePattern, compound, silencePattern, previousPatterns)
+)}
 
 【心が身につけてきた守り方】
 ${buildEmotionalAdaptationNarrative(analyzeEmotionalAdaptation(responsePattern, compound, silencePattern, previousPatterns))}
@@ -3581,6 +3632,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
