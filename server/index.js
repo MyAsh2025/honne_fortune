@@ -2192,6 +2192,259 @@ function buildRecurringEmotionalCenterNarrative(recurringCenterState) {
 
   return "最近の読みでは、違うテーマの中にも、似た感情の揺れ方が少しずつ重なって見えています。今はまだ、それを急いで意味づけしないことも大切なのかもしれません。";
 }
+
+function analyzeUnresolvedEmotionalLoop(responsePattern, compound, silencePattern, previousPatterns = []) {
+  if (!responsePattern || !Array.isArray(previousPatterns) || previousPatterns.length < 2) {
+    return {
+      state: "not_enough_history",
+      hasLoopSignal: false,
+    };
+  }
+
+  const currentTrait = compound?.primaryTrait || null;
+  const currentTone = getEmotionTone(compound);
+  const currentSilence = silencePattern?.silenceStyle || "none";
+  const currentOpenness = getOpennessState(responsePattern);
+
+  const traits = previousPatterns
+    .map((p) => p?.primaryTrait || p?.trait || null)
+    .filter(Boolean);
+
+  const tones = previousPatterns
+    .map((p) => p?.emotionTone || p?.tone || null)
+    .filter(Boolean);
+
+  const silenceStyles = previousPatterns
+    .map((p) => p?.silenceStyle || p?.silencePattern?.silenceStyle || null)
+    .filter(Boolean);
+
+  const opennessStates = previousPatterns
+    .map((p) => p?.opennessState || p?.openness || null)
+    .filter(Boolean);
+
+  const allTraits = [...traits, currentTrait].filter(Boolean);
+  const allTones = [...tones, currentTone].filter(Boolean);
+  const allSilence = [...silenceStyles, currentSilence].filter(Boolean);
+  const allOpenness = [...opennessStates, currentOpenness].filter(Boolean);
+
+  const countBy = (items) =>
+    items.reduce((acc, item) => {
+      acc[item] = (acc[item] || 0) + 1;
+      return acc;
+    }, {});
+
+  const traitCounts = countBy(allTraits);
+  const toneCounts = countBy(allTones);
+
+  const recurringTrait = Object.keys(traitCounts).find((key) => traitCounts[key] >= 2) || null;
+  const recurringTone = Object.keys(toneCounts).find((key) => toneCounts[key] >= 2) || null;
+
+  const silenceCount = allSilence.filter((v) =>
+    v === "strong_avoidance" ||
+    v === "partial_avoidance"
+  ).length;
+
+  const guardedCount = allOpenness.filter((v) =>
+    v === "guarded" ||
+    v === "distant" ||
+    v === "quiet"
+  ).length;
+
+  if (recurringTrait && silenceCount >= 2) {
+    return {
+      state: "silent_unresolved_loop",
+      hasLoopSignal: true,
+      recurringTrait,
+      recurringTone,
+    };
+  }
+
+  if (recurringTrait && guardedCount >= 2) {
+    return {
+      state: "protected_unresolved_loop",
+      hasLoopSignal: true,
+      recurringTrait,
+      recurringTone,
+    };
+  }
+
+  if (recurringTone && silenceCount >= 1) {
+    return {
+      state: "emotional_tone_loop",
+      hasLoopSignal: true,
+      recurringTrait,
+      recurringTone,
+    };
+  }
+
+  if (recurringTrait) {
+    return {
+      state: "soft_recurring_theme",
+      hasLoopSignal: true,
+      recurringTrait,
+      recurringTone,
+    };
+  }
+
+  return {
+    state: "no_clear_loop",
+    hasLoopSignal: false,
+    recurringTrait,
+    recurringTone,
+  };
+}
+
+function buildUnresolvedEmotionalLoopNarrative(loopState) {
+  if (!loopState || loopState.state === "not_enough_history") {
+    return "今はまだ、繰り返し戻ってくる未完了の感情までは見えていません。まずは、その時々の反応を静かに見ている段階です。";
+  }
+
+  if (loopState.state === "silent_unresolved_loop") {
+    return "最近の読みでは、形を変えながらも、まだ言葉にしきれていない感情が静かに残っているようです。それは問題が解けていないというより、まだ急いで触れなくてもよい場所を心が守っているのかもしれません。";
+  }
+
+  if (loopState.state === "protected_unresolved_loop") {
+    return "最近の読みでは、似た感情の中心へ何度か戻りながらも、心が慎重に距離を保っている流れがあります。まだ触れ切れていない本音を、無理に開かず守っている状態かもしれません。";
+  }
+
+  if (loopState.state === "emotional_tone_loop") {
+    return "最近の読みでは、違うテーマの中にも、似た感情の温度が繰り返し現れているようです。今はその感情を解決するより、どんな場面で戻ってくるのかを静かに見ていく段階かもしれません。";
+  }
+
+  if (loopState.state === "soft_recurring_theme") {
+    return "最近の読みでは、同じ本音の近くへ何度か戻っているようです。それは停滞ではなく、まだ大切に扱い切れていない感情が、少しずつ形を変えて現れているのかもしれません。";
+  }
+
+  return "今のところ、強い未完了のループとして読む必要はなさそうです。ただ、似た揺れが重なる場所には、今後の読みで少しずつ意味が見えてくるかもしれません。";
+}
+
+function analyzeEmotionalGravity(responsePattern, compound, silencePattern, previousPatterns = []) {
+  if (!responsePattern || !Array.isArray(previousPatterns) || previousPatterns.length < 2) {
+    return {
+      state: "not_enough_history",
+      gravityCenter: null,
+    };
+  }
+
+  const currentTrait = compound?.primaryTrait || null;
+  const currentTone = getEmotionTone(compound);
+  const currentOpenness = getOpennessState(responsePattern);
+
+  const traits = previousPatterns
+    .map((p) => p?.primaryTrait || p?.trait || null)
+    .filter(Boolean);
+
+  const tones = previousPatterns
+    .map((p) => p?.emotionTone || p?.tone || null)
+    .filter(Boolean);
+
+  const opennessStates = previousPatterns
+    .map((p) => p?.opennessState || p?.openness || null)
+    .filter(Boolean);
+
+  const allTraits = [...traits, currentTrait].filter(Boolean);
+  const allTones = [...tones, currentTone].filter(Boolean);
+  const allOpenness = [...opennessStates, currentOpenness].filter(Boolean);
+
+  const countBy = (items) =>
+    items.reduce((acc, item) => {
+      acc[item] = (acc[item] || 0) + 1;
+      return acc;
+    }, {});
+
+  const traitCounts = countBy(allTraits);
+  const toneCounts = countBy(allTones);
+
+  const dominantTrait =
+    Object.keys(traitCounts).sort((a, b) => traitCounts[b] - traitCounts[a])[0] || null;
+
+  const dominantTone =
+    Object.keys(toneCounts).sort((a, b) => toneCounts[b] - toneCounts[a])[0] || null;
+
+  const guardedCount = allOpenness.filter((v) =>
+    v === "guarded" ||
+    v === "distant"
+  ).length;
+
+  const openingCount = allOpenness.filter((v) =>
+    v === "opening" ||
+    v === "exposed"
+  ).length;
+
+  if (
+    dominantTrait === "role_pressure" ||
+    dominantTrait === "people_pleasing"
+  ) {
+    return {
+      state: "pulled_back_to_responsibility",
+      gravityCenter: dominantTrait,
+      dominantTone,
+    };
+  }
+
+  if (
+    dominantTrait === "identity_confusion" &&
+    guardedCount >= openingCount
+  ) {
+    return {
+      state: "pulled_back_to_protection",
+      gravityCenter: dominantTrait,
+      dominantTone,
+    };
+  }
+
+  if (
+    dominantTone === "overloaded" ||
+    dominantTrait === "emotional_fatigue"
+  ) {
+    return {
+      state: "pulled_back_to_exhaustion",
+      gravityCenter: dominantTrait || dominantTone,
+      dominantTone,
+    };
+  }
+
+  if (
+    openingCount > 0 &&
+    guardedCount > 0
+  ) {
+    return {
+      state: "moving_between_opening_and_fear",
+      gravityCenter: dominantTrait,
+      dominantTone,
+    };
+  }
+
+  return {
+    state: "no_clear_gravity",
+    gravityCenter: dominantTrait || dominantTone || null,
+    dominantTone,
+  };
+}
+
+function buildEmotionalGravityNarrative(gravityState) {
+  if (!gravityState || gravityState.state === "not_enough_history") {
+    return "今はまだ、心がどこへ戻りやすいのかまでは見えていません。まずは、その時々の揺れ方を静かに見ている段階です。";
+  }
+
+  if (gravityState.state === "pulled_back_to_responsibility") {
+    return "最近の読みでは、『もう少し休みたい』『力を抜きたい』と思っても、再び責任や役割の感覚へ戻っていく流れがあるようです。それだけ長い間、気を張って支えてきたのかもしれません。";
+  }
+
+  if (gravityState.state === "pulled_back_to_protection") {
+    return "最近の読みでは、本音へ近づこうとしながらも、最終的には『自分を守る距離』へ戻っていく流れが何度か見えています。それは弱さではなく、心が安全を優先している反応なのかもしれません。";
+  }
+
+  if (gravityState.state === "pulled_back_to_exhaustion") {
+    return "最近の読みでは、『変わりたい』『整えたい』という気持ちがあっても、繰り返し疲労や重さへ引き戻されているようです。今は前へ進むことより、まず安心して力を抜ける場所が必要なのかもしれません。";
+  }
+
+  if (gravityState.state === "moving_between_opening_and_fear") {
+    return "最近の読みでは、『近づきたい気持ち』と『守りたい気持ち』の間を、心が何度も行き来しているようです。どちらかが間違っているのではなく、両方が今のあなたに必要な反応なのかもしれません。";
+  }
+
+  return "最近の読みでは、心が自然と戻りやすい感情の方向が少しずつ見え始めています。ただ、それを急いで変えようとしなくてもよいのかもしれません。";
+}
 function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null, previousPrimaryTrait = null, previousPatterns = [], expectedQuestionCount = 15) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
@@ -2279,6 +2532,12 @@ ${buildEmotionalStabilizationNarrative(analyzeEmotionalStabilization(responsePat
 
 【繰り返し戻ってくる感情】
 ${buildRecurringEmotionalCenterNarrative(analyzeRecurringEmotionalCenter(responsePattern, compound, previousPatterns))}
+
+【まだ触れ切れていない感情】
+${buildUnresolvedEmotionalLoopNarrative(analyzeUnresolvedEmotionalLoop(responsePattern, compound, silencePattern, previousPatterns))}
+
+【心が戻りやすい場所】
+${buildEmotionalGravityNarrative(analyzeEmotionalGravity(responsePattern, compound, silencePattern, previousPatterns))}
 
 【読みの深さ】
 ${getTrustDepthLabel(getTrustDepthState(responsePattern, previousPatterns))}
@@ -2467,6 +2726,10 @@ app.post("/deep-fortune", async (req, res) => {
     emotionalStabilizationNarrative: buildEmotionalStabilizationNarrative(analyzeEmotionalStabilization(responsePattern, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : [])),
     recurringEmotionalCenter: analyzeRecurringEmotionalCenter(responsePattern, compound, Array.isArray(previousPatterns) ? previousPatterns : []),
     recurringEmotionalCenterNarrative: buildRecurringEmotionalCenterNarrative(analyzeRecurringEmotionalCenter(responsePattern, compound, Array.isArray(previousPatterns) ? previousPatterns : [])),
+    unresolvedEmotionalLoop: analyzeUnresolvedEmotionalLoop(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : []),
+    unresolvedEmotionalLoopNarrative: buildUnresolvedEmotionalLoopNarrative(analyzeUnresolvedEmotionalLoop(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : [])),
+    emotionalGravity: analyzeEmotionalGravity(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : []),
+    emotionalGravityNarrative: buildEmotionalGravityNarrative(analyzeEmotionalGravity(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : [])),
 
     primaryCategory: compound.primaryCategory,
     secondaryCategory: compound.secondaryCategory,
@@ -2500,6 +2763,9 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
+
 
 
 
