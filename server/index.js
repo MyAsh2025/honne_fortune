@@ -3146,6 +3146,91 @@ function buildEmotionalAdaptationNarrative(adaptationState) {
 
   return "最近の読みでは、心がこれまでを生きる中で覚えてきた反応の流れが、少しずつ見え始めています。今はそれを急いで変えるより、どんな守り方だったのかを静かに見ていく段階なのかもしれません。";
 }
+
+function analyzeEmotionalMasking(
+  responsePattern,
+  compound,
+  silencePattern,
+  previousPatterns = []
+) {
+  if (!responsePattern || !compound) {
+    return {
+      state: "insufficient_signal",
+      surfaceEmotion: null,
+      underlyingEmotion: null,
+    };
+  }
+
+  const tone = getEmotionTone(compound);
+  const trait = compound?.primaryTrait || null;
+
+  const silenceStyle = silencePattern?.silenceStyle || "none";
+
+  if (
+    (
+      silenceStyle === "strong_avoidance" ||
+      silenceStyle === "partial_avoidance"
+    ) &&
+    tone === "low"
+  ) {
+    return {
+      state: "protective_masking",
+      surfaceEmotion: "distance",
+      underlyingEmotion: "fatigue",
+      dominantTone: tone,
+    };
+  }
+
+  if (
+    trait === "people_pleasing" &&
+    tone !== "high"
+  ) {
+    return {
+      state: "quiet_overextension",
+      surfaceEmotion: "kindness",
+      underlyingEmotion: "exhaustion",
+      dominantTone: tone,
+    };
+  }
+
+  if (
+    trait === "identity_confusion"
+  ) {
+    return {
+      state: "uncertain_self_masking",
+      surfaceEmotion: "calmness",
+      underlyingEmotion: "uncertainty",
+      dominantTone: tone,
+    };
+  }
+
+  return {
+    state: "soft_masking",
+    surfaceEmotion: "self_protection",
+    underlyingEmotion: "unspoken_emotion",
+    dominantTone: tone,
+  };
+}
+
+function buildEmotionalMaskingNarrative(maskingState) {
+  if (!maskingState || maskingState.state === "insufficient_signal") {
+    return "今はまだ、表に出しやすい感情と、奥に残っている感情の違いまでは見えていません。まずは、今の揺れ方そのものを静かに見ている段階です。";
+  }
+
+  if (maskingState.state === "protective_masking") {
+    return "最近の読みでは、表面では少し距離を取って落ち着こうとしているように見えても、その奥では『かなり疲れている感覚』が静かに残っているようです。無理に開こうとしないのは、心が安全を優先している反応なのかもしれません。";
+  }
+
+  if (maskingState.state === "quiet_overextension") {
+    return "最近の読みでは、表面では穏やかに頑張ろうとしているように見えても、その奥では『もう少し休みたい感覚』が静かに残っているようです。優しさの奥に、気づかれにくい疲労が積み重なっているのかもしれません。";
+  }
+
+  if (maskingState.state === "uncertain_self_masking") {
+    return "最近の読みでは、表面では落ち着いて見せようとしていても、その奥では『まだ自分の感情を整理し切れていない感覚』が静かに残っているようです。はっきり断定できないのは、心が慎重に距離を見ているからなのかもしれません。";
+  }
+
+  return "最近の読みでは、表に出しやすい感情と、まだ奥に残っている感情との間に、小さな距離があるようです。無理に剥がすより、その両方が同時に存在していることを静かに見ていく段階なのかもしれません。";
+}
 function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null, previousPrimaryTrait = null, previousPatterns = [], expectedQuestionCount = 15) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
@@ -3461,6 +3546,8 @@ app.post("/deep-fortune", async (req, res) => {
     emotionalResidueNarrative: buildEmotionalResidueNarrative(analyzeEmotionalResidue(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : [])),
     emotionalAdaptation: analyzeEmotionalAdaptation(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : []),
     emotionalAdaptationNarrative: buildEmotionalAdaptationNarrative(analyzeEmotionalAdaptation(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : [])),
+    emotionalMasking: analyzeEmotionalMasking(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : []),
+    emotionalMaskingNarrative: buildEmotionalMaskingNarrative(analyzeEmotionalMasking(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : [])),
 
     primaryCategory: compound.primaryCategory,
     secondaryCategory: compound.secondaryCategory,
@@ -3494,6 +3581,8 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
 
 
 
