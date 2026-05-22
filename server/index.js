@@ -3029,6 +3029,123 @@ function buildEmotionalResidueNarrative(residueState) {
 
   return "最近の読みでは、感情そのものは落ち着きながらも、その時に生まれた小さな反応だけが静かに残っているようです。今はそれを急いで消そうとしなくてもよいのかもしれません。";
 }
+
+function analyzeEmotionalAdaptation(
+  responsePattern,
+  compound,
+  silencePattern,
+  previousPatterns = []
+) {
+  if (!responsePattern || !Array.isArray(previousPatterns) || previousPatterns.length < 2) {
+    return {
+      state: "not_enough_history",
+      adaptation: null,
+    };
+  }
+
+  const currentTrait = compound?.primaryTrait || null;
+  const currentTone = getEmotionTone(compound);
+  const currentSilence = silencePattern?.silenceStyle || "none";
+
+  const traits = previousPatterns
+    .map((p) => p?.primaryTrait || p?.trait || null)
+    .filter(Boolean);
+
+  const tones = previousPatterns
+    .map((p) => p?.emotionTone || p?.tone || null)
+    .filter(Boolean);
+
+  const silenceStyles = previousPatterns
+    .map((p) => p?.silenceStyle || p?.silencePattern?.silenceStyle || null)
+    .filter(Boolean);
+
+  const allTraits = [...traits, currentTrait].filter(Boolean);
+  const allTones = [...tones, currentTone].filter(Boolean);
+  const allSilence = [...silenceStyles, currentSilence].filter(Boolean);
+
+  const countBy = (items) =>
+    items.reduce((acc, item) => {
+      acc[item] = (acc[item] || 0) + 1;
+      return acc;
+    }, {});
+
+  const traitCounts = countBy(allTraits);
+  const toneCounts = countBy(allTones);
+
+  const dominantTrait =
+    Object.keys(traitCounts).sort((a, b) => traitCounts[b] - traitCounts[a])[0] || null;
+
+  const dominantTone =
+    Object.keys(toneCounts).sort((a, b) => toneCounts[b] - toneCounts[a])[0] || null;
+
+  const silenceCount = allSilence.filter((v) =>
+    v === "strong_avoidance" ||
+    v === "partial_avoidance"
+  ).length;
+
+  const recurringTraitCount =
+    dominantTrait ? traitCounts[dominantTrait] || 0 : 0;
+
+  if (
+    recurringTraitCount >= 2 &&
+    silenceCount >= 2 &&
+    dominantTrait === "identity_confusion"
+  ) {
+    return {
+      state: "protective_adaptation",
+      adaptation: dominantTrait,
+      dominantTone,
+    };
+  }
+
+  if (
+    recurringTraitCount >= 2 &&
+    dominantTrait === "emotional_fatigue"
+  ) {
+    return {
+      state: "survival_adaptation",
+      adaptation: dominantTrait,
+      dominantTone,
+    };
+  }
+
+  if (
+    dominantTone === "low" &&
+    silenceCount >= 1
+  ) {
+    return {
+      state: "quiet_adaptation",
+      adaptation: dominantTone,
+      dominantTone,
+    };
+  }
+
+  return {
+    state: "soft_adaptation",
+    adaptation: dominantTrait || dominantTone || null,
+    dominantTone,
+  };
+}
+
+function buildEmotionalAdaptationNarrative(adaptationState) {
+  if (!adaptationState || adaptationState.state === "not_enough_history") {
+    return "今はまだ、心が身につけてきた守り方までは見えていません。まずは、その時々の揺れ方を静かに見ている段階です。";
+  }
+
+  if (adaptationState.state === "protective_adaptation") {
+    return "最近の読みでは、『少し距離を取って自分を守ること』が、心にとって自然な反応になっているようです。それは弱さではなく、これまで自分を守るために身につけてきた感覚なのかもしれません。";
+  }
+
+  if (adaptationState.state === "survival_adaptation") {
+    return "最近の読みでは、『無理をしてでも動き続けること』が、心にとって当たり前の反応になっているようです。それは怠けられない性格というより、長く耐えるために覚えてきた守り方なのかもしれません。";
+  }
+
+  if (adaptationState.state === "quiet_adaptation") {
+    return "最近の読みでは、『大きく感情を動かしすぎないこと』が、自然な落ち着き方として身についているようです。それは感情が無いというより、心が静かな距離感を保ちながら自分を守っているのかもしれません。";
+  }
+
+  return "最近の読みでは、心がこれまでを生きる中で覚えてきた反応の流れが、少しずつ見え始めています。今はそれを急いで変えるより、どんな守り方だったのかを静かに見ていく段階なのかもしれません。";
+}
 function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null, previousPrimaryTrait = null, previousPatterns = [], expectedQuestionCount = 15) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
@@ -3137,6 +3254,9 @@ ${buildEmotionalAfterimageNarrative(analyzeEmotionalAfterimage(responsePattern, 
 
 【感情のあとに残る小さな反応】
 ${buildEmotionalResidueNarrative(analyzeEmotionalResidue(responsePattern, compound, silencePattern, previousPatterns))}
+
+【心が身につけてきた守り方】
+${buildEmotionalAdaptationNarrative(analyzeEmotionalAdaptation(responsePattern, compound, silencePattern, previousPatterns))}
 
 【読みの深さ】
 ${getTrustDepthLabel(getTrustDepthState(responsePattern, previousPatterns))}
@@ -3339,6 +3459,8 @@ app.post("/deep-fortune", async (req, res) => {
     emotionalAfterimageNarrative: buildEmotionalAfterimageNarrative(analyzeEmotionalAfterimage(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : [])),
     emotionalResidue: analyzeEmotionalResidue(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : []),
     emotionalResidueNarrative: buildEmotionalResidueNarrative(analyzeEmotionalResidue(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : [])),
+    emotionalAdaptation: analyzeEmotionalAdaptation(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : []),
+    emotionalAdaptationNarrative: buildEmotionalAdaptationNarrative(analyzeEmotionalAdaptation(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : [])),
 
     primaryCategory: compound.primaryCategory,
     secondaryCategory: compound.secondaryCategory,
@@ -3372,6 +3494,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
