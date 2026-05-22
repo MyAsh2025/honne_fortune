@@ -1751,6 +1751,447 @@ function buildEmotionalDriftNarrative(emotionalDrift) {
 
   return "前回と今回を比べると、心の距離には小さな移動があります。大切なのは、良くなったか悪くなったかではなく、どこで近づき、どこで守り直したのかを静かに見ることです。";
 }
+
+function buildSessionDriftSummary(responsePattern, compound, silencePattern, previousPatterns = []) {
+  if (!responsePattern || !Array.isArray(previousPatterns) || previousPatterns.length < 2) {
+    return "まだ読みの回数は多くありません。今は長い流れを決めつけるより、今回と前回の間にある小さな変化を静かに見ている段階です。";
+  }
+
+  const styles = previousPatterns
+    .map((p) => p?.responseStyle || p?.style || null)
+    .filter(Boolean);
+
+  const traits = previousPatterns
+    .map((p) => p?.primaryTrait || p?.trait || null)
+    .filter(Boolean);
+
+  const opennessStates = previousPatterns
+    .map((p) => p?.opennessState || p?.openness || null)
+    .filter(Boolean);
+
+  const trustStates = previousPatterns
+    .map((p) => p?.trustDepthState || p?.trustDepth || null)
+    .filter(Boolean);
+
+  const silenceStyles = previousPatterns
+    .map((p) => p?.silenceStyle || p?.silencePattern?.silenceStyle || null)
+    .filter(Boolean);
+
+  const currentStyle = responsePattern.responseStyle;
+  const currentTrait = compound?.primaryTrait || null;
+  const currentOpenness = getOpennessState(responsePattern);
+  const currentTrust = getTrustDepthState(responsePattern, previousPatterns);
+  const currentSilence = silencePattern?.silenceStyle || "none";
+
+  const recentStyles = [...styles, currentStyle].filter(Boolean);
+  const recentTraits = [...traits, currentTrait].filter(Boolean);
+  const recentOpenness = [...opennessStates, currentOpenness].filter(Boolean);
+  const recentTrust = [...trustStates, currentTrust].filter(Boolean);
+  const recentSilence = [...silenceStyles, currentSilence].filter(Boolean);
+
+  const countBy = (items) =>
+    items.reduce((acc, item) => {
+      acc[item] = (acc[item] || 0) + 1;
+      return acc;
+    }, {});
+
+  const mostFrequent = (items) => {
+    const counts = countBy(items);
+    return Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || null;
+  };
+
+  const dominantTrait = mostFrequent(recentTraits);
+  const guardedCount = recentOpenness.filter((v) => v === "guarded" || v === "distant" || v === "quiet").length;
+  const openingCount = recentOpenness.filter((v) => v === "opening" || v === "exposed").length;
+  const cautiousCount = recentTrust.filter((v) => v === "surface" || v === "cautious").length;
+  const engagedCount = recentTrust.filter((v) => v === "engaged" || v === "deepening").length;
+  const silenceCount = recentSilence.filter((v) => v === "strong_avoidance" || v === "partial_avoidance").length;
+  const expressiveCount = recentStyles.filter((v) => v === "fluctuating" || v === "unstable").length;
+  const defensiveCount = recentStyles.filter((v) => v === "defensive" || v === "suppressed" || v === "shallow").length;
+
+  if (openingCount > guardedCount && engagedCount >= cautiousCount) {
+    return "最近の読みでは、心が少しずつ防御だけではなく、自分の揺れそのものを見ようとする方向へ動いているようです。大きく開いたというより、見ても大丈夫な範囲を少しずつ確かめている流れに近いかもしれません。";
+  }
+
+  if (guardedCount > openingCount && silenceCount >= 2) {
+    return "最近の読みでは、心がまだ慎重に距離を取りながら反応している流れがあります。それは停滞ではなく、触れるにはまだ早い感情を、無理に言葉へ変えないよう守っている状態かもしれません。";
+  }
+
+  if (expressiveCount > defensiveCount) {
+    return "最近の読みでは、感情をひとつの形に閉じ込めるより、揺れたまま見せる反応が少し増えています。まだ答えは定まっていなくても、本音の近くで動いている部分があるようです。";
+  }
+
+  if (defensiveCount >= expressiveCount && dominantTrait) {
+    return "最近の読みでは、同じ本音のテーマに何度か触れているようです。これは固定された性格ではなく、今の心が繰り返し大切に扱おうとしている場所なのかもしれません。";
+  }
+
+  return "最近の読みには、はっきりした変化というより、小さな揺れの積み重なりが見えます。急いで意味を決めるより、どの反応が繰り返し出ているのかを静かに見ていく段階です。";
+}
+
+function analyzeEmotionalRelapse(responsePattern, silencePattern, previousPatterns = []) {
+  const previous = getLastPreviousPattern(previousPatterns);
+
+  if (!responsePattern || !previous) {
+    return {
+      state: "first_observation",
+      hasRelapseSignal: false,
+      reason: "not_enough_history",
+    };
+  }
+
+  const currentOpenness = getOpennessState(responsePattern);
+  const currentTrust = getTrustDepthState(responsePattern, previousPatterns);
+  const currentSilence = silencePattern?.silenceStyle || "none";
+
+  const previousOpenness =
+    previous?.opennessState ||
+    previous?.openness ||
+    null;
+
+  const previousTrust =
+    previous?.trustDepthState ||
+    previous?.trustDepth ||
+    null;
+
+  const previousSilence =
+    previous?.silenceStyle ||
+    previous?.silencePattern?.silenceStyle ||
+    "none";
+
+  const opennessDrift = getOpennessDrift(currentOpenness, previousOpenness);
+  const trustDrift = getTrustDrift(currentTrust, previousTrust);
+  const silenceDrift = getSilenceDrift(silencePattern, previousSilence);
+
+  const protectiveRetreat =
+    opennessDrift === "protective_retreat" ||
+    trustDrift === "needs_more_safety";
+
+  const silenceIncreased =
+    silenceDrift === "more_silence";
+
+  const currentStyle = responsePattern.responseStyle;
+  const defensiveStyle =
+    currentStyle === "defensive" ||
+    currentStyle === "suppressed" ||
+    currentStyle === "shallow";
+
+  if (protectiveRetreat && silenceIncreased) {
+    return {
+      state: "strong_protective_return",
+      hasRelapseSignal: true,
+      reason: "retreat_and_silence_increased",
+      opennessDrift,
+      trustDrift,
+      silenceDrift,
+    };
+  }
+
+  if (protectiveRetreat && defensiveStyle) {
+    return {
+      state: "soft_protective_return",
+      hasRelapseSignal: true,
+      reason: "retreat_and_defensive_style",
+      opennessDrift,
+      trustDrift,
+      silenceDrift,
+    };
+  }
+
+  if (silenceIncreased && defensiveStyle) {
+    return {
+      state: "silence_return",
+      hasRelapseSignal: true,
+      reason: "silence_and_defensive_style",
+      opennessDrift,
+      trustDrift,
+      silenceDrift,
+    };
+  }
+
+  return {
+    state: "no_clear_relapse",
+    hasRelapseSignal: false,
+    reason: "no_compound_retreat_signal",
+    opennessDrift,
+    trustDrift,
+    silenceDrift,
+  };
+}
+
+function buildEmotionalRelapseNarrative(relapseState) {
+  if (!relapseState || relapseState.state === "first_observation") {
+    return "今回はまだ、揺り戻しとして読むほどの履歴はありません。今はこの瞬間の心の距離を、静かに見ている段階です。";
+  }
+
+  if (relapseState.state === "strong_protective_return") {
+    return "少し触れられた後で、心がもう一度距離を取り始めているようです。それは失敗ではなく、触れた感情が大きかったぶん、安全な場所を確かめ直している流れかもしれません。";
+  }
+
+  if (relapseState.state === "soft_protective_return") {
+    return "前より閉じたように見える反応が少しあります。ただ、それは後退というより、心が本音に近づく前に、もう一度自分を守る姿勢を取り直しているのかもしれません。";
+  }
+
+  if (relapseState.state === "silence_return") {
+    return "今回は、沈黙や距離を取る反応が少し戻ってきているようです。言葉にしないことにも、今は守る意味があるのかもしれません。";
+  }
+
+  return "今のところ、大きな揺り戻しとして読む必要はなさそうです。心はまだ揺れながらも、今見られる範囲を少しずつ確かめているようです。";
+}
+
+function analyzeEmotionalStabilization(responsePattern, silencePattern, previousPatterns = []) {
+  if (!responsePattern || !Array.isArray(previousPatterns) || previousPatterns.length < 2) {
+    return {
+      state: "not_enough_history",
+      stabilized: false,
+    };
+  }
+
+  const previous = getLastPreviousPattern(previousPatterns);
+
+  const currentOpenness = getOpennessState(responsePattern);
+  const currentTrust = getTrustDepthState(responsePattern, previousPatterns);
+  const currentSilence = silencePattern?.silenceStyle || "none";
+
+  const previousOpenness =
+    previous?.opennessState ||
+    previous?.openness ||
+    null;
+
+  const previousTrust =
+    previous?.trustDepthState ||
+    previous?.trustDepth ||
+    null;
+
+  const previousSilence =
+    previous?.silenceStyle ||
+    previous?.silencePattern?.silenceStyle ||
+    "none";
+
+  const opennessDrift = getOpennessDrift(currentOpenness, previousOpenness);
+  const trustDrift = getTrustDrift(currentTrust, previousTrust);
+  const silenceDrift = getSilenceDrift(silencePattern, previousSilence);
+
+  const currentStyle = responsePattern.responseStyle;
+
+  const stableTrust =
+    trustDrift === "stable_distance" ||
+    trustDrift === "closer_to_reading" ||
+    trustDrift === "needs_more_safety";
+
+  const stableOpenness =
+    opennessDrift === "stable_opening" ||
+    opennessDrift === "stable_distance" ||
+    opennessDrift === "slightly_opening" ||
+    opennessDrift === "protective_retreat";
+
+  const silenceSoftened =
+    silenceDrift === "less_silence" ||
+    silenceDrift === "stable_answering" ||
+    silenceDrift === "stable_partial_silence";
+
+  const nonDefensiveStyle =
+    currentStyle !== "defensive" &&
+    currentStyle !== "suppressed";
+
+  if (
+    opennessDrift === "protective_retreat" &&
+    trustDrift === "needs_more_safety" &&
+    silenceDrift === "more_silence"
+  ) {
+    return {
+      state: "protective_stabilizing",
+      stabilized: true,
+      opennessDrift,
+      trustDrift,
+      silenceDrift,
+    };
+  }
+
+  if (
+    stableTrust &&
+    stableOpenness &&
+    silenceSoftened &&
+    nonDefensiveStyle
+  ) {
+    return {
+      state: "gradual_stabilizing",
+      stabilized: true,
+      opennessDrift,
+      trustDrift,
+      silenceDrift,
+    };
+  }
+
+  if (
+    stableTrust &&
+    silenceSoftened
+  ) {
+    return {
+      state: "quiet_stabilizing",
+      stabilized: true,
+      opennessDrift,
+      trustDrift,
+      silenceDrift,
+    };
+  }
+
+  return {
+    state: "still_unstable",
+    stabilized: false,
+    opennessDrift,
+    trustDrift,
+    silenceDrift,
+  };
+}
+
+function buildEmotionalStabilizationNarrative(stabilizationState) {
+  if (!stabilizationState || stabilizationState.state === "not_enough_history") {
+    return "今はまだ、安定として読むほど長い流れは見えていません。まずは、どんな揺れ方をしているのかを静かに見ている段階です。";
+  }
+
+  if (stabilizationState.state === "gradual_stabilizing") {
+    return "最近の読みでは、大きく揺れ動くというより、少しずつ『今の自分を見ても大丈夫な距離』が増えてきているようです。急に変わったわけではなく、心が少しずつ安心できる場所を探し始めているのかもしれません。";
+  }
+
+  if (stabilizationState.state === "quiet_stabilizing") {
+    return "強い変化ではありませんが、最近の読みには少しずつ落ち着いた流れも見え始めています。無理に前へ進むというより、『今のままでも見ていられる感覚』が少し育っているのかもしれません。";
+  }
+
+  if (stabilizationState.state === "protective_stabilizing") {
+    return "今回は少し距離を取り直しているようですが、それでも完全に崩れているわけではありません。揺り戻しの中で、心が自分にとって安全な落ち着き方を探している流れかもしれません。";
+  }
+
+  return "今はまだ、安定よりも揺れの途中にいる時間が続いているようです。ただ、その揺れ自体が、心が今の距離を確かめようとしている流れなのかもしれません。";
+}
+
+function analyzeRecurringEmotionalCenter(responsePattern, compound, previousPatterns = []) {
+  if (!responsePattern || !Array.isArray(previousPatterns) || previousPatterns.length < 2) {
+    return {
+      state: "not_enough_history",
+      recurringCenter: null,
+    };
+  }
+
+  const traits = previousPatterns
+    .map((p) => p?.primaryTrait || p?.trait || null)
+    .filter(Boolean);
+
+  const tones = previousPatterns
+    .map((p) => p?.emotionTone || p?.tone || null)
+    .filter(Boolean);
+
+  const opennessStates = previousPatterns
+    .map((p) => p?.opennessState || p?.openness || null)
+    .filter(Boolean);
+
+  const trustStates = previousPatterns
+    .map((p) => p?.trustDepthState || p?.trustDepth || null)
+    .filter(Boolean);
+
+  const currentTrait = compound?.primaryTrait || null;
+  const currentTone = getEmotionTone(compound);
+  const currentOpenness = getOpennessState(responsePattern);
+  const currentTrust = getTrustDepthState(responsePattern, previousPatterns);
+
+  const allTraits = [...traits, currentTrait].filter(Boolean);
+  const allTones = [...tones, currentTone].filter(Boolean);
+  const allOpenness = [...opennessStates, currentOpenness].filter(Boolean);
+  const allTrust = [...trustStates, currentTrust].filter(Boolean);
+
+  const countBy = (items) =>
+    items.reduce((acc, item) => {
+      acc[item] = (acc[item] || 0) + 1;
+      return acc;
+    }, {});
+
+  const mostFrequent = (items) => {
+    const counts = countBy(items);
+    return Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || null;
+  };
+
+  const dominantTrait = mostFrequent(allTraits);
+  const dominantTone = mostFrequent(allTones);
+
+  const guardedCount = allOpenness.filter((v) =>
+    v === "guarded" ||
+    v === "distant" ||
+    v === "quiet"
+  ).length;
+
+  const openingCount = allOpenness.filter((v) =>
+    v === "opening" ||
+    v === "exposed"
+  ).length;
+
+  const cautiousCount = allTrust.filter((v) =>
+    v === "surface" ||
+    v === "cautious"
+  ).length;
+
+  const engagedCount = allTrust.filter((v) =>
+    v === "engaged" ||
+    v === "deepening"
+  ).length;
+
+  if (
+    dominantTrait === "identity_confusion" &&
+    guardedCount >= openingCount
+  ) {
+    return {
+      state: "searching_safe_self",
+      recurringCenter: dominantTrait,
+      dominantTone,
+    };
+  }
+
+  if (
+    dominantTrait === "emotional_fatigue" ||
+    dominantTone === "overloaded"
+  ) {
+    return {
+      state: "carrying_too_much",
+      recurringCenter: dominantTrait || dominantTone,
+      dominantTone,
+    };
+  }
+
+  if (
+    engagedCount >= cautiousCount &&
+    openingCount > 0
+  ) {
+    return {
+      state: "trying_to_approach_feelings",
+      recurringCenter: dominantTrait,
+      dominantTone,
+    };
+  }
+
+  return {
+    state: "unclear_center",
+    recurringCenter: dominantTrait || dominantTone || null,
+    dominantTone,
+  };
+}
+
+function buildRecurringEmotionalCenterNarrative(recurringCenterState) {
+  if (!recurringCenterState || recurringCenterState.state === "not_enough_history") {
+    return "今はまだ、繰り返し戻ってくる感情の中心までは見えていません。まずは、その時々の揺れ方を静かに見ている段階です。";
+  }
+
+  if (recurringCenterState.state === "searching_safe_self") {
+    return "最近の読みでは、違う悩みに見える場面の中でも、『安心して自分でいられる場所を探している感覚』が繰り返し現れているようです。";
+  }
+
+  if (recurringCenterState.state === "carrying_too_much") {
+    return "最近の読みでは、表面のテーマが変わっても、『ひとりで抱え込み続けてしまう重さ』が何度か同じように現れているようです。";
+  }
+
+  if (recurringCenterState.state === "trying_to_approach_feelings") {
+    return "最近の読みでは、まだ揺れながらも、『自分の感情を少し見てみたい』という流れが何度か繰り返し現れているようです。";
+  }
+
+  return "最近の読みでは、違うテーマの中にも、似た感情の揺れ方が少しずつ重なって見えています。今はまだ、それを急いで意味づけしないことも大切なのかもしれません。";
+}
 function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null, previousPrimaryTrait = null, previousPatterns = [], expectedQuestionCount = 15) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
@@ -1826,6 +2267,18 @@ ${buildRepeatSessionMemoryNarrative(responsePattern, previousPatterns)}
 
 【感情の移動】
 ${buildEmotionalDriftNarrative(analyzeEmotionalDrift(responsePattern, silencePattern, previousPatterns))}
+
+【最近の感情の流れ】
+${buildSessionDriftSummary(responsePattern, compound, silencePattern, previousPatterns)}
+
+【揺り戻しのサイン】
+${buildEmotionalRelapseNarrative(analyzeEmotionalRelapse(responsePattern, silencePattern, previousPatterns))}
+
+【落ち着き始めている流れ】
+${buildEmotionalStabilizationNarrative(analyzeEmotionalStabilization(responsePattern, silencePattern, previousPatterns))}
+
+【繰り返し戻ってくる感情】
+${buildRecurringEmotionalCenterNarrative(analyzeRecurringEmotionalCenter(responsePattern, compound, previousPatterns))}
 
 【読みの深さ】
 ${getTrustDepthLabel(getTrustDepthState(responsePattern, previousPatterns))}
@@ -2007,6 +2460,13 @@ app.post("/deep-fortune", async (req, res) => {
     trustDepthLabel: getTrustDepthLabel(getTrustDepthState(responsePattern, Array.isArray(previousPatterns) ? previousPatterns : [])),
     emotionalDrift: analyzeEmotionalDrift(responsePattern, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : []),
     emotionalDriftNarrative: buildEmotionalDriftNarrative(analyzeEmotionalDrift(responsePattern, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : [])),
+    sessionDriftSummary: buildSessionDriftSummary(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : []),
+    emotionalRelapse: analyzeEmotionalRelapse(responsePattern, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : []),
+    emotionalRelapseNarrative: buildEmotionalRelapseNarrative(analyzeEmotionalRelapse(responsePattern, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : [])),
+    emotionalStabilization: analyzeEmotionalStabilization(responsePattern, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : []),
+    emotionalStabilizationNarrative: buildEmotionalStabilizationNarrative(analyzeEmotionalStabilization(responsePattern, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : [])),
+    recurringEmotionalCenter: analyzeRecurringEmotionalCenter(responsePattern, compound, Array.isArray(previousPatterns) ? previousPatterns : []),
+    recurringEmotionalCenterNarrative: buildRecurringEmotionalCenterNarrative(analyzeRecurringEmotionalCenter(responsePattern, compound, Array.isArray(previousPatterns) ? previousPatterns : [])),
 
     primaryCategory: compound.primaryCategory,
     secondaryCategory: compound.secondaryCategory,
@@ -2040,6 +2500,11 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
+
+
+
 
 
 
