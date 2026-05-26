@@ -833,6 +833,55 @@ function buildDynamicHiddenNeed(compound) {
 「ちゃんとしなければ」と力む前に、自分の本音を否定しなくていい安心感を求めています。`;
 }
 
+function buildQuietHonestCoreNarrative(compound) {
+  const trait = compound?.primaryTrait || "";
+
+  if (trait === "emotional_fatigue") {
+    return `頑張り続けることに慣れた感情の奥で、
+
+休みたいという小さな願いが、
+まだ静かに揺れているようでした。`;
+  }
+
+  if (trait === "people_pleasing") {
+    return `誰かを優先してきた時間の奥で、
+
+自分の声を消しきれない感覚が、
+まだ静かに残っているようでした。`;
+  }
+
+  if (trait === "attachment_anxiety") {
+    return `近づきたい気持ちの奥で、
+
+離れることへの小さな怖さが、
+まだ静かに揺れているようでした。`;
+  }
+
+  if (trait === "future_anxiety") {
+    return `先のことを考えるほど、
+
+安心したい感情が、
+まだ言葉になる前の場所で揺れているようでした。`;
+  }
+
+  if (trait === "identity_confusion") {
+    return `自分を決めきれない静けさの奥で、
+
+無理に形を作らなくてもいい感覚が、
+まだ小さく残っているようでした。`;
+  }
+
+  if (trait === "role_pressure") {
+    return `役割を果たそうとしてきた時間の奥で、
+
+少しだけ力を抜きたい感情が、
+まだ静かに残っているようでした。`;
+  }
+
+  return `言葉になりきる前の本音が、
+
+まだ少し内側で揺れているようでした。`;
+}
 function buildDynamicSign(compound) {
   return `今は、何を選ぶかよりも、なぜそこまで心が反応しているのかを見る時期です。
 「${getTraitLabel(compound.primaryTrait)}」が出ている場所に、次のあなたへ進むための本音があります。`;
@@ -1491,6 +1540,80 @@ function getTrustDepthLabel(trustDepthState) {
   return labels[trustDepthState] || labels.unknown;
 }
 
+
+function buildEmotionalContactNarrative(
+  responsePattern,
+  silencePattern,
+  previousPatterns = []
+) {
+  if (!responsePattern) {
+    return "感情は、まだ静かに揺れ方を探している途中のようでした。";
+  }
+
+  const opennessState = getOpennessState(responsePattern);
+  const trustDepthState = getTrustDepthState(responsePattern, previousPatterns);
+  const silenceStyle = silencePattern?.silenceStyle || "none";
+  const style = responsePattern.responseStyle;
+
+  if (
+    style === "defensive" ||
+    opennessState === "guarded" ||
+    trustDepthState === "cautious"
+  ) {
+    return `感情は、
+急に近づこうとするより、
+
+まだ少し、
+触れ方を確かめながら動いているようでした。
+
+強く閉じているというより、
+傷つかない距離を静かに測っているのかもしれません。`;
+  }
+
+  if (
+    style === "shallow" ||
+    opennessState === "distant"
+  ) {
+    return `今の感情は、
+深く入り込むより、
+
+少し距離を保ちながら、
+静かに様子を見ているようでした。
+
+その距離もまた、
+心が安全を確かめるための反応なのかもしれません。`;
+  }
+
+  if (
+    style === "unstable" ||
+    style === "fluctuating"
+  ) {
+    return `近づきたい気持ちと、
+まだ慎重でいたい感覚が、
+
+心の中で静かに揺れているようでした。
+
+揺れているのは、
+感情が動き始めている途中だからかもしれません。`;
+  }
+
+  if (
+    silenceStyle === "strong_avoidance" ||
+    silenceStyle === "partial_avoidance"
+  ) {
+    return `まだ言葉になりきらない感情が、
+少し内側に残っているようでした。
+
+触れないまま置かれている場所にも、
+今の心の温度が残っているのかもしれません。`;
+  }
+
+  return `感情は、
+まだ無理に答えを決めようとはせず、
+
+どこまで近づいても大丈夫そうかを、
+静かに確かめているようでした。`;
+}
 function buildTrustDepthNarrative(responsePattern, previousPatterns = []) {
   const trustDepthState = getTrustDepthState(responsePattern, previousPatterns);
 
@@ -1715,6 +1838,21 @@ function analyzeEmotionalDrift(responsePattern, silencePattern, previousPatterns
   };
 }
 
+
+function buildIntegratedEmotionMovementNarrative(
+  driftState,
+  sessionSummary,
+  relapseState,
+  stabilizationState
+) {
+  return `前回よりも、心が少し距離を取り直しているようです。
+
+最近の読みでは、まだ慎重に距離を取りながら反応している流れがあります。
+
+少し触れられたあとで、もう一度安全な場所を確かめ直そうとする動きも見えています。
+
+それは停滞というより、心が今の距離を静かに確かめている流れなのかもしれません。`;
+}
 function buildEmotionalDriftNarrative(emotionalDrift) {
   if (!emotionalDrift || emotionalDrift.opennessDrift === "first_observation") {
     return "今回はまだ、前回からの移動ではなく、今この瞬間の心の距離を見ています。次に読みを重ねることで、心が近づいたのか、距離を取ったのか、静かに見えやすくなります。";
@@ -2424,7 +2562,7 @@ function analyzeEmotionalGravity(responsePattern, compound, silencePattern, prev
 
 function buildEmotionalGravityNarrative(gravityState) {
   if (!gravityState || gravityState.state === "not_enough_history") {
-    return "今はまだ、心がどこへ戻りやすいのかまでは見えていません。まずは、その時々の揺れ方を静かに見ている段階です。";
+    return "感情はまだ、どこへ戻っていくのかを静かに確かめている途中のようです。";
   }
 
   if (gravityState.state === "pulled_back_to_responsibility") {
@@ -2552,7 +2690,7 @@ function analyzeEmotionalResonance(
 
 function buildEmotionalResonanceNarrative(resonanceState) {
   if (!resonanceState || resonanceState.state === "not_enough_history") {
-    return "今はまだ、どの感情に心が強く反応しやすいのかまでは見えていません。まずは、その時々の揺れ方を静かに見ている段階です。";
+    return "強く反応する感情は、まだはっきり名前になる前の場所で、静かに揺れているようです。";
   }
 
   if (resonanceState.state === "resonating_with_rejection") {
@@ -2685,7 +2823,7 @@ function analyzeEmotionalInertia(
 
 function buildEmotionalInertiaNarrative(inertiaState) {
   if (!inertiaState || inertiaState.state === "not_enough_history") {
-    return "今はまだ、心が戻りやすい感情速度までは見えていません。まずは、その時々の揺れ方を静かに見ている段階です。";
+    return "感情の速度はまだ定まりきらず、近づいたり離れたりしながら、静かに揺れているようです。";
   }
 
   if (inertiaState.state === "returning_to_responsibility_speed") {
@@ -2795,6 +2933,49 @@ function analyzeEmotionalEcho(
 }
 
 
+function buildResidualAfterwaveNarrative(
+  responsePattern,
+  compound,
+  silencePattern,
+  previousPatterns = []
+) {
+  const echoState = analyzeEmotionalEcho(responsePattern, compound, silencePattern, previousPatterns);
+  const afterimageState = analyzeEmotionalAfterimage(responsePattern, compound, silencePattern, previousPatterns);
+  const residueState = analyzeEmotionalResidue(responsePattern, compound, silencePattern, previousPatterns);
+  const maskingState = analyzeEmotionalMasking(responsePattern, compound, silencePattern, previousPatterns);
+
+  const integrated = buildIntegratedEmotionalAfterwaveNarrative(
+    echoState,
+    afterimageState,
+    residueState
+  );
+
+  const masking = buildEmotionalMaskingNarrative(maskingState);
+
+  if (
+    echoState?.state === "not_enough_history" &&
+    afterimageState?.state === "not_enough_history" &&
+    residueState?.state === "not_enough_history"
+  ) {
+    return `感情の余波はまだ、
+はっきり形になる前の場所で、
+
+静かに揺れているようでした。`;
+  }
+
+  if (masking && masking.includes("表に出た感情")) {
+    return `${integrated}
+
+${masking}`;
+  }
+
+  return `${integrated}
+
+表に出た感情と、
+まだ奥に残っている感情のあいだに、
+
+小さな距離が残っているようでした。`;
+}
 function buildIntegratedEmotionalAfterwaveNarrative(
   echoState,
   afterimageState,
@@ -3282,7 +3463,10 @@ function buildEmotionalMaskingNarrative(maskingState) {
     return "最近の読みでは、表面では落ち着いて見せようとしていても、その奥では『まだ自分の感情を整理し切れていない感覚』が静かに残っているようです。はっきり断定できないのは、心が慎重に距離を見ているからなのかもしれません。";
   }
 
-  return "最近の読みでは、表に出しやすい感情と、まだ奥に残っている感情との間に、小さな距離があるようです。無理に剥がすより、その両方が同時に存在していることを静かに見ていく段階なのかもしれません。";
+  return `表に出た感情と、
+まだ奥に残っている感情のあいだに、
+
+小さな距離が残っているようでした。`;
 }
 function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null, previousPrimaryTrait = null, previousPatterns = [], expectedQuestionCount = 15) {
   const categoryResult = getPrimaryCategory(answers);
@@ -3322,102 +3506,44 @@ function stablePaidFortune(score, answers = [], depth = "deep", previousResponse
   return `【読みはじめ】
 ${buildReadingLead(compound)}
 
-【奥にある本音】
-${buildDynamicOpening(compound)}
-
-【今の心】
+【観測】
 今回の感情温度は「${getEmotionToneLabel(emotionTone)}」です。
 ${getEmotionTonePhrase(emotionTone)}
 
-【感情の揺れ方】
-${buildResponsePatternNarrative(responsePattern)}
+${buildDynamicOpening(compound)}
 
-【心を守る反応】
-${buildResponseStyleTraitNarrative(responsePattern, compound)}
+まだ言葉にならない反応が、
+少し内側に残っているようでした。
 
-【変化の流れ】
-${buildContinuityNarrative(responsePattern, resolvedPreviousResponseStyle, resolvedPreviousEmotionTone)}
+【流れ】
+少し触れたあとで、
+もう一度静かに距離を測り直しているようでした。
 
-【回復の流れ】
-${buildRecoveryTrajectory(responsePattern, resolvedPreviousResponseStyle)}
+近づきたい気持ちと、
+まだ慎重でいたい感覚が、
 
-【読みへの近づき方】
-${buildTrustProgression(responsePattern, resolvedPreviousResponseStyle)}
+同じ場所に残っているようでした。
 
-【隠れている感情】
-${buildEmotionalMaskingNarrative(responsePattern)}
-
-【本音への近さ】
-${getOpennessLabel(getOpennessState(responsePattern))}
-${buildOpennessNarrative(responsePattern)}
-
-【続いている矛盾】
-${buildContradictionPersistence(compound, resolvedPreviousPrimaryTrait)}
-
-【感情履歴の流れ】
-${buildRepeatSessionMemoryNarrative(responsePattern, previousPatterns)}
-
-【感情の移動】
-${buildEmotionalDriftNarrative(analyzeEmotionalDrift(responsePattern, silencePattern, previousPatterns))}
-
-【最近の感情の流れ】
-${buildSessionDriftSummary(responsePattern, compound, silencePattern, previousPatterns)}
-
-【揺り戻しのサイン】
-${buildEmotionalRelapseNarrative(analyzeEmotionalRelapse(responsePattern, silencePattern, previousPatterns))}
-
-【落ち着き始めている流れ】
-${buildEmotionalStabilizationNarrative(analyzeEmotionalStabilization(responsePattern, silencePattern, previousPatterns))}
-
-【繰り返し戻ってくる感情】
-${buildRecurringEmotionalCenterNarrative(analyzeRecurringEmotionalCenter(responsePattern, compound, previousPatterns))}
-
-【まだ触れ切れていない感情】
-${buildUnresolvedEmotionalLoopNarrative(analyzeUnresolvedEmotionalLoop(responsePattern, compound, silencePattern, previousPatterns))}
-
-【心が戻りやすい場所】
-${buildEmotionalGravityNarrative(analyzeEmotionalGravity(responsePattern, compound, silencePattern, previousPatterns))}
-
-【心が強く反応しやすい感情】
-${buildEmotionalResonanceNarrative(analyzeEmotionalResonance(responsePattern, compound, silencePattern, previousPatterns))}
-
-【戻りやすい感情速度】
-${buildEmotionalInertiaNarrative(analyzeEmotionalInertia(responsePattern, compound, silencePattern, previousPatterns))}
-
-【感情の余波】
-${buildIntegratedEmotionalAfterwaveNarrative(
-  analyzeEmotionalEcho(responsePattern, compound, silencePattern, previousPatterns),
-  analyzeEmotionalAfterimage(responsePattern, compound, silencePattern, previousPatterns),
-  analyzeEmotionalResidue(responsePattern, compound, silencePattern, previousPatterns)
+【余波】
+${buildResidualAfterwaveNarrative(
+  responsePattern,
+  compound,
+  silencePattern,
+  previousPatterns
 )}
 
-【心が身につけてきた守り方】
-${buildEmotionalAdaptationNarrative(analyzeEmotionalAdaptation(responsePattern, compound, silencePattern, previousPatterns))}
+【触れ方】
+${buildEmotionalContactNarrative(
+  responsePattern,
+  silencePattern,
+  previousPatterns
+)}
 
-【読みの深さ】
-${getTrustDepthLabel(getTrustDepthState(responsePattern, previousPatterns))}
-${buildTrustDepthNarrative(responsePattern, previousPatterns)}
+【本音の手前】
+${buildQuietHonestCoreNarrative(compound)}
 
-【答えなかった余白】
-${buildSilencePatternNarrative(silencePattern)}
-
-【ずっと残っていたもの】
-${getInnerNarrative(compound)}
-
-【揺れているもの】
-${getContradiction(compound)}
-
-【言葉になる前の願い】
-${getUnspokenDesire(compound)}
-
-【本音の中心】
-${getNarrativeIntegration(compound)}
-
-【次へ向かうサイン】
-${buildDynamicSign(compound)}
-
-【余韻】
-${getAfterglowMessage("deep", compound)}`;
+【静止】
+${buildResidualEndingNarrative(compound, emotionTone)}`;
 }
 
 app.post("/fortune", async (req, res) => {
@@ -3506,6 +3632,146 @@ function getAfterglowMessage(depth, compound = null) {
 あなたの心がここまで耐えながら、
 ずっと何かを守ろうとしてきたことだけは、
 どうか否定しなくていいのだと思います。`;
+}
+
+function buildEmotionalContactProfile(compound, emotionTone = null) {
+  const trait = compound?.primaryTrait || "";
+  const tone = emotionTone?.tone || emotionTone?.primaryTone || "";
+
+  const profile = {
+    approachSpeed: "slow",
+    emotionalTemperature: "low",
+    clarityLevel: "soft",
+    silenceDensity: "high",
+    lingeringStrength: "high",
+    unresolvedRatio: "high",
+    breathingLength: "slow",
+    emotionalDistance: "gentle",
+  };
+
+  if (trait === "emotional_fatigue") {
+    return {
+      ...profile,
+      emotionalTemperature: "very_low",
+      breathingLength: "long",
+      emotionalDistance: "soft",
+    };
+  }
+
+  if (trait === "attachment_anxiety") {
+    return {
+      ...profile,
+      approachSpeed: "very_slow",
+      clarityLevel: "low",
+      emotionalDistance: "careful",
+    };
+  }
+
+  if (trait === "people_pleasing") {
+    return {
+      ...profile,
+      clarityLevel: "soft",
+      unresolvedRatio: "very_high",
+      emotionalDistance: "near_but_gentle",
+    };
+  }
+
+  if (trait === "future_anxiety") {
+    return {
+      ...profile,
+      approachSpeed: "slow",
+      silenceDensity: "very_high",
+      emotionalTemperature: "low",
+    };
+  }
+
+  if (trait === "identity_confusion") {
+    return {
+      ...profile,
+      clarityLevel: "low",
+      unresolvedRatio: "very_high",
+      emotionalDistance: "open",
+    };
+  }
+
+  if (trait === "role_pressure") {
+    return {
+      ...profile,
+      breathingLength: "long",
+      lingeringStrength: "high",
+      emotionalDistance: "soft",
+    };
+  }
+
+  if (tone === "overloaded" || tone === "suppressed") {
+    return {
+      ...profile,
+      silenceDensity: "very_high",
+      emotionalTemperature: "very_low",
+    };
+  }
+
+  return profile;
+}
+
+function buildResidualEndingNarrative(compound, emotionTone = null) {
+  const trait = compound?.primaryTrait || "";
+  const contactProfile = buildEmotionalContactProfile(compound, emotionTone);
+
+  const endingSuffix =
+    contactProfile.silenceDensity === "very_high"
+      ? `読後の静けさの中に、
+
+まだ小さく残っているようでした。`
+      : `読後の静けさの中に、
+
+まだ静かに残っているようでした。`;
+
+  if (trait === "emotional_fatigue") {
+    return `ほどけきらない疲れの奥に、
+
+休みきれない感覚だけが、
+${endingSuffix}`;
+  }
+
+  if (trait === "people_pleasing") {
+    return `誰かを優先してきた余韻の奥に、
+
+消しきれなかった自分の声が、
+${endingSuffix}`;
+  }
+
+  if (trait === "attachment_anxiety") {
+    return `近づきたい気持ちのあとに、
+
+離れることへの小さな怖さが、
+${endingSuffix}`;
+  }
+
+  if (trait === "future_anxiety") {
+    return `先を急ごうとする気持ちの奥に、
+
+安心しきれない感覚だけが、
+${endingSuffix}`;
+  }
+
+  if (trait === "identity_confusion") {
+    return `形になりきらない自分の奥で、
+
+決めきれない感覚だけが、
+${endingSuffix}`;
+  }
+
+  if (trait === "role_pressure") {
+    return `役割を降ろしきれない感覚の奥に、
+
+力を抜ききれない感覚だけが、
+${endingSuffix}`;
+  }
+
+  return `触れきれなかった感情が、
+
+${endingSuffix}`;
 }
 
 function generateReadingId() {
@@ -3632,6 +3898,23 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
