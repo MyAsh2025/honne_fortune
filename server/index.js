@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v49-human-understanding-calibration-v01";
+const PHASE = "stable-paid-v50-atmospheric-drift-guard-v2";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -4094,6 +4094,10 @@ function buildRuntimeCompositionProfile(runtimeSectionController) {
       avoidTherapistExplanation: true,
       avoidFullEmotionalTranslation: true,
       preserveInterpretiveSpace: true,
+      avoidAtmosphereForAtmosphereSake: true,
+      avoidMeaningEvaporation: true,
+      avoidAbstractEmotionalFog: true,
+      preserveEmotionalSubjectVisibility: true,
       avoidResidualOverload: true,
       avoidStrongFinalMessage: true,
       keepReadingIncomplete: true,
@@ -4130,6 +4134,9 @@ function buildRuntimeNarrativeSelection(runtimeComposition) {
       suppressRepeatedLingering: shouldLimitResidual,
       suppressFullReveal: outlineExposure !== "partial-visible",
       suppressMotivationalEnding: true,
+      suppressPoeticDrift: true,
+      suppressAtmosphereOnlyContinuation: true,
+      suppressMeaninglessLingering: true,
     },
 
     boundaryRules: {
@@ -4151,6 +4158,9 @@ function buildRuntimeNarrativeSelection(runtimeComposition) {
       maxResidualConcepts: shouldLimitResidual ? 1 : 2,
       avoidEchoAfterimageResidueStacking: true,
       preferOneQuietImage: true,
+      limitAbstractResidualLayers: true,
+      preferReadableEmotionalResidue: true,
+      avoidResidualAestheticLoop: true,
       keepFinalLineUnresolved: true,
     },
   };
@@ -4626,6 +4636,8 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
 
 
 
