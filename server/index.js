@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v46-residual-sentence-naturalness";
+const PHASE = "stable-paid-v49-human-understanding-calibration-v01";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -3725,7 +3725,73 @@ function buildEmotionalContactProfile(compound, emotionTone = null) {
   return profile;
 }
 
+function buildEmotionalAnchorProfile({
+  responsePattern,
+  silencePattern,
+  compound,
+  emotionTone = null,
+  contactProfile = null,
+}) {
+  const trait = compound?.primaryTrait || "";
+  const tone = emotionTone?.tone || emotionTone?.primaryTone || "";
+  const residualSubject = getResidualSubjectProfile(compound);
 
+  const profile = {
+    version: "emotional-anchor-runtime-v0.2",
+    purpose: "preserve human-understandable emotional meaning across runtime layers",
+
+    observedState: "soft_emotional_signal",
+    interpretedCondition: "感情がまだ完全には言葉になりきっていない状態",
+    readableMeaning: "今の感情には、まだ整理されきっていない本音の輪郭が残っている",
+    unresolvedMovement: "still_forming",
+    residualSubject: residualSubject?.subject || "まだ形になりきらない感情",
+    residualAnchor: residualSubject?.anchor || "その感覚は、まだ少し残っているのかもしれません",
+    emotionalDistance: contactProfile?.emotionalDistance || "careful",
+    driftGuard: {
+      avoidAtmosphereOnly: true,
+      avoidPoeticFog: true,
+      avoidTraitLabeling: true,
+      preserveReadableMeaning: true,
+    },
+  };
+
+  if (trait === "emotional_fatigue") {
+    profile.observedState = "held_tension";
+    profile.interpretedCondition = "気を張り続けた疲れが、まだほどけきっていない状態";
+    profile.readableMeaning = "休みたい気持ちはあっても、安心して力を抜く感覚にまだ慣れていない";
+    profile.unresolvedMovement = "difficulty_resting";
+  }
+
+  if (trait === "people_pleasing") {
+    profile.observedState = "self_suppression";
+    profile.interpretedCondition = "相手に合わせるほど、自分の本音が後ろに下がっている状態";
+    profile.readableMeaning = "本当は気づいている違和感を、まだ自分の言葉として出しきれていない";
+    profile.unresolvedMovement = "truth_waiting_behind_kindness";
+  }
+
+  if (trait === "future_anxiety") {
+    profile.observedState = "future_pressure";
+    profile.interpretedCondition = "先のことを考え続けるほど、今の自分の呼吸が浅くなっている状態";
+    profile.readableMeaning = "決めなければいけない気持ちと、まだ決めきれない感覚が同時に残っている";
+    profile.unresolvedMovement = "decision_pressure_remaining";
+  }
+
+  if (trait === "identity_confusion") {
+    profile.observedState = "blurred_self_outline";
+    profile.interpretedCondition = "自分が何を望んでいるのか、まだ輪郭を探している状態";
+    profile.readableMeaning = "答えがないのではなく、自分の声を見つける前の静かな迷いが残っている";
+    profile.unresolvedMovement = "self_outline_forming";
+  }
+
+  if (tone === "low" && profile.observedState === "soft_emotional_signal") {
+    profile.observedState = "quiet_emotional_weight";
+    profile.interpretedCondition = "大きく揺れてはいないけれど、心の奥に静かな重さが残っている状態";
+    profile.readableMeaning = "平気に見える部分の奥で、まだ言葉になっていない疲れが残っている";
+    profile.unresolvedMovement = "quiet_weight_remaining";
+  }
+
+  return profile;
+}
 function buildRuntimeRouterProfile({
   responsePattern,
   silencePattern,
@@ -3751,7 +3817,14 @@ function buildRuntimeRouterProfile({
   const unresolvedEmotionalLoop = analyzeUnresolvedEmotionalLoop(responsePattern, compound, silencePattern, safePreviousPatterns);
   const emotionalMasking = analyzeEmotionalMasking(responsePattern, compound, silencePattern, safePreviousPatterns);
 
-  return {
+    const emotionalAnchor = buildEmotionalAnchorProfile({
+    responsePattern,
+    silencePattern,
+    compound,
+    emotionTone,
+    contactProfile,
+  });
+return {
     version: "runtime-router-v0.1",
     purpose: "classify existing emotional narratives into runtime layers without increasing narrative volume",
 
@@ -3790,6 +3863,20 @@ function buildRuntimeRouterProfile({
       sectionRule: "touch lightly; avoid over-explaining or rescuing",
     },
 
+
+    emotionalAnchorRuntime: {
+      role: "preserve readable emotional understanding across runtime layers",
+      state: {
+        observedState: emotionalAnchor.observedState,
+        interpretedCondition: emotionalAnchor.interpretedCondition,
+        readableMeaning: emotionalAnchor.readableMeaning,
+        unresolvedMovement: emotionalAnchor.unresolvedMovement,
+        residualSubject: emotionalAnchor.residualSubject,
+        residualAnchor: emotionalAnchor.residualAnchor,
+        emotionalDistance: emotionalAnchor.emotionalDistance,
+      },
+      sectionRule: "preserve emotional subject; avoid atmosphere-only continuation",
+    },
     residualRuntime: {
       role: "control what remains after reading",
       state: {
@@ -3827,6 +3914,7 @@ function buildRuntimeSectionController(runtimeRouter) {
   const observation = runtimeRouter?.observationRuntime?.state || {};
   const movement = runtimeRouter?.movementRuntime?.state || {};
   const contact = runtimeRouter?.contactRuntime?.state || {};
+  const anchor = runtimeRouter?.emotionalAnchorRuntime?.state || {};
   const residual = runtimeRouter?.residualRuntime?.state || {};
 
   const isGuarded =
@@ -3853,6 +3941,10 @@ function buildRuntimeSectionController(runtimeRouter) {
     movement.stabilizationState !== "not_enough_history" ||
     movement.gravityState !== "not_enough_history" ||
     movement.inertiaState !== "not_enough_history";
+  const hasReadableAnchor =
+    Boolean(anchor.readableMeaning) ||
+    Boolean(anchor.interpretedCondition) ||
+    Boolean(anchor.residualSubject);
 
   return {
     version: "runtime-section-controller-v0.1",
@@ -3862,6 +3954,7 @@ function buildRuntimeSectionController(runtimeRouter) {
       "observation",
       "movement",
       "contact",
+      "understanding",
       "outline",
       "airflow",
       "residual",
@@ -3887,6 +3980,12 @@ function buildRuntimeSectionController(runtimeRouter) {
             ? "touch carefully without explaining too much"
             : "approach softly",
       },
+      understanding: {
+        role: "preserve readable emotional meaning without turning it into explanation",
+        density: hasReadableAnchor ? "middle" : "light",
+        distanceRule: "keep the emotional subject understandable; avoid atmosphere-only continuation",
+      },
+
       outline: {
         role: "draw the emotional outline before the full inner truth",
         density: isDeepening ? "middle" : "light",
@@ -3915,6 +4014,7 @@ function buildRuntimeSectionController(runtimeRouter) {
       shouldDeepenContact: isDeepening && !isGuarded,
       shouldProtectDistance: isGuarded || isDistant,
       shouldEmphasizeMovement: movementIsActive,
+      shouldPreserveAnchor: hasReadableAnchor,
       shouldEmphasizeResidual: hasResidualSignal,
       shouldKeepEndingQuiet: true,
     },
@@ -3929,6 +4029,8 @@ function buildRuntimeCompositionProfile(runtimeSectionController) {
   const shouldProtectDistance = Boolean(decision.shouldProtectDistance);
   const shouldDeepenContact = Boolean(decision.shouldDeepenContact);
   const shouldEmphasizeMovement = Boolean(decision.shouldEmphasizeMovement);
+  const shouldPreserveAnchor = Boolean(decision.shouldPreserveAnchor);
+
   const shouldEmphasizeResidual = Boolean(decision.shouldEmphasizeResidual);
 
   return {
@@ -3950,6 +4052,21 @@ function buildRuntimeCompositionProfile(runtimeSectionController) {
     movementDensity: shouldEmphasizeMovement ? "middle" : "light",
 
     residualDensity: shouldEmphasizeResidual ? "middle" : "light",
+    understandingVisibility: shouldPreserveAnchor
+      ? shouldProtectDistance
+        ? "low-visible"
+        : shouldDeepenContact
+          ? "soft-visible"
+          : "partial-visible"
+      : "minimal",
+
+    understandingPressure: shouldPreserveAnchor
+      ? shouldProtectDistance
+        ? "low"
+        : "soft"
+      : "minimal",
+
+    meaningDensity: shouldPreserveAnchor ? "readable-light" : "minimal",
 
     silenceWeight: shouldProtectDistance
       ? "high"
@@ -3965,6 +4082,7 @@ function buildRuntimeCompositionProfile(runtimeSectionController) {
       observation: responsibility.observation?.density || "light",
       movement: responsibility.movement?.density || "light",
       contact: responsibility.contact?.density || "light",
+      understanding: responsibility.understanding?.density || "light",
       outline: responsibility.outline?.density || "light",
       airflow: responsibility.airflow?.density || "light",
       residual: responsibility.residual?.density || "light",
@@ -3973,6 +4091,9 @@ function buildRuntimeCompositionProfile(runtimeSectionController) {
     compositionGuard: {
       doNotAddMoreNarrativeLayers: true,
       doNotExplainTheRuntimeToUser: true,
+      avoidTherapistExplanation: true,
+      avoidFullEmotionalTranslation: true,
+      preserveInterpretiveSpace: true,
       avoidResidualOverload: true,
       avoidStrongFinalMessage: true,
       keepReadingIncomplete: true,
@@ -4505,6 +4626,10 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
+
+
 
 
 
