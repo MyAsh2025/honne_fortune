@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v32";
+const PHASE = "stable-paid-v46-residual-sentence-naturalness";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -3475,6 +3475,17 @@ function stablePaidFortune(score, answers = [], depth = "deep", previousResponse
   const responsePattern = analyzeResponsePattern(answers);
   const silencePattern = analyzeSilencePattern(answers, expectedQuestionCount);
   const emotionTone = getEmotionTone(compound);
+  const runtimeRouter = buildRuntimeRouterProfile({
+    responsePattern,
+    silencePattern,
+    compound,
+    previousPatterns: Array.isArray(previousPatterns) ? previousPatterns : [],
+    emotionTone,
+  });
+  const runtimeSectionController = buildRuntimeSectionController(runtimeRouter);
+  const runtimeComposition = buildRuntimeCompositionProfile(runtimeSectionController);
+  const runtimeNarrativeSelection = buildRuntimeNarrativeSelection(runtimeComposition);
+  const runtimeRendering = buildRuntimeRenderingProfile(runtimeNarrativeSelection);
   const previousPattern = getLastPreviousPattern(previousPatterns);
 
   const resolvedPreviousResponseStyle =
@@ -3543,7 +3554,7 @@ ${buildEmotionalContactNarrative(
 ${buildQuietHonestCoreNarrative(compound)}
 
 【静止】
-${buildResidualEndingNarrative(compound, emotionTone)}`;
+${buildSectionAwareNarrative(buildResidualEndingNarrative(compound, emotionTone), "residual", buildSectionBreathMap(runtimeRendering))}`;
 }
 
 app.post("/fortune", async (req, res) => {
@@ -3714,64 +3725,618 @@ function buildEmotionalContactProfile(compound, emotionTone = null) {
   return profile;
 }
 
-function buildResidualEndingNarrative(compound, emotionTone = null) {
-  const trait = compound?.primaryTrait || "";
+
+function buildRuntimeRouterProfile({
+  responsePattern,
+  silencePattern,
+  compound,
+  previousPatterns = [],
+  emotionTone = null,
+}) {
+  const safePreviousPatterns = Array.isArray(previousPatterns)
+    ? previousPatterns
+    : [];
+
+  const opennessState = getOpennessState(responsePattern);
+  const trustDepthState = getTrustDepthState(responsePattern, safePreviousPatterns);
   const contactProfile = buildEmotionalContactProfile(compound, emotionTone);
+  const emotionalDrift = analyzeEmotionalDrift(responsePattern, silencePattern, safePreviousPatterns);
+  const emotionalRelapse = analyzeEmotionalRelapse(responsePattern, silencePattern, safePreviousPatterns);
+  const emotionalStabilization = analyzeEmotionalStabilization(responsePattern, silencePattern, safePreviousPatterns);
+  const emotionalGravity = analyzeEmotionalGravity(responsePattern, compound, silencePattern, safePreviousPatterns);
+  const emotionalInertia = analyzeEmotionalInertia(responsePattern, compound, silencePattern, safePreviousPatterns);
+  const emotionalEcho = analyzeEmotionalEcho(responsePattern, compound, silencePattern, safePreviousPatterns);
+  const emotionalAfterimage = analyzeEmotionalAfterimage(responsePattern, compound, silencePattern, safePreviousPatterns);
+  const emotionalResidue = analyzeEmotionalResidue(responsePattern, compound, silencePattern, safePreviousPatterns);
+  const unresolvedEmotionalLoop = analyzeUnresolvedEmotionalLoop(responsePattern, compound, silencePattern, safePreviousPatterns);
+  const emotionalMasking = analyzeEmotionalMasking(responsePattern, compound, silencePattern, safePreviousPatterns);
 
-  const endingSuffix =
-    contactProfile.silenceDensity === "very_high"
-      ? `読後の静けさの中に、
+  return {
+    version: "runtime-router-v0.1",
+    purpose: "classify existing emotional narratives into runtime layers without increasing narrative volume",
 
-まだ小さく残っているようでした。`
-      : `読後の静けさの中に、
+    observationRuntime: {
+      role: "observe emotional reaction without forcing interpretation",
+      state: {
+        responseStyle: responsePattern?.responseStyle || "unknown",
+        opennessState,
+        silenceStyle: silencePattern?.silenceStyle || "none",
+        maskingState: emotionalMasking?.state || "insufficient_signal",
+      },
+      sectionRule: "do not conclude; keep emotional observation soft",
+    },
 
-まだ静かに残っているようでした。`;
+    movementRuntime: {
+      role: "track emotional movement, distance recalibration, relapse, gravity, and inertia",
+      state: {
+        driftState: emotionalDrift?.opennessDrift || "first_observation",
+        relapseState: emotionalRelapse?.state || "first_observation",
+        stabilizationState: emotionalStabilization?.state || "not_enough_history",
+        gravityState: emotionalGravity?.state || "not_enough_history",
+        inertiaState: emotionalInertia?.state || "not_enough_history",
+      },
+      sectionRule: "show movement, not solution",
+    },
+
+    contactRuntime: {
+      role: "control how close the reading approaches the user's inner truth",
+      state: {
+        trustDepthState,
+        approachSpeed: contactProfile.approachSpeed,
+        emotionalDistance: contactProfile.emotionalDistance,
+        clarityLevel: contactProfile.clarityLevel,
+        silenceDensity: contactProfile.silenceDensity,
+      },
+      sectionRule: "touch lightly; avoid over-explaining or rescuing",
+    },
+
+    residualRuntime: {
+      role: "control what remains after reading",
+      state: {
+        echoState: emotionalEcho?.state || "not_enough_history",
+        afterimageState: emotionalAfterimage?.state || "not_enough_history",
+        residueState: emotionalResidue?.state || "not_enough_history",
+        unresolvedLoopState: unresolvedEmotionalLoop?.state || "not_enough_history",
+        lingeringStrength: contactProfile.lingeringStrength,
+        unresolvedRatio: contactProfile.unresolvedRatio,
+        breathingLength: contactProfile.breathingLength,
+      },
+      sectionRule: "leave quiet residue; avoid strong closing",
+    },
+
+    driftGuard: {
+      avoid: [
+        "fortune-like conclusion",
+        "motivational quote ending",
+        "over-healing",
+        "over-explanation",
+        "too many residual phrases",
+      ],
+      keep: [
+        "emotional distance",
+        "quiet lingering",
+        "incomplete outline",
+        "soft observation",
+        "residual silence",
+      ],
+    },
+  };
+}
+
+function buildRuntimeSectionController(runtimeRouter) {
+  const observation = runtimeRouter?.observationRuntime?.state || {};
+  const movement = runtimeRouter?.movementRuntime?.state || {};
+  const contact = runtimeRouter?.contactRuntime?.state || {};
+  const residual = runtimeRouter?.residualRuntime?.state || {};
+
+  const isGuarded =
+    observation.opennessState === "guarded" ||
+    contact.trustDepthState === "cautious";
+
+  const isDistant =
+    observation.opennessState === "distant" ||
+    contact.trustDepthState === "surface";
+
+  const isDeepening =
+    contact.trustDepthState === "deepening" ||
+    observation.opennessState === "exposed";
+
+  const hasResidualSignal =
+    residual.echoState !== "not_enough_history" ||
+    residual.afterimageState !== "not_enough_history" ||
+    residual.residueState !== "not_enough_history" ||
+    residual.unresolvedLoopState !== "not_enough_history";
+
+  const movementIsActive =
+    movement.driftState !== "first_observation" ||
+    movement.relapseState !== "first_observation" ||
+    movement.stabilizationState !== "not_enough_history" ||
+    movement.gravityState !== "not_enough_history" ||
+    movement.inertiaState !== "not_enough_history";
+
+  return {
+    version: "runtime-section-controller-v0.1",
+    purpose: "control section role, distance, density, and residual pacing without rewriting narrative text",
+
+    sectionOrder: [
+      "observation",
+      "movement",
+      "contact",
+      "outline",
+      "airflow",
+      "residual",
+    ],
+
+    sectionResponsibility: {
+      observation: {
+        role: "read the current emotional reaction without forcing meaning",
+        density: isGuarded || isDistant ? "light" : "middle",
+        distanceRule: "stay outside the core; do not expose hidden truth too quickly",
+      },
+      movement: {
+        role: "show how the emotion moved, returned, slowed, or protected itself",
+        density: movementIsActive ? "middle" : "light",
+        distanceRule: "describe movement, not improvement",
+      },
+      contact: {
+        role: "control how closely the reading touches the user's inner truth",
+        density: isDeepening ? "middle" : "light",
+        distanceRule: isGuarded
+          ? "keep a protective distance"
+          : isDeepening
+            ? "touch carefully without explaining too much"
+            : "approach softly",
+      },
+      outline: {
+        role: "draw the emotional outline before the full inner truth",
+        density: isDeepening ? "middle" : "light",
+        distanceRule: "do not fully reveal; leave the core incomplete",
+      },
+      airflow: {
+        role: "slow the reading down before ending",
+        density: "light",
+        distanceRule: "begin leaving before the conclusion becomes too strong",
+      },
+      residual: {
+        role: "leave the reading afterimage without turning it into a quote or lesson",
+        density: hasResidualSignal ? "middle" : "light",
+        distanceRule: "remain quiet; avoid strong closure",
+      },
+    },
+
+    narrativeDensityControl: {
+      avoidAddingNewSections: true,
+      avoidRepeatingResidualLanguage: true,
+      preferShorterEnding: true,
+      keepUnresolvedSpace: true,
+    },
+
+    runtimeDecision: {
+      shouldDeepenContact: isDeepening && !isGuarded,
+      shouldProtectDistance: isGuarded || isDistant,
+      shouldEmphasizeMovement: movementIsActive,
+      shouldEmphasizeResidual: hasResidualSignal,
+      shouldKeepEndingQuiet: true,
+    },
+  };
+}
+
+function buildRuntimeCompositionProfile(runtimeSectionController) {
+  const decision = runtimeSectionController?.runtimeDecision || {};
+  const responsibility = runtimeSectionController?.sectionResponsibility || {};
+  const densityControl = runtimeSectionController?.narrativeDensityControl || {};
+
+  const shouldProtectDistance = Boolean(decision.shouldProtectDistance);
+  const shouldDeepenContact = Boolean(decision.shouldDeepenContact);
+  const shouldEmphasizeMovement = Boolean(decision.shouldEmphasizeMovement);
+  const shouldEmphasizeResidual = Boolean(decision.shouldEmphasizeResidual);
+
+  return {
+    version: "runtime-composition-controller-v0.1",
+    purpose: "let runtime decide narrative depth, outline exposure, residual density, silence weight, and ending breath",
+
+    compositionDepth: shouldDeepenContact
+      ? "middle"
+      : shouldProtectDistance
+        ? "shallow"
+        : "soft-middle",
+
+    outlineExposure: shouldDeepenContact
+      ? "partial-visible"
+      : shouldProtectDistance
+        ? "guarded"
+        : "soft-outline",
+
+    movementDensity: shouldEmphasizeMovement ? "middle" : "light",
+
+    residualDensity: shouldEmphasizeResidual ? "middle" : "light",
+
+    silenceWeight: shouldProtectDistance
+      ? "high"
+      : shouldEmphasizeResidual
+        ? "middle-high"
+        : "middle",
+
+    endingBreath: densityControl.preferShorterEnding
+      ? "short-soft"
+      : "lingering",
+
+    sectionPressure: {
+      observation: responsibility.observation?.density || "light",
+      movement: responsibility.movement?.density || "light",
+      contact: responsibility.contact?.density || "light",
+      outline: responsibility.outline?.density || "light",
+      airflow: responsibility.airflow?.density || "light",
+      residual: responsibility.residual?.density || "light",
+    },
+
+    compositionGuard: {
+      doNotAddMoreNarrativeLayers: true,
+      doNotExplainTheRuntimeToUser: true,
+      avoidResidualOverload: true,
+      avoidStrongFinalMessage: true,
+      keepReadingIncomplete: true,
+    },
+  };
+}
+
+function buildRuntimeNarrativeSelection(runtimeComposition) {
+  const depth = runtimeComposition?.compositionDepth || "soft-middle";
+  const outlineExposure = runtimeComposition?.outlineExposure || "soft-outline";
+  const residualDensity = runtimeComposition?.residualDensity || "light";
+  const silenceWeight = runtimeComposition?.silenceWeight || "middle";
+  const endingBreath = runtimeComposition?.endingBreath || "short-soft";
+  const sectionPressure = runtimeComposition?.sectionPressure || {};
+
+  const shouldProtect = depth === "shallow" || outlineExposure === "guarded";
+  const shouldLimitResidual = residualDensity === "middle" || silenceWeight === "high";
+
+  return {
+    version: "runtime-narrative-selection-v0.1",
+    purpose: "select, prioritize, and suppress narrative pressure based on runtime composition",
+
+    priorityNarratives: {
+      observation: sectionPressure.observation === "middle" ? "use" : "soft-use",
+      movement: sectionPressure.movement === "middle" ? "use" : "soft-use",
+      contact: shouldProtect ? "soft-use" : "use",
+      outline: outlineExposure === "guarded" ? "suppress-depth" : "use",
+      residual: shouldLimitResidual ? "limit" : "soft-use",
+    },
+
+    suppressionRules: {
+      suppressStrongConclusion: true,
+      suppressOverHealing: true,
+      suppressRepeatedLingering: shouldLimitResidual,
+      suppressFullReveal: outlineExposure !== "partial-visible",
+      suppressMotivationalEnding: true,
+    },
+
+    boundaryRules: {
+      outlineBoundary: outlineExposure,
+      endingBoundary: endingBreath,
+      residualBoundary: shouldLimitResidual ? "leave-small-trace" : "leave-soft-trace",
+      silenceBoundary: silenceWeight,
+    },
+
+    narrativeWeight: {
+      observationWeight: shouldProtect ? "middle" : "light-middle",
+      movementWeight: sectionPressure.movement === "middle" ? "middle" : "light",
+      contactWeight: shouldProtect ? "light" : "middle",
+      outlineWeight: outlineExposure === "partial-visible" ? "middle" : "light",
+      residualWeight: shouldLimitResidual ? "light" : "middle",
+    },
+
+    saturationGuard: {
+      maxResidualConcepts: shouldLimitResidual ? 1 : 2,
+      avoidEchoAfterimageResidueStacking: true,
+      preferOneQuietImage: true,
+      keepFinalLineUnresolved: true,
+    },
+  };
+}
+
+function buildRuntimeRenderingProfile(runtimeNarrativeSelection) {
+  const boundary = runtimeNarrativeSelection?.boundaryRules || {};
+  const weight = runtimeNarrativeSelection?.narrativeWeight || {};
+  const saturation = runtimeNarrativeSelection?.saturationGuard || {};
+  const suppression = runtimeNarrativeSelection?.suppressionRules || {};
+
+  const protectOutline =
+    boundary.outlineBoundary === "guarded" ||
+    suppression.suppressFullReveal === true;
+
+  const limitResidual =
+    boundary.residualBoundary === "leave-small-trace" ||
+    saturation.maxResidualConcepts === 1;
+
+  const quietEnding =
+    suppression.suppressStrongConclusion === true ||
+    suppression.suppressMotivationalEnding === true;
+
+  return {
+    version: "runtime-rendering-controller-v0.1",
+    purpose: "control sentence breath, pause density, outline softness, lingering pressure, and ending fade",
+
+    sentenceBreath: protectOutline
+      ? "slow-soft"
+      : weight.movementWeight === "middle"
+        ? "balanced"
+        : "soft-short",
+
+    pauseDensity: protectOutline
+      ? "high"
+      : limitResidual
+        ? "middle-high"
+        : "middle",
+
+    outlineSoftness: protectOutline
+      ? "guarded-blur"
+      : boundary.outlineBoundary === "partial-visible"
+        ? "soft-visible"
+        : "blurred",
+
+    lingeringPressure: limitResidual
+      ? "controlled-low"
+      : weight.residualWeight === "middle"
+        ? "controlled-middle"
+        : "light",
+
+    endingFade: quietEnding
+      ? "soft-fade"
+      : "lingering-fade",
+
+    renderingGuard: {
+      avoidLongExplanatoryParagraphs: true,
+      avoidDirectAdviceTone: true,
+      avoidFinalAnswerFeeling: true,
+      preferLineBreakBreathing: true,
+      preferQuietImageOverSummary: true,
+    },
+
+    textBehaviorHint: {
+      useShorterSentencesWhenGuarded: protectOutline,
+      leaveMoreWhiteSpaceWhenSilent: boundary.silenceBoundary === "high",
+      reduceResidualStacking: limitResidual,
+      keepLastLineUnresolved: saturation.keepFinalLineUnresolved === true,
+    },
+  };
+}
+
+function applyRuntimeSentenceBreath(text, runtimeRendering) {
+  if (!text || typeof text !== "string") return "";
+
+  const sentenceBreath = runtimeRendering?.sentenceBreath || "soft-short";
+
+  if (sentenceBreath === "slow-soft") {
+    return text
+      .replace(/。/g, "。\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
+  if (sentenceBreath === "balanced") {
+    return text
+      .replace(/。\s*/g, "。\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
+  return text.trim();
+}
+
+function applyRuntimeSilencePacing(text, runtimeRendering) {
+  if (!text || typeof text !== "string") return "";
+
+  const pauseDensity = runtimeRendering?.pauseDensity || "middle";
+  const hints = runtimeRendering?.textBehaviorHint || {};
+
+  if (pauseDensity === "high" || hints.leaveMoreWhiteSpaceWhenSilent) {
+    return text
+      .replace(/\n/g, "\n\n")
+      .replace(/\n{4,}/g, "\n\n\n")
+      .trim();
+  }
+
+  if (pauseDensity === "middle-high") {
+    return text
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
+  return text.trim();
+}
+
+function applyRuntimeResidualPressure(text, runtimeRendering) {
+  if (!text || typeof text !== "string") return "";
+
+  const lingeringPressure = runtimeRendering?.lingeringPressure || "light";
+  const hints = runtimeRendering?.textBehaviorHint || {};
+
+  if (hints.reduceResidualStacking || lingeringPressure === "controlled-low") {
+    return text
+      .replace(/余韻のように/g, "静かに")
+      .replace(/まだ少し残っているようです。/g, "まだ小さく残っているようでした。")
+      .replace(/急いで消そうとしなくてもよいのかもしれません。/g, "急がなくてもよいのかもしれません。")
+      .trim();
+  }
+
+  return text.trim();
+}
+
+function applyRuntimeEndingFade(text, runtimeRendering) {
+  if (!text || typeof text !== "string") return "";
+
+  const endingFade = runtimeRendering?.endingFade || "soft-fade";
+  const hints = runtimeRendering?.textBehaviorHint || {};
+
+  if (endingFade === "soft-fade" || hints.keepLastLineUnresolved) {
+    return text
+      .replace(/です。$/g, "ようでした。")
+      .replace(/ます。$/g, "いるようでした。")
+      .trim();
+  }
+
+  return text.trim();
+}
+
+function buildRuntimeAwareNarrative(text, runtimeRendering) {
+  let rendered = text || "";
+
+  rendered = applyRuntimeSentenceBreath(rendered, runtimeRendering);
+  rendered = applyRuntimeSilencePacing(rendered, runtimeRendering);
+  rendered = applyRuntimeResidualPressure(rendered, runtimeRendering);
+  rendered = applyRuntimeEndingFade(rendered, runtimeRendering);
+
+  return rendered.trim();
+}
+
+function buildSectionBreathMap(runtimeRendering) {
+  const pauseDensity = runtimeRendering?.pauseDensity || "middle";
+  const outlineSoftness = runtimeRendering?.outlineSoftness || "blurred";
+  const lingeringPressure = runtimeRendering?.lingeringPressure || "light";
+  const endingFade = runtimeRendering?.endingFade || "soft-fade";
+
+  return {
+    version: "section-breath-map-v0.1",
+    purpose: "assign different breath, silence, fade, and lingering behavior for each runtime section",
+
+    observation: {
+      sentenceBreath: "soft-short",
+      pauseDensity: pauseDensity === "high" ? "middle" : "low-middle",
+      tone: "observational",
+      rule: "observe without exposing the core",
+    },
+
+    movement: {
+      sentenceBreath: "balanced",
+      pauseDensity: "middle",
+      tone: "flowing",
+      rule: "show emotional movement without turning it into progress advice",
+    },
+
+    contact: {
+      sentenceBreath: "slow-soft",
+      pauseDensity: pauseDensity === "high" ? "high" : "middle",
+      tone: "near-but-safe",
+      rule: "approach carefully and avoid over-explaining",
+    },
+
+    outline: {
+      sentenceBreath: "slow-soft",
+      pauseDensity: "middle-high",
+      outlineSoftness,
+      tone: "blurred-outline",
+      rule: "leave the emotional center incomplete",
+    },
+
+    airflow: {
+      sentenceBreath: "soft-short",
+      pauseDensity: "middle",
+      endingFade,
+      tone: "leaving",
+      rule: "start leaving before the ending becomes a conclusion",
+    },
+
+    residual: {
+      sentenceBreath: "slow-soft",
+      pauseDensity: "middle-high",
+      lingeringPressure: lingeringPressure === "controlled-low" ? "low" : "controlled-low",
+      endingFade: "soft-fade",
+      tone: "quiet-afterimage",
+      rule: "leave only a small trace; avoid residual saturation",
+    },
+  };
+}
+
+function buildSectionAwareNarrative(text, sectionKey, sectionBreathMap) {
+  const sectionProfile = sectionBreathMap?.[sectionKey] || {};
+  const runtimeRendering = {
+    sentenceBreath: sectionProfile.sentenceBreath || "soft-short",
+    pauseDensity: sectionProfile.pauseDensity || "middle",
+    lingeringPressure: sectionProfile.lingeringPressure || "light",
+    endingFade: sectionProfile.endingFade || "soft-fade",
+    textBehaviorHint: {
+      leaveMoreWhiteSpaceWhenSilent: false,
+      reduceResidualStacking: sectionKey === "residual",
+      keepLastLineUnresolved: sectionKey === "airflow" || sectionKey === "residual",
+    },
+  };
+
+  return buildRuntimeAwareNarrative(text, runtimeRendering);
+}
+function getResidualSubjectProfile(compound) {
+  const trait = compound?.primaryTrait || "";
 
   if (trait === "emotional_fatigue") {
-    return `ほどけきらない疲れの奥に、
-
-休みきれない感覚だけが、
-${endingSuffix}`;
+    return {
+      subject: "気を張ったままの疲れ",
+      state: "ほどけきっていない",
+      anchor: "まだ少し、休むことに慣れていないのかもしれません",
+    };
   }
 
   if (trait === "people_pleasing") {
-    return `誰かを優先してきた余韻の奥に、
-
-消しきれなかった自分の声が、
-${endingSuffix}`;
+    return {
+      subject: "自分の気持ちを後ろへ置く癖",
+      state: "すぐには戻りきっていない",
+      anchor: "まだ少し、自分より先に相手を見てしまうのかもしれません",
+    };
   }
 
   if (trait === "attachment_anxiety") {
-    return `近づきたい気持ちのあとに、
-
-離れることへの小さな怖さが、
-${endingSuffix}`;
+    return {
+      subject: "離れることへの怖さ",
+      state: "消えきっていない",
+      anchor: "まだ少し、近づきたいのに身構えてしまうのかもしれません",
+    };
   }
 
   if (trait === "future_anxiety") {
-    return `先を急ごうとする気持ちの奥に、
-
-安心しきれない感覚だけが、
-${endingSuffix}`;
+    return {
+      subject: "先を考えすぎる緊張",
+      state: "ゆるみきっていない",
+      anchor: "まだ少し、安心する前に正解を探してしまうのかもしれません",
+    };
   }
 
   if (trait === "identity_confusion") {
-    return `形になりきらない自分の奥で、
-
-決めきれない感覚だけが、
-${endingSuffix}`;
+    return {
+      subject: "自分を決めきれない迷い",
+      state: "形になりきっていない",
+      anchor: "まだ少し、自分の輪郭を確かめているのかもしれません",
+    };
   }
 
   if (trait === "role_pressure") {
-    return `役割を降ろしきれない感覚の奥に、
-
-力を抜ききれない感覚だけが、
-${endingSuffix}`;
+    return {
+      subject: "役割を降ろせない緊張",
+      state: "抜けきっていない",
+      anchor: "まだ少し、休む前に役に立とうとしてしまうのかもしれません",
+    };
   }
 
-  return `触れきれなかった感情が、
+  return {
+    subject: "言葉になりきらなかった感情",
+    state: "残っている",
+    anchor: "まだ少し、自分の内側を確かめているのかもしれません",
+  };
+}
 
-${endingSuffix}`;
+function buildResidualEndingNarrative(compound, emotionTone = null) {
+  const residualSubject = getResidualSubjectProfile(compound);
+  const contactProfile = buildEmotionalContactProfile(compound, emotionTone);
+
+  const endingLine =
+    contactProfile.silenceDensity === "very_high"
+      ? "その感覚が、まだ小さく残っているようでした。"
+      : "その感覚が、まだ少し残っているようでした。";
+
+  return `${residualSubject.subject}は、
+まだ完全には${residualSubject.state}ようです。
+
+${residualSubject.anchor}。
+
+${endingLine}`;
 }
 
 function generateReadingId() {
@@ -3865,6 +4430,48 @@ app.post("/deep-fortune", async (req, res) => {
     emotionalAdaptationNarrative: buildEmotionalAdaptationNarrative(analyzeEmotionalAdaptation(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : [])),
     emotionalMasking: analyzeEmotionalMasking(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : []),
     emotionalMaskingNarrative: buildEmotionalMaskingNarrative(analyzeEmotionalMasking(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : [])),
+    runtimeRouter: buildRuntimeRouterProfile({
+      responsePattern,
+      silencePattern,
+      compound,
+      previousPatterns: Array.isArray(previousPatterns) ? previousPatterns : [],
+      emotionTone: getEmotionTone(compound),
+    }),
+    runtimeSectionController: buildRuntimeSectionController(buildRuntimeRouterProfile({
+      responsePattern,
+      silencePattern,
+      compound,
+      previousPatterns: Array.isArray(previousPatterns) ? previousPatterns : [],
+      emotionTone: getEmotionTone(compound),
+    })),
+    runtimeComposition: buildRuntimeCompositionProfile(buildRuntimeSectionController(buildRuntimeRouterProfile({
+      responsePattern,
+      silencePattern,
+      compound,
+      previousPatterns: Array.isArray(previousPatterns) ? previousPatterns : [],
+      emotionTone: getEmotionTone(compound),
+    }))),
+    runtimeNarrativeSelection: buildRuntimeNarrativeSelection(buildRuntimeCompositionProfile(buildRuntimeSectionController(buildRuntimeRouterProfile({
+      responsePattern,
+      silencePattern,
+      compound,
+      previousPatterns: Array.isArray(previousPatterns) ? previousPatterns : [],
+      emotionTone: getEmotionTone(compound),
+    })))),
+    runtimeRendering: buildRuntimeRenderingProfile(buildRuntimeNarrativeSelection(buildRuntimeCompositionProfile(buildRuntimeSectionController(buildRuntimeRouterProfile({
+      responsePattern,
+      silencePattern,
+      compound,
+      previousPatterns: Array.isArray(previousPatterns) ? previousPatterns : [],
+      emotionTone: getEmotionTone(compound),
+    }))))),
+    sectionBreathMap: buildSectionBreathMap(buildRuntimeRenderingProfile(buildRuntimeNarrativeSelection(buildRuntimeCompositionProfile(buildRuntimeSectionController(buildRuntimeRouterProfile({
+      responsePattern,
+      silencePattern,
+      compound,
+      previousPatterns: Array.isArray(previousPatterns) ? previousPatterns : [],
+      emotionTone: getEmotionTone(compound),
+    })))))),
 
     primaryCategory: compound.primaryCategory,
     secondaryCategory: compound.secondaryCategory,
@@ -3898,6 +4505,20 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
