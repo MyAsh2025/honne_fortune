@@ -6,7 +6,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PHASE = "stable-paid-v53-intent-wiring-propagation";
+const PHASE = "stable-paid-v54-runtime-policy-layer-v01";
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -4263,6 +4263,76 @@ function buildRuntimeNarrativeSelection(runtimeComposition) {
   };
 }
 
+function buildRuntimePolicyLayer(runtimeNarrativeSelection) {
+  const boundary = runtimeNarrativeSelection?.boundaryRules || {};
+  const weight = runtimeNarrativeSelection?.narrativeWeight || {};
+  const saturation = runtimeNarrativeSelection?.saturationGuard || {};
+  const suppression = runtimeNarrativeSelection?.suppressionRules || {};
+  const intent = runtimeNarrativeSelection?.runtimeIntent || {};
+
+  const meaningIntent = intent.meaningPreservationIntent || {};
+  const breathingIntent = intent.emotionalBreathingIntent || {};
+  const atmosphericIntent = intent.atmosphericIntegrityIntent || {};
+  const residualIntent = intent.residualIntegrityIntent || {};
+
+  const boundaryProtectionPolicy = {
+    protectOutline:
+      boundary.outlineBoundary === "guarded" ||
+      suppression.suppressFullReveal === true,
+    outlineBoundary: boundary.outlineBoundary || "blurred",
+    useShorterSentencesWhenGuarded: true,
+  };
+
+  const emotionalBreathingPolicy = {
+    preserveBreathingSpace: breathingIntent.preserveBreathingSpace === true,
+    sentenceBreathBase:
+      boundaryProtectionPolicy.protectOutline
+        ? "slow-soft"
+        : weight.movementWeight === "middle"
+          ? "balanced"
+          : "soft-short",
+    pauseDensityBase:
+      boundaryProtectionPolicy.protectOutline
+        ? "high"
+        : saturation.maxResidualConcepts === 1
+          ? "middle-high"
+          : "middle",
+  };
+
+  const residualControlPolicy = {
+    limitResidual:
+      boundary.residualBoundary === "leave-small-trace" ||
+      saturation.maxResidualConcepts === 1 ||
+      residualIntent.reduceResidualStacking === true ||
+      residualIntent.avoidResidualAestheticLoop === true,
+    reduceResidualStacking: residualIntent.reduceResidualStacking === true,
+    keepFinalLineUnresolved:
+      saturation.keepFinalLineUnresolved === true ||
+      residualIntent.keepFinalLineUnresolved === true,
+  };
+
+  const atmosphericIntegrityPolicy = {
+    suppressAtmosphericDrift:
+      atmosphericIntent.suppressPoeticDrift === true ||
+      atmosphericIntent.suppressAtmosphereOnlyContinuation === true,
+    preserveMeaning:
+      meaningIntent.preserveReadableMeaning === true ||
+      meaningIntent.avoidMeaningEvaporation === true,
+    avoidAestheticLoop:
+      saturation.avoidResidualAestheticLoop === true ||
+      residualIntent.avoidResidualAestheticLoop === true,
+  };
+
+  return {
+    version: "runtime-policy-layer-v0.1",
+    purpose: "translate runtime intents into reusable rendering policies",
+    boundaryProtectionPolicy,
+    emotionalBreathingPolicy,
+    residualControlPolicy,
+    atmosphericIntegrityPolicy,
+  };
+}
+
 function buildRuntimeRenderingProfile(runtimeNarrativeSelection) {
   const boundary = runtimeNarrativeSelection?.boundaryRules || {};
   const weight = runtimeNarrativeSelection?.narrativeWeight || {};
@@ -4274,11 +4344,19 @@ function buildRuntimeRenderingProfile(runtimeNarrativeSelection) {
   const atmosphericIntent = intent.atmosphericIntegrityIntent || {};
   const residualIntent = intent.residualIntegrityIntent || {};
 
+  const runtimePolicy = buildRuntimePolicyLayer(runtimeNarrativeSelection);
+  const boundaryPolicy = runtimePolicy.boundaryProtectionPolicy || {};
+  const breathingPolicy = runtimePolicy.emotionalBreathingPolicy || {};
+  const residualPolicy = runtimePolicy.residualControlPolicy || {};
+  const atmosphericPolicy = runtimePolicy.atmosphericIntegrityPolicy || {};
+
   const protectOutline =
+    boundaryPolicy.protectOutline === true ||
     boundary.outlineBoundary === "guarded" ||
     suppression.suppressFullReveal === true;
 
   const limitResidual =
+    residualPolicy.limitResidual === true ||
     boundary.residualBoundary === "leave-small-trace" ||
     saturation.maxResidualConcepts === 1 ||
     residualIntent.reduceResidualStacking === true ||
@@ -4292,6 +4370,7 @@ function buildRuntimeRenderingProfile(runtimeNarrativeSelection) {
   return {
     version: "runtime-rendering-controller-v0.1",
     purpose: "control sentence breath, pause density, outline softness, lingering pressure, and ending fade",
+    runtimePolicy,
     renderingIntent: {
       meaningPreservation: {
         preserveReadableMeaning: meaningIntent.preserveReadableMeaning === true,
@@ -4304,25 +4383,31 @@ function buildRuntimeRenderingProfile(runtimeNarrativeSelection) {
       atmosphericIntegrity: {
         suppressPoeticDrift: atmosphericIntent.suppressPoeticDrift === true,
         suppressAtmosphereOnlyContinuation:
-          atmosphericIntent.suppressAtmosphereOnlyContinuation === true,
+          atmosphericPolicy.suppressAtmosphericDrift === true ||
+        atmosphericIntent.suppressAtmosphereOnlyContinuation === true,
       },
       residualIntegrity: {
         reduceResidualStacking: residualIntent.reduceResidualStacking === true,
-        keepFinalLineUnresolved: residualIntent.keepFinalLineUnresolved === true,
+        keepFinalLineUnresolved: residualPolicy.keepFinalLineUnresolved === true ||
+        residualIntent.keepFinalLineUnresolved === true,
       },
     },
 
-    sentenceBreath: protectOutline
-      ? "slow-soft"
-      : weight.movementWeight === "middle"
-        ? "balanced"
-        : "soft-short",
+    sentenceBreath:
+      breathingPolicy.sentenceBreathBase ||
+      (protectOutline
+        ? "slow-soft"
+        : weight.movementWeight === "middle"
+          ? "balanced"
+          : "soft-short"),
 
-    pauseDensity: protectOutline
-      ? "high"
-      : limitResidual
-        ? "middle-high"
-        : "middle",
+    pauseDensity:
+      breathingPolicy.pauseDensityBase ||
+      (protectOutline
+        ? "high"
+        : limitResidual
+          ? "middle-high"
+          : "middle"),
 
     outlineSoftness: protectOutline
       ? "guarded-blur"
@@ -4352,15 +4437,19 @@ function buildRuntimeRenderingProfile(runtimeNarrativeSelection) {
       useShorterSentencesWhenGuarded: protectOutline,
       leaveMoreWhiteSpaceWhenSilent:
         boundary.silenceBoundary === "high" ||
+        breathingPolicy.preserveBreathingSpace === true ||
         breathingIntent.preserveBreathingSpace === true,
       reduceResidualStacking:
         limitResidual ||
+        residualPolicy.reduceResidualStacking === true ||
         residualIntent.reduceResidualStacking === true,
       keepLastLineUnresolved:
         saturation.keepFinalLineUnresolved === true ||
+        residualPolicy.keepFinalLineUnresolved === true ||
         residualIntent.keepFinalLineUnresolved === true,
       suppressAtmosphericDrift:
         atmosphericIntent.suppressPoeticDrift === true ||
+        atmosphericPolicy.suppressAtmosphericDrift === true ||
         atmosphericIntent.suppressAtmosphereOnlyContinuation === true,
     },
   };
@@ -4769,6 +4858,9 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
+
 
 
 
