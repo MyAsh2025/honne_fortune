@@ -27,7 +27,7 @@ class HonneApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '本音占い',
+      title: 'Inner Fortune',
       debugShowCheckedModeBanner: false,
       locale: context.locale,
       supportedLocales: context.supportedLocales,
@@ -456,7 +456,7 @@ class _HomePageState extends State<HomePage> {
                         child: Column(
                           children: [
                             Text(
-                              '前回の本音',
+                              'previous_reading'.tr(),
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
@@ -1342,5 +1342,4 @@ class ResultPage extends StatelessWidget {
     );
   }
 }
-
 
