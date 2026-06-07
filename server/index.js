@@ -3557,6 +3557,64 @@ ${buildQuietHonestCoreNarrative(compound)}
 ${buildSectionAwareNarrative(buildResidualEndingNarrative(compound, emotionTone), "residual", buildSectionBreathMap(runtimeRendering))}`;
 }
 
+
+function stablePaidFortuneEn(score, answers = [], depth = "deep", previousPatterns = [], expectedQuestionCount = 15) {
+  const categoryResult = getPrimaryCategory(answers);
+  const traitResult = getPrimaryTrait(answers);
+  const compound = buildCompoundInsight(categoryResult, traitResult);
+  const responsePattern = analyzeResponsePattern(answers);
+  const silencePattern = analyzeSilencePattern(answers, expectedQuestionCount);
+  const emotionTone = getEmotionTone(compound);
+
+  const toneLabel = {
+    warm: "warm",
+    cool: "quiet",
+    heavy: "heavy",
+    restless: "restless",
+    soft: "soft",
+  }[emotionTone] || "quiet";
+
+  return `[Opening]
+You may not need a loud answer right now.
+
+What seems to matter is the quiet movement beneath your responses.
+
+[Observation]
+The emotional tone of this reading feels ${toneLabel}.
+
+Something in you may be trying to stay composed,
+while another part is still waiting to be noticed.
+
+[Movement]
+There seems to be a small distance inside you:
+
+a wish to move closer to what you feel,
+and a need to remain careful at the same time.
+
+That hesitation is not a failure.
+It may be one of the ways your heart has learned to protect itself.
+
+[Afterimage]
+Some feelings do not disappear simply because they were not spoken.
+
+They remain as a quiet afterimage,
+not demanding an answer,
+but asking to be treated with a little more honesty.
+
+[Quiet Truth]
+The part of you that has been holding back
+may not be weak.
+
+It may simply be waiting for a safer place
+to become real in your own words.
+
+[Stillness]
+You do not have to understand everything today.
+
+For now, it may be enough to notice
+that something within you is still quietly moving.`;
+}
+
 app.post("/fortune", async (req, res) => {
   const { score } = req.body || {};
 
@@ -4721,7 +4779,7 @@ function getRecommendedPrice(depth) {
 }
 
 app.post("/deep-fortune", async (req, res) => {
-  const { score, answers, depth, previousResponseStyle, previousEmotionTone, previousPrimaryTrait, previousPatterns, expectedQuestionCount } = req.body || {};
+  const { score, answers, depth, locale, previousResponseStyle, previousEmotionTone, previousPrimaryTrait, previousPatterns, expectedQuestionCount } = req.body || {};
   const safeAnswers = answers || [];
 
   const categoryResult = getPrimaryCategory(safeAnswers);
@@ -4840,7 +4898,7 @@ app.post("/deep-fortune", async (req, res) => {
 
     recommendedPrice: getRecommendedPrice(depth || "deep"),
     depth: depth || "deep",
-    text: stablePaidFortune(score || 0, safeAnswers, depth || "deep", previousResponseStyle || null, previousEmotionTone || null, previousPrimaryTrait || null, Array.isArray(previousPatterns) ? previousPatterns : [], Number(expectedQuestionCount || 15)),
+    text: locale === "en" ? stablePaidFortuneEn(score || 0, safeAnswers, depth || "deep", Array.isArray(previousPatterns) ? previousPatterns : [], Number(expectedQuestionCount || 15)) : stablePaidFortune(score || 0, safeAnswers, depth || "deep", previousResponseStyle || null, previousEmotionTone || null, previousPrimaryTrait || null, Array.isArray(previousPatterns) ? previousPatterns : [], Number(expectedQuestionCount || 15)),
   });
 });
 
@@ -4858,134 +4916,4 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

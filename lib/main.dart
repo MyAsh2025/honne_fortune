@@ -1268,6 +1268,7 @@ class ResultPage extends StatelessWidget {
                             headers: {'Content-Type': 'application/json'},
                             body: jsonEncode({
                               'score': score,
+                              'locale': context.locale.languageCode,
                               'answers': answers
                                   .map((answer) => answer.toJson())
                                   .toList(),
@@ -1342,5 +1343,4 @@ class ResultPage extends StatelessWidget {
     );
   }
 }
-
 
