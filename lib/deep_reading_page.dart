@@ -267,8 +267,8 @@ class DeepReadingPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(36),
                         ),
                       ),
-                      child: const Text(
-                        '結果へ戻る',
+                      child: Text(
+                        'back_to_result'.tr(),
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -285,4 +285,5 @@ class DeepReadingPage extends StatelessWidget {
     );
   }
 }
+
 
