@@ -294,6 +294,30 @@ function getEmotionTonePhrase(tone) {
   return phrases[tone] || "苦しさの中にも、少しずつ自分に戻ろうとする流れがあります。";
 }
 
+function getEmotionToneLabelEn(tone) {
+  const labels = {
+    suppressed: "a feeling held back before it can speak",
+    anxious: "an uneasiness that wants an answer too quickly",
+    empty: "a quiet uncertainty where the self feels hard to see",
+    overloaded: "a tiredness that has been carrying too much for too long",
+    recovering: "a fragile movement back toward yourself",
+  };
+
+  return labels[tone] || "a fragile movement back toward yourself";
+}
+
+function getEmotionTonePhraseEn(tone) {
+  const phrases = {
+    suppressed: "Part of you may be holding back before your honest feeling has enough room to appear.",
+    anxious: "There may be a wish to decide quickly, while another part of you is afraid of choosing wrong.",
+    empty: "Before wanting something clearly, your own sense of self may feel slightly difficult to reach.",
+    overloaded: "There is a heaviness here, as if you have kept going even after you were already tired.",
+    recovering: "Even inside the strain, there seems to be a small movement trying to return you to yourself.",
+  };
+
+  return phrases[tone] || "Even inside the strain, there seems to be a small movement trying to return you to yourself.";
+}
+
 function getNarrativeIntegration(compound) {
   const trait = compound.primaryTrait;
 
@@ -3566,13 +3590,8 @@ function stablePaidFortuneEn(score, answers = [], depth = "deep", previousPatter
   const silencePattern = analyzeSilencePattern(answers, expectedQuestionCount);
   const emotionTone = getEmotionTone(compound);
 
-  const toneLabel = {
-    warm: "warm",
-    cool: "quiet",
-    heavy: "heavy",
-    restless: "restless",
-    soft: "soft",
-  }[emotionTone] || "quiet";
+  const toneLabel = getEmotionToneLabelEn(emotionTone);
+  const tonePhrase = getEmotionTonePhraseEn(emotionTone);
 
   return `[Opening]
 You may not need a loud answer right now.
@@ -3580,7 +3599,8 @@ You may not need a loud answer right now.
 What seems to matter is the quiet movement beneath your responses.
 
 [Observation]
-The emotional tone of this reading feels ${toneLabel}.
+The emotional tone of this reading feels like ${toneLabel}.
+${tonePhrase}
 
 Something in you may be trying to stay composed,
 while another part is still waiting to be noticed.
@@ -4916,4 +4936,5 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
