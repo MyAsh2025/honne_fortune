@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 class DeepReadingPage extends StatelessWidget {
@@ -14,34 +15,34 @@ class DeepReadingPage extends StatelessWidget {
 
   String getAfterglowMain() {
     if (score >= 22) {
-      return 'あなたのやさしさは、\nもう十分に誰かを支えてきました。';
+      return 'deep_afterglow_main_very_high'.tr();
     }
     if (score >= 12) {
-      return 'あなたの心は、\nまだ誰かを大切にしたいと願っています。';
+      return 'deep_afterglow_main_high'.tr();
     }
     if (score >= 4) {
-      return '言えなかった本音は、\nまだあなたの中で静かに待っています。';
+      return 'deep_afterglow_main_mid'.tr();
     }
     if (score >= -5) {
-      return '考えすぎてしまう心も、\nあなたを守ろうとしてきた一部です。';
+      return 'deep_afterglow_main_low'.tr();
     }
-    return '閉じてきた心にも、\nちゃんと理由がありました。';
+    return 'deep_afterglow_main_very_low'.tr();
   }
 
   String getAfterglowSub() {
     if (score >= 22) {
-      return '今は、誰かのためではなく、自分を戻す時間が必要なのかもしれません。';
+      return 'deep_afterglow_sub_very_high'.tr();
     }
     if (score >= 12) {
-      return 'でもその前に、あなた自身の声も少しだけ聞いてあげてください。';
+      return 'deep_afterglow_sub_high'.tr();
     }
     if (score >= 4) {
-      return '急がなくて大丈夫です。気づけた時点で、もう少し進んでいます。';
+      return 'deep_afterglow_sub_mid'.tr();
     }
     if (score >= -5) {
-      return '答えを急がず、まずは心が疲れていることを責めないでください。';
+      return 'deep_afterglow_sub_low'.tr();
     }
-    return '無理に開かなくても大丈夫です。安心できる場所からでいいのです。';
+    return 'deep_afterglow_sub_very_low'.tr();
   }
 
   List<TextSpan> _buildFormattedText() {
@@ -103,7 +104,7 @@ class DeepReadingPage extends StatelessWidget {
         elevation: 0,
         foregroundColor: Colors.white.withOpacity(0.92),
         title: Text(
-          '深層リーディング',
+          'deep_reading_appbar'.tr(),
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
@@ -157,7 +158,7 @@ class DeepReadingPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 42),
                   Text(
-                    'あなたの深層リーディング',
+                    'deep_reading_title'.tr(),
                     style: TextStyle(
                       fontSize: width > 700 ? 28 : 25,
                       fontWeight: FontWeight.w800,
@@ -168,7 +169,7 @@ class DeepReadingPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    '今の心の流れを、静かに見つめていきます。',
+                    'deep_reading_subtitle'.tr(),
                     style: TextStyle(
                       fontSize: 14,
                       height: 1.9,
@@ -284,3 +285,4 @@ class DeepReadingPage extends StatelessWidget {
     );
   }
 }
+

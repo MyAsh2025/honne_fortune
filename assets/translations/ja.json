@@ -50,5 +50,19 @@
   "q13": "本当は嫌なのに、場の空気を壊さないように笑うことがありますか？",
   "q14": "休んでいるはずなのに、心が休まっていないと感じることがありますか？",
   "q15": "今の働き方や役割が、自分の本音とずれている気がすることがありますか？",
-  "previous_reading": "前回の本音"
+  "previous_reading": "前回の本音",
+  "deep_reading_appbar": "深層リーディング",
+  "deep_reading_title": "あなたの深層リーディング",
+  "deep_reading_subtitle": "今の心の流れを、静かに見つめていきます。",
+  "deep_afterglow_main_very_high": "あなたのやさしさは、\nもう十分に誰かを支えてきました。",
+  "deep_afterglow_main_high": "あなたの心は、\nまだ誰かを大切にしたいと願っています。",
+  "deep_afterglow_main_mid": "言えなかった本音は、\nまだあなたの中で静かに待っています。",
+  "deep_afterglow_main_low": "考えすぎてしまう心も、\nあなたを守ろうとしてきた一部です。",
+  "deep_afterglow_main_very_low": "閉じてきた心にも、\nちゃんと理由がありました。",
+  "deep_afterglow_sub_very_high": "今は、誰かのためではなく、自分を戻す時間が必要なのかもしれません。",
+  "deep_afterglow_sub_high": "でもその前に、あなた自身の声も少しだけ聞いてあげてください。",
+  "deep_afterglow_sub_mid": "急がなくて大丈夫です。気づけた時点で、もう少し進んでいます。",
+  "deep_afterglow_sub_low": "答えを急がず、まずは心が疲れていることを責めないでください。",
+  "deep_afterglow_sub_very_low": "無理に開かなくても大丈夫です。安心できる場所からでいいのです。"
 }
+
