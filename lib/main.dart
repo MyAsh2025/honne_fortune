@@ -1314,7 +1314,7 @@ class ResultPage extends StatelessWidget {
                           if (!context.mounted) return;
 
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('有料鑑定の取得に失敗しました。')),
+                            SnackBar(content: Text('paid_reading_fetch_failed'.tr())),
                           );
                         }
                       },
@@ -1342,4 +1342,5 @@ class ResultPage extends StatelessWidget {
     );
   }
 }
+
 
