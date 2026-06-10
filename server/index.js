@@ -3706,6 +3706,61 @@ function buildEmotionalMaskingNarrativeEn(maskingState) {
   ].join("\n");
 }
 
+function buildAfterimageFallbackNarrativeEn(compound) {
+  const trait = compound?.primaryTrait || "";
+
+  if (trait === "emotional_fatigue") {
+    return `The afterwave of this feeling
+has not fully settled yet.
+
+A small tiredness
+still seems to be moving quietly underneath.`;
+  }
+
+  if (trait === "people_pleasing") {
+    return `The afterwave of this feeling
+has not fully taken shape yet.
+
+Something that was held back for others
+still seems to remain quietly.`;
+  }
+
+  if (trait === "attachment_anxiety") {
+    return `The afterwave of this feeling
+has not fully taken shape yet.
+
+A feeling that wanted to come closer
+still seems to hesitate a little.`;
+  }
+
+  if (trait === "future_anxiety") {
+    return `The afterwave of this feeling
+has not fully taken shape yet.
+
+Part of it still seems to be looking ahead,
+searching for certainty.`;
+  }
+
+  if (trait === "identity_confusion") {
+    return `The afterwave of this feeling
+has not fully taken shape yet.
+
+Something still seems to be searching
+for its outline.`;
+  }
+
+  if (trait === "role_pressure") {
+    return `The afterwave of this feeling
+has not fully taken shape yet.
+
+A sense of responsibility
+still seems to remain quietly in the background.`;
+  }
+
+  return `The afterwave of this feeling has not fully taken shape yet.
+It still seems to be moving quietly
+in a place before clear words.`;
+}
 function buildResidualAfterwaveNarrativeEn(responsePattern, compound, silencePattern, previousPatterns = []) {
   const echoState = analyzeEmotionalEcho(responsePattern, compound, silencePattern, previousPatterns);
   const afterimageState = analyzeEmotionalAfterimage(responsePattern, compound, silencePattern, previousPatterns);
@@ -3720,11 +3775,7 @@ function buildResidualAfterwaveNarrativeEn(responsePattern, compound, silencePat
     afterimageState?.state === "not_enough_history" &&
     residueState?.state === "not_enough_history"
   ) {
-    return [
-      "The afterwave of this feeling has not fully taken shape yet.",
-      "It still seems to be moving quietly",
-      "in a place before clear words.",
-    ].join("\n");
+    return buildAfterimageFallbackNarrativeEn(compound);
   }
 
   if (
@@ -5325,6 +5376,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
