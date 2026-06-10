@@ -906,6 +906,57 @@ function buildQuietHonestCoreNarrative(compound) {
 
 まだ少し内側で揺れているようでした。`;
 }
+
+function buildQuietHonestCoreNarrativeEn(compound) {
+  const trait = compound?.primaryTrait || "";
+
+  if (trait === "emotional_fatigue") {
+    return `Behind the part of you that has grown used to keeping going,
+
+a small wish to rest
+still seems to be moving quietly.`;
+  }
+
+  if (trait === "people_pleasing") {
+    return `Behind all the time you have spent choosing others first,
+
+there still seems to be a part of your own voice
+that has not completely disappeared.`;
+  }
+
+  if (trait === "attachment_anxiety") {
+    return `Behind the wish to move closer,
+
+a small fear of being left
+still seems to be trembling quietly.`;
+  }
+
+  if (trait === "future_anxiety") {
+    return `The more you think about what comes next,
+
+the more a wish for safety
+seems to move in a place before words.`;
+  }
+
+  if (trait === "identity_confusion") {
+    return `Behind the quiet uncertainty of not being able to define yourself,
+
+there still seems to be a small sense
+that you do not have to force yourself into a shape.`;
+  }
+
+  if (trait === "role_pressure") {
+    return `Behind all the time you have spent trying to fulfill your role,
+
+there still seems to be a quiet feeling
+that wants to loosen its grip, even slightly.`;
+  }
+
+  return `Before your honest feeling becomes words,
+
+something inside you
+still seems to be moving quietly.`;
+}
 function buildDynamicSign(compound) {
   return `今は、何を選ぶかよりも、なぜそこまで心が反応しているのかを見る時期です。
 「${getTraitLabel(compound.primaryTrait)}」が出ている場所に、次のあなたへ進むための本音があります。`;
@@ -3622,11 +3673,7 @@ not demanding an answer,
 but asking to be treated with a little more honesty.
 
 [Quiet Truth]
-The part of you that has been holding back
-may not be weak.
-
-It may simply be waiting for a safer place
-to become real in your own words.
+${buildQuietHonestCoreNarrativeEn(compound)}
 
 [Stillness]
 You do not have to understand everything today.
