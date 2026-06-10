@@ -4127,7 +4127,11 @@ But underneath it, a tiredness that has kept going for too long seems to remain.
 
 [For You Now]
 This may not be about giving up.
-It may be about noticing where your strength has been quietly used.`;
+It may be about noticing where your strength has been quietly used.
+
+[Small Opening]
+There may be more beneath this tiredness
+than can be understood all at once.`;
   }
 
   if (trait === "people_pleasing") {
@@ -4140,7 +4144,11 @@ But underneath it, something of your own still seems to be waiting to speak.
 
 [For You Now]
 This may not be weakness.
-It may be the small place where your honest feeling has not disappeared.`;
+It may be the small place where your honest feeling has not disappeared.
+
+[Small Opening]
+The voice that stayed quiet
+may still have more to show.`;
   }
 
   if (trait === "attachment_anxiety") {
@@ -4153,7 +4161,11 @@ But underneath it, a fear of being left seems to move quietly beside the wish to
 
 [For You Now]
 This may not mean your heart is closed.
-It may mean it is still checking what distance feels safe.`;
+It may mean it is still checking what distance feels safe.
+
+[Small Opening]
+There may be more underneath this feeling
+than can be seen all at once.`;
   }
 
   if (trait === "future_anxiety") {
@@ -4166,7 +4178,12 @@ But underneath it, a wish for certainty seems to remain before the next step bec
 
 [For You Now]
 This may not be only fear.
-It may be your heart trying to find a place where the future feels safe enough to face.`;
+It may be your heart trying to find a place where the future feels safe enough to face.
+
+[Small Opening]
+The wish for certainty may not be the whole story.
+
+Something quieter may still be waiting underneath it.`;
   }
 
   if (trait === "identity_confusion") {
@@ -4179,7 +4196,12 @@ But underneath it, something small still seems to be looking for its outline.
 
 [For You Now]
 This may not mean you are empty.
-It may mean something inside you has not yet found clear words.`;
+It may mean something inside you has not yet found clear words.
+
+[Small Opening]
+Not every part of you needs to become clear today.
+
+Some things may still be taking shape.`;
   }
 
   if (trait === "role_pressure") {
@@ -4192,7 +4214,11 @@ But underneath it, the weight of what had to be carried seems to remain.
 
 [For You Now]
 This may not be about doing less immediately.
-It may be about noticing what has been hard to set down.`;
+It may be about noticing what has been hard to set down.
+
+[Small Opening]
+The weight you have carried
+may still have more to say.`;
   }
 
   return `[Essence]
