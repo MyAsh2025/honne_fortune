@@ -3637,9 +3637,8 @@ function buildIntegratedEmotionalAfterwaveNarrativeEn(echoState, afterimageState
 
   if (residueState && residueState.state !== "no_residue") {
     parts.push([
-      "Even as the strongest defensive feeling softens,",
-      "a small reaction that tries to protect you in advance",
-      "still seems to remain.",
+      "Even after the strongest feeling softens,",
+      "a small trace of caution may still remain.",
     ].join("\n"));
   }
 
