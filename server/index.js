@@ -5167,7 +5167,7 @@ function getResidualSubjectProfileEn(compound) {
     return {
       subject: "the tiredness that stayed alert for too long",
       state: "has not fully loosened yet",
-      anchor: "You may still be getting used to resting",
+      anchor: "A small need for rest still seems to remain close by",
     };
   }
 
@@ -5175,7 +5175,7 @@ function getResidualSubjectProfileEn(compound) {
     return {
       subject: "the habit of placing your own feelings behind others",
       state: "has not fully returned to you yet",
-      anchor: "You may still look toward someone else before you look back at yourself",
+      anchor: "A small movement toward others still seems to remain before the self returns",
     };
   }
 
@@ -5183,7 +5183,7 @@ function getResidualSubjectProfileEn(compound) {
     return {
       subject: "the fear of being left",
       state: "has not completely disappeared",
-      anchor: "You may still brace yourself even while wanting to come closer",
+      anchor: "A small bracing still seems to remain beside the wish to come closer",
     };
   }
 
@@ -5191,7 +5191,7 @@ function getResidualSubjectProfileEn(compound) {
     return {
       subject: "the tension of thinking too far ahead",
       state: "has not fully softened yet",
-      anchor: "You may still search for the right answer before you allow yourself to feel safe",
+      anchor: "A small search for certainty still seems to remain before safety can settle",
     };
   }
 
@@ -5199,7 +5199,7 @@ function getResidualSubjectProfileEn(compound) {
     return {
       subject: "the uncertainty of not being able to define yourself",
       state: "has not fully taken shape yet",
-      anchor: "You may still be quietly checking the outline of who you are",
+      anchor: "A quiet checking of the outline still seems to remain",
     };
   }
 
@@ -5207,14 +5207,14 @@ function getResidualSubjectProfileEn(compound) {
     return {
       subject: "the tension of not being able to put your role down",
       state: "has not fully left your body yet",
-      anchor: "You may still try to be useful before you allow yourself to rest",
+      anchor: "A small pull toward being useful still seems to remain before rest can arrive",
     };
   }
 
   return {
     subject: "the feeling that did not fully become words",
     state: "is still present",
-    anchor: "You may still be quietly checking what remains inside you",
+    anchor: "A quiet checking of what remains still seems to continue",
   };
 }
 
@@ -5408,4 +5408,3 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
-
