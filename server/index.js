@@ -3631,15 +3631,14 @@ function buildResidualAfterwaveNarrativeEn(responsePattern, compound, silencePat
     ].join("\n");
   }
 
-  if (masking && masking.includes("surface")) {
+  if (
+    masking &&
+    ["protective_masking", "quiet_overextension", "uncertain_self_masking"].includes(maskingState?.state)
+  ) {
     return integrated + "\n\n" + masking;
   }
 
-  return integrated + "\n\n" + [
-    "Between the feeling that appeared on the surface",
-    "and the feeling that still remains underneath,",
-    "a small distance seems to remain.",
-  ].join("\n");
+  return integrated;
 }
 
 function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null, previousPrimaryTrait = null, previousPatterns = [], expectedQuestionCount = 15) {
@@ -5155,5 +5154,6 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
