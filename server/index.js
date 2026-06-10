@@ -162,6 +162,31 @@ function getTraitLabel(trait) {
   return labels[trait] || "自分らしさの迷子";
 }
 
+function getCategoryLabelEn(category) {
+  const labels = {
+    relationship: "relationships",
+    love: "love",
+    work: "work and roles",
+    future: "the future and direction",
+    self: "your sense of self",
+    mental: "emotional tiredness",
+  };
+
+  return labels[category] || "your sense of self";
+}
+
+function getTraitLabelEn(trait) {
+  const labels = {
+    people_pleasing: "a habit of adjusting yourself around others",
+    attachment_anxiety: "a fear of being left behind",
+    role_pressure: "pressure around the role you have been carrying",
+    future_anxiety: "anxiety about what comes next",
+    identity_confusion: "uncertainty around who you are",
+    emotional_fatigue: "emotional tiredness",
+  };
+
+  return labels[trait] || "uncertainty around who you are";
+}
 function buildCompoundInsight(categoryResult, traitResult) {
   const primaryCategory = categoryResult.primary;
   const secondaryCategory = categoryResult.secondary;
@@ -3822,17 +3847,21 @@ What seems to matter is the quiet movement beneath your responses.
 The emotional tone of this reading feels like ${toneLabel}.
 ${tonePhrase}
 
-Something in you may be trying to stay composed,
-while another part is still waiting to be noticed.
+On the surface, this may look like a concern around ${getCategoryLabelEn(compound.primaryCategory)}.
+But in this reading, something underneath it is responding as ${getTraitLabelEn(compound.primaryTrait)}.
+
+Something that has not yet become words
+still seems to remain a little inside.
 
 [Movement]
-There seems to be a small distance inside you:
+After being touched lightly,
 
-a wish to move closer to what you feel,
-and a need to remain careful at the same time.
+the feeling seems to be quietly measuring its distance again.
 
-That hesitation is not a failure.
-It may be one of the ways your heart has learned to protect itself.
+A wish to move closer,
+and a sense that still needs to remain careful,
+
+seem to be staying in the same place.
 
 [Afterimage]
 ${buildResidualAfterwaveNarrativeEn(
@@ -5049,6 +5078,13 @@ function getResidualSubjectProfileEn(compound) {
   };
 }
 
+function capitalizeFirst(text) {
+  if (!text || typeof text !== "string") {
+    return "";
+  }
+
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
 function buildResidualEndingNarrativeEn(compound, emotionTone = null) {
   const residualSubject = getResidualSubjectProfileEn(compound);
   const contactProfile = buildEmotionalContactProfile(compound, emotionTone);
@@ -5058,7 +5094,7 @@ function buildResidualEndingNarrativeEn(compound, emotionTone = null) {
       ? "That feeling still seems to remain in a small, quiet way."
       : "That feeling still seems to remain, just a little.";
 
-  return `${residualSubject.subject}
+  return `${capitalizeFirst(residualSubject.subject)}
 ${residualSubject.state}.
 
 ${residualSubject.anchor}.
@@ -5232,6 +5268,10 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
+
+
 
 
 
