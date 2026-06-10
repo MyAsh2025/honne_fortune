@@ -349,6 +349,10 @@ function getObservationToneLabelEn(compound, tone) {
     return "a pressure that has stayed tied to what must be carried";
   }
 
+  if (trait === "attachment_anxiety") {
+    return "an uneasiness that watches the distance to someone close";
+  }
+
   return getEmotionToneLabelEn(tone);
 }
 
@@ -357,6 +361,10 @@ function getObservationTonePhraseEn(compound, tone) {
 
   if (trait === "role_pressure") {
     return "There is a weight here, as if part of you has kept holding a role even after it became heavy.";
+  }
+
+  if (trait === "attachment_anxiety") {
+    return "There may be a wish to move closer, while another part of you braces for being left.";
   }
 
   return getEmotionTonePhraseEn(tone);
