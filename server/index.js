@@ -945,8 +945,8 @@ still seems to be moving quietly.`;
   if (trait === "people_pleasing") {
     return `Behind all the time you have spent choosing others first,
 
-there still seems to be a part of your own voice
-that has not completely disappeared.`;
+a small voice of your own
+still seems to remain quietly.`;
   }
 
   if (trait === "attachment_anxiety") {
@@ -973,8 +973,8 @@ that has not yet settled into a shape.`;
   if (trait === "role_pressure") {
     return `Behind all the time you have spent trying to fulfill your role,
 
-there still seems to be a quiet feeling
-that wants to loosen its grip, even slightly.`;
+a small feeling
+still seems to remain before it can loosen.`;
   }
 
   return `Before your honest feeling becomes words,
