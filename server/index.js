@@ -3827,6 +3827,70 @@ ${buildSectionAwareNarrative(buildResidualEndingNarrative(compound, emotionTone)
 }
 
 
+function buildMovementNarrativeEn(compound) {
+  const trait = compound?.primaryTrait || "";
+
+  if (trait === "emotional_fatigue") {
+    return `After carrying so much for so long,
+
+part of the feeling seems to be slowing down,
+while another part still keeps going.
+
+Both seem to remain together for now.`;
+  }
+
+  if (trait === "people_pleasing") {
+    return `The feeling seems to pause
+
+between listening to others
+and listening to yourself.
+
+Both directions still seem to remain.`;
+  }
+
+  if (trait === "attachment_anxiety") {
+    return `A wish to move closer,
+and a need to remain careful,
+
+still seem to be staying in the same place.`;
+  }
+
+  if (trait === "future_anxiety") {
+    return `Part of the feeling seems to look ahead,
+
+while another part quietly waits
+for something to feel certain.
+
+Both seem to remain together.`;
+  }
+
+  if (trait === "identity_confusion") {
+    return `The feeling seems to be searching
+
+without fully knowing what it is looking for yet.
+
+Something is still taking shape quietly.`;
+  }
+
+  if (trait === "role_pressure") {
+    return `Part of the feeling still holds on
+to what must be carried.
+
+Another part seems to be wondering
+what it would be like to loosen that grip.
+
+Both remain present.`;
+  }
+
+  return `After being touched lightly,
+
+the feeling seems to be quietly measuring its distance again.
+
+A wish to move closer,
+and a sense that still needs to remain careful,
+
+seem to be staying in the same place.`;
+}
 function stablePaidFortuneEn(score, answers = [], depth = "deep", previousPatterns = [], expectedQuestionCount = 15) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
@@ -3854,14 +3918,7 @@ Something that has not yet become words
 still seems to remain a little inside.
 
 [Movement]
-After being touched lightly,
-
-the feeling seems to be quietly measuring its distance again.
-
-A wish to move closer,
-and a sense that still needs to remain careful,
-
-seem to be staying in the same place.
+${buildMovementNarrativeEn(compound)}
 
 [Afterimage]
 ${buildResidualAfterwaveNarrativeEn(
@@ -5268,6 +5325,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
