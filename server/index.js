@@ -1736,7 +1736,7 @@ function buildEmotionalContactNarrativeEn(
     return [
       "The feeling does not seem to be trying to come closer all at once.",
       "",
-      "It seems to be moving while checking how it can be touched.",
+      "It seems to be moving while quietly feeling out how close it can come.",
       "",
       "Rather than being completely closed, it may be quietly measuring a distance that does not hurt.",
     ].join("\n");
@@ -5268,6 +5268,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
