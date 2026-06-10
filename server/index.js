@@ -1775,6 +1775,16 @@ function buildEmotionalContactNarrativeEn(
       ].join("\n");
     }
 
+    if (trait === "role_pressure") {
+      return [
+        "The feeling does not seem to be trying to come closer all at once.",
+        "",
+        "It seems to be checking whether something can be set down safely.",
+        "",
+        "Rather than being completely closed, it may be measuring how much weight it still has to hold.",
+      ].join("\n");
+    }
+
     return [
       "The feeling does not seem to be trying to come closer all at once.",
       "",
