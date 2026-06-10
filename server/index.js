@@ -4109,15 +4109,112 @@ ${buildQuietHonestCoreNarrativeEn(compound)}
 ${buildResidualEndingNarrativeEn(compound, emotionTone)}`;
 }
 
+function stableFortuneEn(score, answers = []) {
+  const categoryResult = getPrimaryCategory(answers || []);
+  const traitResult = getPrimaryTrait(answers || []);
+  const compound = buildCompoundInsight(categoryResult, traitResult);
+
+  const category = getCategoryLabelEn(compound.primaryCategory);
+  const trait = compound.primaryTrait || "";
+
+  if (trait === "emotional_fatigue") {
+    return `[Essence]
+You may have been carrying more than your heart could quietly show.
+
+[Hidden Feeling]
+On the surface, this may look like a concern around ${category}.
+But underneath it, a tiredness that has kept going for too long seems to remain.
+
+[For You Now]
+This may not be about giving up.
+It may be about noticing where your strength has been quietly used.`;
+  }
+
+  if (trait === "people_pleasing") {
+    return `[Essence]
+You may have become used to placing your own voice behind others.
+
+[Hidden Feeling]
+On the surface, this may look like a concern around ${category}.
+But underneath it, something of your own still seems to be waiting to speak.
+
+[For You Now]
+This may not be weakness.
+It may be the small place where your honest feeling has not disappeared.`;
+  }
+
+  if (trait === "attachment_anxiety") {
+    return `[Essence]
+You may be wanting closeness while still protecting yourself from being hurt.
+
+[Hidden Feeling]
+On the surface, this may look like a concern around ${category}.
+But underneath it, a fear of being left seems to move quietly beside the wish to come closer.
+
+[For You Now]
+This may not mean your heart is closed.
+It may mean it is still checking what distance feels safe.`;
+  }
+
+  if (trait === "future_anxiety") {
+    return `[Essence]
+You may be looking ahead before your feeling has fully caught up.
+
+[Hidden Feeling]
+On the surface, this may look like a concern around ${category}.
+But underneath it, a wish for certainty seems to remain before the next step becomes clear.
+
+[For You Now]
+This may not be only fear.
+It may be your heart trying to find a place where the future feels safe enough to face.`;
+  }
+
+  if (trait === "identity_confusion") {
+    return `[Essence]
+You may be searching for yourself before the shape has fully appeared.
+
+[Hidden Feeling]
+On the surface, this may look like a concern around ${category}.
+But underneath it, something small still seems to be looking for its outline.
+
+[For You Now]
+This may not mean you are empty.
+It may mean something inside you has not yet found clear words.`;
+  }
+
+  if (trait === "role_pressure") {
+    return `[Essence]
+You may have been holding a role even after it became heavy.
+
+[Hidden Feeling]
+On the surface, this may look like a concern around ${category}.
+But underneath it, the weight of what had to be carried seems to remain.
+
+[For You Now]
+This may not be about doing less immediately.
+It may be about noticing what has been hard to set down.`;
+  }
+
+  return `[Essence]
+Something in you may be responding more quietly than it appears.
+
+[Hidden Feeling]
+On the surface, this may look like a concern around ${category}.
+But underneath it, a feeling that has not yet become words seems to remain.
+
+[For You Now]
+This may be only the entrance.
+There may be more underneath this feeling than can be seen at once.`;
+}
 app.post("/fortune", async (req, res) => {
-  const { score } = req.body || {};
+  const { score, locale, answers } = req.body || {};
 
   res.json({
     ok: true,
     mode: "stable-template",
     phase: "stable-free-v1",
     type: getScoreType(score || 0),
-    text: stableFortune(score || 0),
+    text: locale === "en" ? stableFortuneEn(score || 0, answers || []) : stableFortune(score || 0),
   });
 });
 
