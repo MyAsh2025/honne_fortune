@@ -3543,6 +3543,105 @@ function buildEmotionalMaskingNarrative(maskingState) {
 
 小さな距離が残っているようでした。`;
 }
+
+function buildIntegratedEmotionalAfterwaveNarrativeEn(echoState, afterimageState, residueState) {
+  const parts = [];
+
+  if (echoState && echoState.state !== "no_signal") {
+    parts.push([
+      "In recent readings,",
+      "the afterwave of a feeling touched before",
+      "still seems to remain quietly.",
+    ].join("\n"));
+  }
+
+  if (afterimageState && afterimageState.state !== "no_afterimage") {
+    parts.push([
+      "Even if the strongest feeling has settled a little,",
+      "the distance you keep to protect yourself",
+      "may still remain like an outline.",
+    ].join("\n"));
+  }
+
+  if (residueState && residueState.state !== "no_residue") {
+    parts.push([
+      "Even as the strongest defensive feeling softens,",
+      "a small reaction that tries to protect you in advance",
+      "still seems to remain.",
+    ].join("\n"));
+  }
+
+  if (parts.length === 0) {
+    return [
+      "In recent readings,",
+      "the reactions left after a strong emotional movement",
+      "are not yet clearly visible.",
+    ].join("\n");
+  }
+
+  return parts.join("\n\n") + "\n\n" + [
+    "This may not mean you are unhealed.",
+    "It may mean your heart is still holding the afterimage carefully,",
+    "while checking what distance feels safe.",
+  ].join("\n");
+}
+
+function buildEmotionalMaskingNarrativeEn(maskingState) {
+  if (!maskingState || maskingState.state === "insufficient_signal") {
+    return "For now, it is still too early to see the difference between the feeling that appears on the surface and the feeling that remains underneath.";
+  }
+
+  if (maskingState.state === "protective_masking") {
+    return "In recent readings, even if you seem to be keeping some distance on the surface, a deeper tiredness may still remain underneath. Not opening too quickly may be your heart choosing safety first.";
+  }
+
+  if (maskingState.state === "quiet_overextension") {
+    return "In recent readings, even if you seem calmly able to keep going, a quieter wish to rest may still remain underneath. Beneath your gentleness, a fatigue that is hard to notice may have been gathering.";
+  }
+
+  if (maskingState.state === "uncertain_self_masking") {
+    return "In recent readings, even if you seem composed on the surface, a feeling of not yet being able to organize yourself may still remain underneath. Not being able to define it clearly may be your heart measuring distance carefully.";
+  }
+
+  return [
+    "Between the feeling that appeared on the surface",
+    "and the feeling that still remains underneath,",
+    "a small distance seems to remain.",
+  ].join("\n");
+}
+
+function buildResidualAfterwaveNarrativeEn(responsePattern, compound, silencePattern, previousPatterns = []) {
+  const echoState = analyzeEmotionalEcho(responsePattern, compound, silencePattern, previousPatterns);
+  const afterimageState = analyzeEmotionalAfterimage(responsePattern, compound, silencePattern, previousPatterns);
+  const residueState = analyzeEmotionalResidue(responsePattern, compound, silencePattern, previousPatterns);
+  const maskingState = analyzeEmotionalMasking(responsePattern, compound, silencePattern, previousPatterns);
+
+  const integrated = buildIntegratedEmotionalAfterwaveNarrativeEn(echoState, afterimageState, residueState);
+  const masking = buildEmotionalMaskingNarrativeEn(maskingState);
+
+  if (
+    echoState?.state === "not_enough_history" &&
+    afterimageState?.state === "not_enough_history" &&
+    residueState?.state === "not_enough_history"
+  ) {
+    return [
+      "The afterwave of this feeling has not fully taken shape yet.",
+      "It still seems to be moving quietly",
+      "in a place before clear words.",
+    ].join("\n");
+  }
+
+  if (masking && masking.includes("surface")) {
+    return integrated + "\n\n" + masking;
+  }
+
+  return integrated + "\n\n" + [
+    "Between the feeling that appeared on the surface",
+    "and the feeling that still remains underneath,",
+    "a small distance seems to remain.",
+  ].join("\n");
+}
+
 function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null, previousPrimaryTrait = null, previousPatterns = [], expectedQuestionCount = 15) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
@@ -3666,11 +3765,12 @@ That hesitation is not a failure.
 It may be one of the ways your heart has learned to protect itself.
 
 [Afterimage]
-Some feelings do not disappear simply because they were not spoken.
-
-They remain as a quiet afterimage,
-not demanding an answer,
-but asking to be treated with a little more honesty.
+${buildResidualAfterwaveNarrativeEn(
+  responsePattern,
+  compound,
+  silencePattern,
+  previousPatterns
+)}
 
 [Quiet Truth]
 ${buildQuietHonestCoreNarrativeEn(compound)}
