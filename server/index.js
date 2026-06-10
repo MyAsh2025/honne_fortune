@@ -3676,10 +3676,7 @@ but asking to be treated with a little more honesty.
 ${buildQuietHonestCoreNarrativeEn(compound)}
 
 [Stillness]
-You do not have to understand everything today.
-
-For now, it may be enough to notice
-that something within you is still quietly moving.`;
+${buildResidualEndingNarrativeEn(compound, emotionTone)}`;
 }
 
 app.post("/fortune", async (req, res) => {
@@ -4813,6 +4810,81 @@ function buildResidualEndingNarrative(compound, emotionTone = null) {
 まだ完全には${residualSubject.state}ようです。
 
 ${residualSubject.anchor}。
+
+${endingLine}`;
+}
+
+function getResidualSubjectProfileEn(compound) {
+  const trait = compound?.primaryTrait || "";
+
+  if (trait === "emotional_fatigue") {
+    return {
+      subject: "the tiredness that stayed alert for too long",
+      state: "has not fully loosened yet",
+      anchor: "You may still be learning how to rest without feeling like you have failed",
+    };
+  }
+
+  if (trait === "people_pleasing") {
+    return {
+      subject: "the habit of placing your own feelings behind others",
+      state: "has not fully returned to you yet",
+      anchor: "You may still look toward someone else before you look back at yourself",
+    };
+  }
+
+  if (trait === "attachment_anxiety") {
+    return {
+      subject: "the fear of being left",
+      state: "has not completely disappeared",
+      anchor: "You may still brace yourself even while wanting to come closer",
+    };
+  }
+
+  if (trait === "future_anxiety") {
+    return {
+      subject: "the tension of thinking too far ahead",
+      state: "has not fully softened yet",
+      anchor: "You may still search for the right answer before you allow yourself to feel safe",
+    };
+  }
+
+  if (trait === "identity_confusion") {
+    return {
+      subject: "the uncertainty of not being able to define yourself",
+      state: "has not fully taken shape yet",
+      anchor: "You may still be quietly checking the outline of who you are",
+    };
+  }
+
+  if (trait === "role_pressure") {
+    return {
+      subject: "the tension of not being able to put your role down",
+      state: "has not fully left your body yet",
+      anchor: "You may still try to be useful before you allow yourself to rest",
+    };
+  }
+
+  return {
+    subject: "the feeling that did not fully become words",
+    state: "is still present",
+    anchor: "You may still be quietly checking what remains inside you",
+  };
+}
+
+function buildResidualEndingNarrativeEn(compound, emotionTone = null) {
+  const residualSubject = getResidualSubjectProfileEn(compound);
+  const contactProfile = buildEmotionalContactProfile(compound, emotionTone);
+
+  const endingLine =
+    contactProfile.silenceDensity === "very_high"
+      ? "That feeling still seems to remain in a small, quiet way."
+      : "That feeling still seems to remain, just a little.";
+
+  return `${residualSubject.subject}
+${residualSubject.state}.
+
+${residualSubject.anchor}.
 
 ${endingLine}`;
 }
