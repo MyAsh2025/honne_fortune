@@ -5027,7 +5027,7 @@ function getResidualSubjectProfileEn(compound) {
     return {
       subject: "the tiredness that stayed alert for too long",
       state: "has not fully loosened yet",
-      anchor: "You may still be learning how to rest without feeling like you have failed",
+      anchor: "You may still be getting used to resting",
     };
   }
 
@@ -5268,6 +5268,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
