@@ -1765,6 +1765,16 @@ function buildEmotionalContactNarrativeEn(
       ].join("\n");
     }
 
+    if (trait === "future_anxiety") {
+      return [
+        "The feeling does not seem to be trying to come closer all at once.",
+        "",
+        "It seems to be checking whether the next step can feel safe enough.",
+        "",
+        "Rather than being completely closed, it may be measuring how much uncertainty it can hold.",
+      ].join("\n");
+    }
+
     return [
       "The feeling does not seem to be trying to come closer all at once.",
       "",
