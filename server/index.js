@@ -1689,6 +1689,78 @@ function buildEmotionalContactNarrative(
 どこまで近づいても大丈夫そうかを、
 静かに確かめているようでした。`;
 }
+function buildEmotionalContactNarrativeEn(
+  responsePattern,
+  silencePattern,
+  previousPatterns = []
+) {
+  if (!responsePattern) {
+    return "The feeling still seems to be looking for a safe way to move."; 
+  }
+
+  const opennessState = getOpennessState(responsePattern);
+  const trustDepthState = getTrustDepthState(responsePattern, previousPatterns);
+  const silenceStyle = silencePattern?.silenceStyle || "none";
+  const style = responsePattern.responseStyle;
+
+  if (
+    style === "defensive" ||
+    opennessState === "guarded" ||
+    trustDepthState === "cautious"
+  ) {
+    return [
+      "The feeling does not seem to be trying to come closer all at once.",
+      "",
+      "It seems to be moving while checking how it can be touched.",
+      "",
+      "Rather than being completely closed, it may be quietly measuring a distance that does not hurt.",
+    ].join("\n");
+  }
+
+  if (
+    style === "shallow" ||
+    opennessState === "distant"
+  ) {
+    return [
+      "The feeling seems to be staying a little outside of itself for now.",
+      "",
+      "Rather than going deeply inward, it may be watching quietly from a safer distance.",
+      "",
+      "That distance may also be one way your heart checks whether it is safe.",
+    ].join("\n");
+  }
+
+  if (
+    style === "unstable" ||
+    style === "fluctuating"
+  ) {
+    return [
+      "A wish to come closer and a need to remain careful",
+      "seem to be moving quietly in the same place.",
+      "",
+      "That wavering may be happening because the feeling has begun to move.",
+    ].join("\n");
+  }
+
+  if (
+    silenceStyle === "strong_avoidance" ||
+    silenceStyle === "partial_avoidance"
+  ) {
+    return [
+      "Some feeling that has not yet become words",
+      "still seems to remain a little inside.",
+      "",
+      "Even in the place left untouched, the temperature of your heart may still remain.",
+    ].join("\n");
+  }
+
+  return [
+    "The feeling does not seem to be forcing itself toward an answer yet.",
+    "",
+    "It seems to be quietly checking how close it can come and still feel safe.",
+  ].join("\n");
+}
+
 function buildTrustDepthNarrative(responsePattern, previousPatterns = []) {
   const trustDepthState = getTrustDepthState(responsePattern, previousPatterns);
 
@@ -3767,6 +3839,13 @@ It may be one of the ways your heart has learned to protect itself.
 ${buildResidualAfterwaveNarrativeEn(
   responsePattern,
   compound,
+  silencePattern,
+  previousPatterns
+)}
+
+[Emotional Contact]
+${buildEmotionalContactNarrativeEn(
+  responsePattern,
   silencePattern,
   previousPatterns
 )}
