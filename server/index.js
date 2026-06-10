@@ -1717,7 +1717,8 @@ function buildEmotionalContactNarrative(
 function buildEmotionalContactNarrativeEn(
   responsePattern,
   silencePattern,
-  previousPatterns = []
+  previousPatterns = [],
+  compound = null
 ) {
   if (!responsePattern) {
     return "The feeling still seems to be looking for a safe way to move."; 
@@ -1727,12 +1728,43 @@ function buildEmotionalContactNarrativeEn(
   const trustDepthState = getTrustDepthState(responsePattern, previousPatterns);
   const silenceStyle = silencePattern?.silenceStyle || "none";
   const style = responsePattern.responseStyle;
+  const trait = compound?.primaryTrait || "";
 
   if (
     style === "defensive" ||
     opennessState === "guarded" ||
     trustDepthState === "cautious"
   ) {
+    if (trait === "emotional_fatigue") {
+      return [
+        "The feeling does not seem to be trying to come closer all at once.",
+        "",
+        "It seems to be checking how much strength remains.",
+        "",
+        "Rather than being completely closed, it may be protecting a small place to rest.",
+      ].join("\n");
+    }
+
+    if (trait === "people_pleasing") {
+      return [
+        "The feeling does not seem to be trying to come closer all at once.",
+        "",
+        "It seems to be checking whether its own voice can stay safe.",
+        "",
+        "Rather than being completely closed, it may be measuring where it can stand.",
+      ].join("\n");
+    }
+
+    if (trait === "identity_confusion") {
+      return [
+        "The feeling does not seem to be trying to come closer all at once.",
+        "",
+        "It seems to be checking whether its outline can appear safely.",
+        "",
+        "Rather than being completely closed, it may be measuring how much shape it can take.",
+      ].join("\n");
+    }
+
     return [
       "The feeling does not seem to be trying to come closer all at once.",
       "",
@@ -1785,7 +1817,6 @@ function buildEmotionalContactNarrativeEn(
     "It seems to be quietly checking how close it can come and still feel safe.",
   ].join("\n");
 }
-
 function buildTrustDepthNarrative(responsePattern, previousPatterns = []) {
   const trustDepthState = getTrustDepthState(responsePattern, previousPatterns);
 
@@ -3983,7 +4014,8 @@ ${buildResidualAfterwaveNarrativeEn(
 ${buildEmotionalContactNarrativeEn(
   responsePattern,
   silencePattern,
-  previousPatterns
+  previousPatterns,
+  compound
 )}
 
 [Quiet Truth]
@@ -5376,16 +5408,4 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
-
-
-
-
-
-
-
-
-
-
-
-
 
