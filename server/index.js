@@ -3973,6 +3973,43 @@ and a sense that still needs to remain careful,
 
 seem to be staying in the same place.`;
 }
+function buildObservationTraitNarrativeEn(compound) {
+  const trait = compound?.primaryTrait || "";
+  const category = getCategoryLabelEn(compound?.primaryCategory);
+
+  if (trait === "emotional_fatigue") {
+    return `On the surface, this may look like a concern around ${category}.
+But underneath it, the feeling seems to gather around the strain of having carried too much.`;
+  }
+
+  if (trait === "people_pleasing") {
+    return `On the surface, this may look like a concern around ${category}.
+But underneath it, the feeling seems to move around where your own voice becomes harder to keep near others.`;
+  }
+
+  if (trait === "attachment_anxiety") {
+    return `On the surface, this may look like a concern around ${category}.
+But underneath it, the feeling seems to gather around the distance between wanting closeness and needing to stay careful.`;
+  }
+
+  if (trait === "future_anxiety") {
+    return `On the surface, this may look like a concern around ${category}.
+But underneath it, the feeling seems to move around the uncertainty of what comes next.`;
+  }
+
+  if (trait === "identity_confusion") {
+    return `On the surface, this may look like a concern around ${category}.
+But underneath it, the feeling seems to gather around an outline of the self that has not fully appeared yet.`;
+  }
+
+  if (trait === "role_pressure") {
+    return `On the surface, this may look like a concern around ${category}.
+But underneath it, the feeling seems to gather around the weight of what has had to be carried.`;
+  }
+
+  return `On the surface, this may look like a concern around ${category}.
+But underneath it, something quieter seems to be responding before it becomes clear.`;
+}
 function stablePaidFortuneEn(score, answers = [], depth = "deep", previousPatterns = [], expectedQuestionCount = 15) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
@@ -3993,8 +4030,7 @@ What seems to matter is the quiet movement beneath your responses.
 The emotional tone of this reading feels like ${toneLabel}.
 ${tonePhrase}
 
-On the surface, this may look like a concern around ${getCategoryLabelEn(compound.primaryCategory)}.
-But in this reading, something underneath it is responding as ${getTraitLabelEn(compound.primaryTrait)}.
+${buildObservationTraitNarrativeEn(compound)}
 
 Something that has not yet become words
 still seems to remain a little inside.
