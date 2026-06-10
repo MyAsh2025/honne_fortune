@@ -342,6 +342,26 @@ function getEmotionTonePhraseEn(tone) {
 
   return phrases[tone] || "Even inside the strain, there seems to be a small movement trying to return you to yourself.";
 }
+function getObservationToneLabelEn(compound, tone) {
+  const trait = compound?.primaryTrait || "";
+
+  if (trait === "role_pressure") {
+    return "a pressure that has stayed tied to what must be carried";
+  }
+
+  return getEmotionToneLabelEn(tone);
+}
+
+function getObservationTonePhraseEn(compound, tone) {
+  const trait = compound?.primaryTrait || "";
+
+  if (trait === "role_pressure") {
+    return "There is a weight here, as if part of you has kept holding a role even after it became heavy.";
+  }
+
+  return getEmotionTonePhraseEn(tone);
+}
+
 
 function getNarrativeIntegration(compound) {
   const trait = compound.primaryTrait;
@@ -4038,8 +4058,8 @@ function stablePaidFortuneEn(score, answers = [], depth = "deep", previousPatter
   const silencePattern = analyzeSilencePattern(answers, expectedQuestionCount);
   const emotionTone = getEmotionTone(compound);
 
-  const toneLabel = getEmotionToneLabelEn(emotionTone);
-  const tonePhrase = getEmotionTonePhraseEn(emotionTone);
+  const toneLabel = getObservationToneLabelEn(compound, emotionTone);
+  const tonePhrase = getObservationTonePhraseEn(compound, emotionTone);
 
   return `[Opening]
 You may not need a loud answer right now.
