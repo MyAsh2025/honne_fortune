@@ -169,7 +169,7 @@ function getCategoryLabelEn(category) {
     work: "work and roles",
     future: "the future and direction",
     self: "your sense of self",
-    mental: "emotional tiredness",
+    mental: "emotional strain",
   };
 
   return labels[category] || "your sense of self";
@@ -967,7 +967,7 @@ seems to move in a place before words.`;
     return `Behind the quiet uncertainty of not being able to define yourself,
 
 there still seems to be a small sense
-that you do not have to force yourself into a shape.`;
+that has not yet settled into a shape.`;
   }
 
   if (trait === "role_pressure") {
@@ -5268,6 +5268,8 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
 
 
 
