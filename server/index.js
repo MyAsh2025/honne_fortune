@@ -4599,6 +4599,23 @@ function stablePaidFortuneEn(score, answers = [], depth = "deep", previousPatter
     emotionTone
   );
 
+  const runtimeRendering = buildRuntimeRenderingProfile(
+    buildRuntimeNarrativeSelection(
+      buildRuntimeCompositionProfile(
+        buildRuntimeSectionController(
+          buildRuntimeRouterProfile({
+            responsePattern,
+            silencePattern,
+            compound,
+            previousPatterns: Array.isArray(previousPatterns) ? previousPatterns : [],
+            emotionTone,
+          })
+        )
+      )
+    )
+  );
+  const sectionBreathMap = buildSectionBreathMap(runtimeRendering);
+
   const toneLabel = getObservationToneLabelEn(compound, emotionTone);
   const tonePhrase = getObservationTonePhraseEn(compound, emotionTone);
 
@@ -4611,36 +4628,60 @@ What seems to matter is the quiet movement beneath your responses.
 The emotional tone of this reading feels like ${toneLabel}.
 ${tonePhrase}
 
-${buildObservationTraitNarrativeEn(compound)}
+${buildSectionAwareNarrative(
+  `${buildObservationTraitNarrativeEn(compound)}
 
-${buildObservationClosingEn(compound, runtimeProfile)}
+${buildObservationClosingEn(compound, runtimeProfile)}`,
+  "observation",
+  sectionBreathMap
+)}
 
 [How the Feeling Moves]
-${buildMovementNarrativeEn(compound, runtimeProfile)}
+${buildSectionAwareNarrative(
+  buildMovementNarrativeEn(compound, runtimeProfile),
+  "movement",
+  sectionBreathMap
+)}
 
 [What Still Remains]
-${buildResidualAfterwaveNarrativeEn(
-  responsePattern,
-  compound,
-  silencePattern,
-  previousPatterns,
-  runtimeProfile
+${buildSectionAwareNarrative(
+  buildResidualAfterwaveNarrativeEn(
+    responsePattern,
+    compound,
+    silencePattern,
+    previousPatterns,
+    runtimeProfile
+  ),
+  "residual",
+  sectionBreathMap
 )}
 
 [How It Comes Closer]
-${buildEmotionalContactNarrativeEn(
-  responsePattern,
-  silencePattern,
-  previousPatterns,
-  compound,
-  runtimeProfile
+${buildSectionAwareNarrative(
+  buildEmotionalContactNarrativeEn(
+    responsePattern,
+    silencePattern,
+    previousPatterns,
+    compound,
+    runtimeProfile
+  ),
+  "contact",
+  sectionBreathMap
 )}
 
 [The Quiet Truth]
-${buildQuietHonestCoreNarrativeEn(compound, runtimeProfile)}
+${buildSectionAwareNarrative(
+  buildQuietHonestCoreNarrativeEn(compound, runtimeProfile),
+  "outline",
+  sectionBreathMap
+)}
 
 [Where It Leaves You]
-${buildResidualEndingNarrativeEn(compound, emotionTone, runtimeProfile)}`;
+${buildSectionAwareNarrative(
+  buildResidualEndingNarrativeEn(compound, emotionTone, runtimeProfile),
+  "airflow",
+  sectionBreathMap
+)}`;
 }
 
 function getRuntimeTitleEn(unresolvedMovement, trait = "") {
@@ -5919,7 +5960,7 @@ function buildSectionBreathMap(runtimeRendering) {
 
     contact: {
       sentenceBreath: "slow-soft",
-      pauseDensity: pauseDensity === "high" ? "high" : "middle",
+      pauseDensity: pauseDensity === "high" ? "middle-high" : "middle",
       tone: "near-but-safe",
       rule: "approach carefully and avoid over-explaining",
     },
