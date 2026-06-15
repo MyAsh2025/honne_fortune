@@ -3961,65 +3961,68 @@ function buildMovementNarrativeEn(compound) {
   const trait = compound?.primaryTrait || "";
 
   if (trait === "emotional_fatigue") {
-    return `After carrying so much for so long,
+    return `Part of you seems ready to rest.
 
-part of the feeling seems to be slowing down,
-while another part still keeps going.
+Another part
+still doesn't know how to stop.
 
-Both seem to remain together for now.`;
+Both remain quietly present.`;
   }
 
   if (trait === "people_pleasing") {
-    return `The feeling seems to pause
+    return `Your attention still turns outward,
 
-between listening to others
-and listening to yourself.
+even while
+something inside quietly waits.
 
-Both directions still seem to remain.`;
+Neither side has disappeared.`;
   }
 
   if (trait === "attachment_anxiety") {
-    return `A wish to move closer,
-and a need to remain careful,
+    return `The wish to move closer
+hasn't disappeared.
 
-still seem to be staying in the same place.`;
+Neither has the instinct
+to protect yourself.
+
+Both continue to exist together.`;
   }
 
   if (trait === "future_anxiety") {
-    return `Part of the feeling seems to look ahead,
+    return `Your thoughts keep moving forward.
 
-while another part quietly waits
-for something to feel certain.
+Your heart
+hasn't quite followed yet.
 
-Both seem to remain together.`;
+Both are still trying to meet.`;
   }
 
   if (trait === "identity_confusion") {
-    return `The feeling seems to be searching
+    return `Nothing feels completely lost.
 
-without fully knowing what it is looking for yet.
+It simply hasn't
+taken a clear shape yet.
 
-Something is still taking shape quietly.`;
+Something is still quietly becoming itself.`;
   }
 
   if (trait === "role_pressure") {
-    return `Part of the feeling still holds on
-to what must be carried.
+    return `You keep carrying
+what feels expected of you.
 
-Another part seems to be wondering
-what it would be like to loosen that grip.
+Something quieter
+has begun asking how much longer.
 
-Both remain present.`;
+Both remain with you.`;
   }
 
-  return `After being touched lightly,
+  return `Something inside you
+moves forward carefully.
 
-the feeling seems to be quietly measuring its distance again.
+Another part
+still wants a little more time.
 
-A wish to move closer,
-and a sense that still needs to remain careful,
-
-seem to be staying in the same place.`;
+Both continue quietly together.`;
 }
 function buildObservationTraitNarrativeEn(compound) {
   const trait = compound?.primaryTrait || "";
