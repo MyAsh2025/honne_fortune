@@ -1746,10 +1746,11 @@ function buildEmotionalContactNarrativeEn(
   responsePattern,
   silencePattern,
   previousPatterns = [],
-  compound = null
+  compound = null,
+  runtimeProfile = null
 ) {
   if (!responsePattern) {
-    return "The feeling still seems to be looking for a safe way to move."; 
+    return "You may still be looking for a safe way to stay with this feeling.";
   }
 
   const opennessState = getOpennessState(responsePattern);
@@ -1757,69 +1758,70 @@ function buildEmotionalContactNarrativeEn(
   const silenceStyle = silencePattern?.silenceStyle || "none";
   const style = responsePattern.responseStyle;
   const trait = compound?.primaryTrait || "";
+  const distance = runtimeProfile?.distance || "soft";
+  const voice = runtimeProfile?.voice || "quiet-direct";
+  const pressure = runtimeProfile?.pressure || "soft-low";
+
+  const guardedOpenings = {
+    emotional_fatigue: [
+      "You do not seem to be letting yourself come too close to this feeling all at once.",
+      "",
+      "Part of you may be checking how much strength is still available.",
+      "",
+      "That distance may be less about closing off,",
+      "and more about protecting a small place to rest.",
+    ],
+    people_pleasing: [
+      "You do not seem to be letting this feeling come forward all at once.",
+      "",
+      "Part of you may be checking whether your own voice can stay safe near others.",
+      "",
+      "That distance may be less about hiding,",
+      "and more about finding a place where you can still belong to yourself.",
+    ],
+    identity_confusion: [
+      "You do not seem to be forcing this feeling to become clear all at once.",
+      "",
+      "Part of you may be checking whether its outline can appear safely.",
+      "",
+      "That distance may be less about being closed,",
+      "and more about refusing a shape that does not fit.",
+    ],
+    future_anxiety: [
+      "You do not seem to be stepping all the way into this feeling yet.",
+      "",
+      "Part of you may be checking whether the next step can feel safe enough.",
+      "",
+      "That distance may be less about avoiding the future,",
+      "and more about needing enough ground before moving.",
+    ],
+    role_pressure: [
+      "You do not seem to be setting everything down all at once.",
+      "",
+      "Part of you may be checking what can be released safely.",
+      "",
+      "That distance may be less about refusing responsibility,",
+      "and more about learning that not everything has to stay in your hands.",
+    ],
+  };
+
+  const guardedFallback = [
+    "You do not seem to be letting the feeling come closer all at once.",
+    "",
+    "Part of you may be checking how close it can come and still feel safe.",
+    "",
+    "That distance may be less about being closed,",
+    "and more about protecting the place that still feels tender.",
+  ];
 
   if (
     style === "defensive" ||
     opennessState === "guarded" ||
-    trustDepthState === "cautious"
+    trustDepthState === "cautious" ||
+    distance === "near-but-safe" ||
+    pressure === "low"
   ) {
-    if (trait === "emotional_fatigue") {
-      return [
-        "The feeling does not seem to be trying to come closer all at once.",
-        "",
-        "It seems to be checking how much strength remains.",
-        "",
-        "Rather than being completely closed, it may be protecting a small place to rest.",
-      ].join("\n");
-    }
-
-    if (trait === "people_pleasing") {
-      return [
-        "The feeling does not seem to be trying to come closer all at once.",
-        "",
-        "It seems to be checking whether its own voice can stay safe.",
-        "",
-        "Rather than being completely closed, it may be measuring where it can stand.",
-      ].join("\n");
-    }
-
-    if (trait === "identity_confusion") {
-      return [
-        "The feeling does not seem to be trying to come closer all at once.",
-        "",
-        "It seems to be checking whether its outline can appear safely.",
-        "",
-        "Rather than being completely closed, it may be measuring how much shape it can take.",
-      ].join("\n");
-    }
-
-    if (trait === "future_anxiety") {
-      return [
-        "The feeling does not seem to be trying to come closer all at once.",
-        "",
-        "It seems to be checking whether the next step can feel safe enough.",
-        "",
-        "Rather than being completely closed, it may be measuring how much uncertainty it can hold.",
-      ].join("\n");
-    }
-
-    if (trait === "role_pressure") {
-      return [
-        "The feeling does not seem to be trying to come closer all at once.",
-        "",
-        "It seems to be checking whether something can be set down safely.",
-        "",
-        "Rather than being completely closed, it may be measuring how much weight it still has to hold.",
-      ].join("\n");
-    }
-
-    return [
-      "The feeling does not seem to be trying to come closer all at once.",
-      "",
-      "It seems to be moving while quietly feeling out how close it can come.",
-      "",
-      "Rather than being completely closed, it may be quietly measuring a distance that does not hurt.",
-    ].join("\n");
+    return (guardedOpenings[trait] || guardedFallback).join("\n");
   }
 
   if (
@@ -1827,11 +1829,12 @@ function buildEmotionalContactNarrativeEn(
     opennessState === "distant"
   ) {
     return [
-      "The feeling seems to be staying a little outside of itself for now.",
+      "You may still be staying a little outside the feeling for now.",
       "",
-      "Rather than going deeply inward, it may be watching quietly from a safer distance.",
+      "Rather than going deeply inward,",
+      "part of you may be keeping enough distance to feel safe.",
       "",
-      "That distance may also be one way your heart checks whether it is safe.",
+      "That distance can also be one way your heart checks the ground.",
     ].join("\n");
   }
 
@@ -1840,29 +1843,34 @@ function buildEmotionalContactNarrativeEn(
     style === "fluctuating"
   ) {
     return [
-      "A wish to come closer and a need to remain careful",
-      "seem to be moving quietly in the same place.",
+      "A wish to come closer",
+      "and a need to stay careful",
+      "may be moving in the same place.",
       "",
-      "That wavering may be happening because the feeling has begun to move.",
+      "That wavering may be happening",
+      "because the feeling has begun to move.",
     ].join("\n");
   }
 
   if (
     silenceStyle === "strong_avoidance" ||
-    silenceStyle === "partial_avoidance"
+    silenceStyle === "partial_avoidance" ||
+    voice === "quiet-protective"
   ) {
     return [
-      "Some feeling that has not yet become words",
-      "still seems to remain a little inside.",
+      "Some part of this feeling",
+      "may still be staying just outside words.",
       "",
-      "Even in the place left untouched, the temperature of your heart may still remain.",
+      "Even in the place left untouched,",
+      "something in you may still be keeping watch.",
     ].join("\n");
   }
 
   return [
-    "The feeling does not seem to be forcing itself toward an answer yet.",
+    "You do not seem to be forcing this feeling toward an answer yet.",
     "",
-    "It seems to be quietly checking how close it can come and still feel safe.",
+    "Part of you may be checking",
+    "how close it can come and still feel safe.",
   ].join("\n");
 }
 function buildTrustDepthNarrative(responsePattern, previousPatterns = []) {
@@ -4541,7 +4549,8 @@ ${buildEmotionalContactNarrativeEn(
   responsePattern,
   silencePattern,
   previousPatterns,
-  compound
+  compound,
+  runtimeProfile
 )}
 
 [The Quiet Truth]
