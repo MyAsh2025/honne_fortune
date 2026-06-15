@@ -3195,6 +3195,16 @@ function buildResidualAfterwaveNarrative(
   const residueState = analyzeEmotionalResidue(responsePattern, compound, silencePattern, previousPatterns);
   const maskingState = analyzeEmotionalMasking(responsePattern, compound, silencePattern, previousPatterns);
 
+  const residualStyleProfile = getResidualStyleProfileEn(
+    responsePattern,
+    compound,
+    silencePattern,
+    echoState,
+    afterimageState,
+    residueState,
+    maskingState
+  );
+
   const integrated = buildIntegratedEmotionalAfterwaveNarrative(
     echoState,
     afterimageState,
@@ -3720,30 +3730,303 @@ function buildEmotionalMaskingNarrative(maskingState) {
 小さな距離が残っているようでした。`;
 }
 
-function buildIntegratedEmotionalAfterwaveNarrativeEn(echoState, afterimageState, residueState) {
+function getResidualStyleProfileEn(responsePattern, compound, silencePattern, echoState, afterimageState, residueState, maskingState) {
+  const trait = compound?.primaryTrait || "";
+  const tone = getEmotionTone(compound);
+  const responseStyle = responsePattern?.responseStyle || "";
+  const silenceStyle = silencePattern?.silenceStyle || "";
+  const masking = maskingState?.state || "";
+  const afterimage = afterimageState?.state || "";
+  const residue = residueState?.state || "";
+  const echo = echoState?.state || "";
+
+  let profile = {
+    style: "softening",
+    movement: "settling",
+    density: "light",
+    persistence: "soft",
+    ending: "open",
+  };
+
+  if (trait === "emotional_fatigue") {
+    profile = {
+      style: "drifting",
+      movement: "away",
+      density: "light",
+      persistence: "slow",
+      ending: "soft-open",
+    };
+  }
+
+  if (trait === "people_pleasing") {
+    profile = {
+      style: "returning",
+      movement: "inward",
+      density: "light",
+      persistence: "gentle",
+      ending: "self-return",
+    };
+  }
+
+  if (trait === "attachment_anxiety") {
+    profile = {
+      style: "lingering",
+      movement: "nearby",
+      density: "middle",
+      persistence: "close",
+      ending: "safe-distance",
+    };
+  }
+
+  if (trait === "future_anxiety") {
+    profile = {
+      style: "searching",
+      movement: "forward",
+      density: "middle",
+      persistence: "restless",
+      ending: "unresolved-forward",
+    };
+  }
+
+  if (trait === "identity_confusion") {
+    profile = {
+      style: "forming",
+      movement: "emerging",
+      density: "soft-middle",
+      persistence: "uncertain",
+      ending: "outline-open",
+    };
+  }
+
+  if (trait === "role_pressure") {
+    profile = {
+      style: "unloading",
+      movement: "loosening",
+      density: "middle",
+      persistence: "held",
+      ending: "shoulder-release",
+    };
+  }
+
+  if (
+    masking === "protective_masking" ||
+    afterimage === "protective_afterimage" ||
+    responseStyle === "defensive" ||
+    silenceStyle === "strong_avoidance"
+  ) {
+    profile = {
+      ...profile,
+      density: profile.density === "light" ? "soft-middle" : profile.density,
+      persistence: "careful",
+      ending: "safe-distance",
+    };
+  }
+
+  if (
+    masking === "quiet_overextension" ||
+    residue === "defensive_residue" ||
+    tone === "low"
+  ) {
+    profile = {
+      ...profile,
+      persistence: profile.persistence === "soft" ? "slow" : profile.persistence,
+      movement: profile.movement === "settling" ? "loosening" : profile.movement,
+    };
+  }
+
+  if (
+    echo === "silent_emotional_echo" ||
+    echo === "repeated_emotional_echo"
+  ) {
+    profile = {
+      ...profile,
+      density: profile.density === "light" ? "soft-middle" : profile.density,
+      ending: profile.ending === "open" ? "echo-open" : profile.ending,
+    };
+  }
+
+  return profile;
+}
+
+function buildIntegratedEmotionalAfterwaveNarrativeEn(echoState, afterimageState, residueState, residualStyleProfile = null) {
   const parts = [];
+  const style = residualStyleProfile?.style || "softening";
 
-  if (echoState && echoState.state !== "no_signal") {
-    parts.push([
-      "In recent readings,",
-      "the afterwave of a feeling touched before",
-      "still seems to remain quietly.",
-    ].join("\n"));
+  const styleLines = {
+    drifting: {
+      echo: [
+        "In recent readings,",
+        "a feeling touched before",
+        "seems to be drifting farther from the center.",
+      ],
+      afterimage: [
+        "Even if the strongest feeling has softened,",
+        "a quiet tiredness may still be leaving the body slowly,",
+        "without needing to become a clear answer.",
+      ],
+      residue: [
+        "A small trace of caution may still be there,",
+        "but it feels less like resistance",
+        "and more like the body taking time to loosen.",
+      ],
+      closing: [
+        "This may not mean you are still caught in it.",
+        "It may mean your heart is learning",
+        "how to let the afterimage move away at its own pace.",
+      ],
+    },
+
+    returning: {
+      echo: [
+        "In recent readings,",
+        "a feeling once held back",
+        "seems to be returning quietly toward you.",
+      ],
+      afterimage: [
+        "Even if the strongest feeling has settled,",
+        "something that was shaped around others",
+        "may still be finding its way back to your own side.",
+      ],
+      residue: [
+        "A small trace of caution may remain,",
+        "as if your heart is checking",
+        "whether it is safe to choose itself a little more.",
+      ],
+      closing: [
+        "This may not mean you are selfish.",
+        "It may mean a feeling that waited for permission",
+        "is beginning to remember where it belongs.",
+      ],
+    },
+
+    lingering: {
+      echo: [
+        "In recent readings,",
+        "a feeling touched before",
+        "still seems to stay nearby.",
+      ],
+      afterimage: [
+        "Even if the strongest feeling has settled a little,",
+        "the need for nearness may still remain close,",
+        "not pressing as loudly as before.",
+      ],
+      residue: [
+        "A small trace of caution may remain,",
+        "as if your heart is still measuring",
+        "how close it can safely come.",
+      ],
+      closing: [
+        "This may not mean you are unable to let go.",
+        "It may mean your heart is learning",
+        "what distance can feel safe without becoming absence.",
+      ],
+    },
+
+    searching: {
+      echo: [
+        "In recent readings,",
+        "a feeling touched before",
+        "still seems to look toward what comes next.",
+      ],
+      afterimage: [
+        "Even if the strongest feeling has settled,",
+        "part of you may still be searching ahead,",
+        "trying to find a shape that feels steady enough.",
+      ],
+      residue: [
+        "A small trace of caution may remain,",
+        "not as fear alone,",
+        "but as the wish to step forward without losing yourself.",
+      ],
+      closing: [
+        "This may not mean you are lost.",
+        "It may mean your heart is still asking",
+        "for a future that feels safe enough to enter.",
+      ],
+    },
+
+    forming: {
+      echo: [
+        "In recent readings,",
+        "a feeling touched before",
+        "seems to be gathering a quieter outline.",
+      ],
+      afterimage: [
+        "Even if the strongest feeling has softened,",
+        "something inside may still be forming,",
+        "not clear yet, but no longer completely without shape.",
+      ],
+      residue: [
+        "A small trace of uncertainty may remain,",
+        "as if your heart is checking",
+        "which outline actually belongs to you.",
+      ],
+      closing: [
+        "This may not mean you are undefined.",
+        "It may mean your heart is taking care",
+        "not to accept a shape that is too small.",
+      ],
+    },
+
+    unloading: {
+      echo: [
+        "In recent readings,",
+        "a feeling touched before",
+        "still seems to sit around what you have carried.",
+      ],
+      afterimage: [
+        "Even if the strongest feeling has settled,",
+        "a sense of responsibility may still be loosening slowly,",
+        "as if your shoulders have not fully believed they can rest.",
+      ],
+      residue: [
+        "A small trace of caution may remain,",
+        "around the part of you",
+        "that learned to keep holding things together.",
+      ],
+      closing: [
+        "This may not mean you must keep carrying it.",
+        "It may mean your heart is only beginning",
+        "to believe that not everything has to stay in your hands.",
+      ],
+    },
+
+    softening: {
+      echo: [
+        "In recent readings,",
+        "the afterwave of a feeling touched before",
+        "seems to be softening quietly.",
+      ],
+      afterimage: [
+        "Even if the strongest feeling has settled a little,",
+        "a small outline of it may still remain,",
+        "not as strongly as before.",
+      ],
+      residue: [
+        "A small trace of caution may still be there,",
+        "while your heart checks",
+        "what distance feels safe.",
+      ],
+      closing: [
+        "This may not mean you are unhealed.",
+        "It may mean the afterimage is still settling",
+        "without needing to become a conclusion.",
+      ],
+    },
+  };
+
+  const selected = styleLines[style] || styleLines.softening;
+
+  if (echoState && echoState.state !== "no_signal" && echoState.state !== "not_enough_history") {
+    parts.push(selected.echo.join("\n"));
   }
 
-  if (afterimageState && afterimageState.state !== "no_afterimage") {
-    parts.push([
-      "Even if the strongest feeling has settled a little,",
-      "the distance you keep to protect yourself",
-      "may still remain like an outline.",
-    ].join("\n"));
+  if (afterimageState && afterimageState.state !== "no_afterimage" && afterimageState.state !== "not_enough_history") {
+    parts.push(selected.afterimage.join("\n"));
   }
 
-  if (residueState && residueState.state !== "no_residue") {
-    parts.push([
-      "Even after the strongest feeling softens,",
-      "a small trace of caution may still remain.",
-    ].join("\n"));
+  if (residueState && residueState.state !== "no_residue" && residueState.state !== "not_enough_history") {
+    parts.push(selected.residue.join("\n"));
   }
 
   if (parts.length === 0) {
@@ -3754,11 +4037,7 @@ function buildIntegratedEmotionalAfterwaveNarrativeEn(echoState, afterimageState
     ].join("\n");
   }
 
-  return parts.join("\n\n") + "\n\n" + [
-    "This may not mean you are unhealed.",
-    "It may mean your heart is still holding the afterimage carefully,",
-    "while checking what distance feels safe.",
-  ].join("\n");
+  return parts.join("\n\n") + "\n\n" + selected.closing.join("\n");
 }
 
 function buildEmotionalMaskingNarrativeEn(maskingState) {
@@ -3785,60 +4064,61 @@ function buildEmotionalMaskingNarrativeEn(maskingState) {
   ].join("\n");
 }
 
-function buildAfterimageFallbackNarrativeEn(compound) {
-  const trait = compound?.primaryTrait || "";
+function buildAfterimageFallbackNarrativeEn(compound, residualStyleProfile = null) {
+  const style = residualStyleProfile?.style || "softening";
 
-  if (trait === "emotional_fatigue") {
-    return `The afterwave of this feeling
-has not fully settled yet.
+  if (style === "drifting") {
+    return `The feeling has not disappeared.
 
-A small tiredness
-still seems to be moving quietly underneath.`;
+It seems to be drifting a little farther away,
+without asking to be solved all at once.`;
   }
 
-  if (trait === "people_pleasing") {
-    return `The afterwave of this feeling
-has not fully taken shape yet.
+  if (style === "returning") {
+    return `What was left unspoken
+may be finding its way back toward you.
 
-Something that was held back for others
-still seems to remain quietly.`;
+Not loudly.
+Just enough to remind you
+that your own feeling is still here.`;
   }
 
-  if (trait === "attachment_anxiety") {
-    return `The afterwave of this feeling
-has not fully taken shape yet.
+  if (style === "lingering") {
+    return `The feeling has not moved far.
 
-A feeling that wanted to come closer
-still seems to hesitate a little.`;
+It no longer has to press as strongly,
+but it still stays close enough
+to be noticed.`;
   }
 
-  if (trait === "future_anxiety") {
-    return `The afterwave of this feeling
-has not fully taken shape yet.
+  if (style === "searching") {
+    return `The feeling is still looking ahead.
 
-Part of it still seems to be looking ahead,
-searching for certainty.`;
+Not because you are lost,
+but because some part of you
+is still trying to find a shape that feels safe.`;
   }
 
-  if (trait === "identity_confusion") {
-    return `The afterwave of this feeling
-has not fully taken shape yet.
+  if (style === "forming") {
+    return `The feeling is still gathering its outline.
 
-Something still seems to be searching
-for its outline.`;
+It may not be clear yet,
+but it is no longer completely without shape.`;
   }
 
-  if (trait === "role_pressure") {
-    return `The afterwave of this feeling
-has not fully taken shape yet.
+  if (style === "unloading") {
+    return `The weight has not fully left.
 
-A sense of responsibility
-still seems to remain quietly in the background.`;
+But something in you
+may be beginning to loosen its grip
+around what you thought you had to carry.`;
   }
 
-  return `The afterwave of this feeling has not fully taken shape yet.
-It still seems to be moving quietly
-in a place before clear words.`;
+  return `The feeling is still settling.
+
+It does not need to become clear all at once.
+For now, it is enough
+that it has begun to soften.`;
 }
 function buildResidualAfterwaveNarrativeEn(responsePattern, compound, silencePattern, previousPatterns = []) {
   const echoState = analyzeEmotionalEcho(responsePattern, compound, silencePattern, previousPatterns);
@@ -3846,7 +4126,17 @@ function buildResidualAfterwaveNarrativeEn(responsePattern, compound, silencePat
   const residueState = analyzeEmotionalResidue(responsePattern, compound, silencePattern, previousPatterns);
   const maskingState = analyzeEmotionalMasking(responsePattern, compound, silencePattern, previousPatterns);
 
-  const integrated = buildIntegratedEmotionalAfterwaveNarrativeEn(echoState, afterimageState, residueState);
+  const residualStyleProfile = getResidualStyleProfileEn(
+    responsePattern,
+    compound,
+    silencePattern,
+    echoState,
+    afterimageState,
+    residueState,
+    maskingState
+  );
+
+  const integrated = buildIntegratedEmotionalAfterwaveNarrativeEn(echoState, afterimageState, residueState, residualStyleProfile);
   const masking = buildEmotionalMaskingNarrativeEn(maskingState);
 
   if (
@@ -3854,7 +4144,7 @@ function buildResidualAfterwaveNarrativeEn(responsePattern, compound, silencePat
     afterimageState?.state === "not_enough_history" &&
     residueState?.state === "not_enough_history"
   ) {
-    return buildAfterimageFallbackNarrativeEn(compound);
+    return buildAfterimageFallbackNarrativeEn(compound, residualStyleProfile);
   }
 
   if (
@@ -5795,4 +6085,6 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
+
 
