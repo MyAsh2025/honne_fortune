@@ -960,55 +960,83 @@ function buildQuietHonestCoreNarrative(compound) {
 まだ少し内側で揺れているようでした。`;
 }
 
-function buildQuietHonestCoreNarrativeEn(compound) {
+function buildQuietHonestCoreNarrativeEn(compound, runtimeProfile = null) {
   const trait = compound?.primaryTrait || "";
+  const style = runtimeProfile?.style || "softening";
+  const pressure = runtimeProfile?.pressure || "soft-low";
+  const voice = runtimeProfile?.voice || "quiet-direct";
+
+  const quietEnding =
+    pressure === "low" || voice === "quiet-protective"
+      ? "It does not need to become louder to be real."
+      : "It may be small, but it is still part of you.";
 
   if (trait === "emotional_fatigue") {
-    return `Behind the part of you that has grown used to keeping going,
+    return `Behind the part of you
+that has grown used to keeping going,
 
-a small wish to rest
-still seems to be moving quietly.`;
+there may be a quiet wish
+to rest without having to explain why.
+
+${quietEnding}`;
   }
 
   if (trait === "people_pleasing") {
-    return `Behind all the time you have spent choosing others first,
+    return `Behind all the times
+you have chosen others first,
 
-a small voice of your own
-still seems to remain quietly.`;
+there may be a small voice
+that has been waiting for room.
+
+${quietEnding}`;
   }
 
   if (trait === "attachment_anxiety") {
     return `Behind the wish to move closer,
 
-a small fear of being left
-still seems to be trembling quietly.`;
+there may be a small fear
+of being left before you feel safe.
+
+${quietEnding}`;
   }
 
   if (trait === "future_anxiety") {
-    return `The more you think about what comes next,
+    return `Behind the thoughts
+that keep reaching toward what comes next,
 
-the more a wish for safety
-seems to move in a place before words.`;
+there may be a wish
+for a place where your heart can stand safely.
+
+${quietEnding}`;
   }
 
   if (trait === "identity_confusion") {
-    return `Behind the quiet uncertainty of not being able to define yourself,
+    return `Behind the uncertainty
+of not being able to define yourself,
 
-there still seems to be a small sense
-that has not yet settled into a shape.`;
+there may be a small outline
+that has not asked to be rushed.
+
+${quietEnding}`;
   }
 
   if (trait === "role_pressure") {
-    return `Behind all the time you have spent trying to fulfill your role,
+    return `Behind the part of you
+that keeps trying to fulfill your role,
 
-a small feeling
-still seems to remain before it can loosen.`;
+there may be a quieter feeling
+that wants to put something down.
+
+${quietEnding}`;
   }
 
-  return `Before your honest feeling becomes words,
+  return `Before your honest feeling
+becomes clear words,
 
-something inside you
-still seems to be moving quietly.`;
+something in you
+may already be asking for a safer place.
+
+${quietEnding}`;
 }
 function buildDynamicSign(compound) {
   return `今は、何を選ぶかよりも、なぜそこまで心が反応しているのかを見る時期です。
@@ -4554,7 +4582,7 @@ ${buildEmotionalContactNarrativeEn(
 )}
 
 [The Quiet Truth]
-${buildQuietHonestCoreNarrativeEn(compound)}
+${buildQuietHonestCoreNarrativeEn(compound, runtimeProfile)}
 
 [Where It Leaves You]
 ${buildResidualEndingNarrativeEn(compound, emotionTone, runtimeProfile)}`;
