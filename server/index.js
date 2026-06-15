@@ -3730,6 +3730,86 @@ function buildEmotionalMaskingNarrative(maskingState) {
 小さな距離が残っているようでした。`;
 }
 
+function buildRuntimeProfileEn(responsePattern, compound, silencePattern, echoState, afterimageState, residueState, maskingState, emotionTone = null) {
+  const residualStyleProfile = getResidualStyleProfileEn(
+    responsePattern,
+    compound,
+    silencePattern,
+    echoState,
+    afterimageState,
+    residueState,
+    maskingState
+  );
+
+  const style = residualStyleProfile?.style || "softening";
+  const trait = compound?.primaryTrait || "";
+  const tone = emotionTone || getEmotionTone(compound);
+  const silenceStyle = silencePattern?.silenceStyle || "";
+  const responseStyle = responsePattern?.responseStyle || "";
+
+  const stillnessProfiles = {
+    drifting: {
+      subject: "the tiredness that stayed alert for too long",
+      state: "is beginning to loosen, even if only slightly",
+      anchor: "Rest may already be a little closer than it feels",
+      finalLine: "For now, it does not have to disappear completely.",
+    },
+    returning: {
+      subject: "the feeling that waited behind everyone else",
+      state: "is beginning to return to your side",
+      anchor: "A small part of you may be remembering that your own voice matters too",
+      finalLine: "It can come back quietly, without needing to be loud.",
+    },
+    lingering: {
+      subject: "the wish to come closer without losing safety",
+      state: "is still staying nearby",
+      anchor: "A small need for reassurance may still be close to the center",
+      finalLine: "It does not have to become absence in order to soften.",
+    },
+    searching: {
+      subject: "the part of you that keeps looking ahead",
+      state: "is still trying to find a steadier shape",
+      anchor: "A small search for safety may still be moving under the surface",
+      finalLine: "It can remain unfinished without meaning you are lost.",
+    },
+    forming: {
+      subject: "the outline of yourself that has not fully settled",
+      state: "is beginning to gather more shape",
+      anchor: "A quiet checking of what belongs to you may still be there",
+      finalLine: "It does not need to become clear all at once.",
+    },
+    unloading: {
+      subject: "the weight you learned to keep carrying",
+      state: "is starting to loosen around your shoulders",
+      anchor: "A small pull toward responsibility may still be there",
+      finalLine: "Not everything has to stay in your hands tonight.",
+    },
+    softening: {
+      subject: "the feeling that did not fully become words",
+      state: "is still settling",
+      anchor: "A quiet trace may still be there, but it does not need to become a conclusion",
+      finalLine: "For now, it is enough that it has softened a little.",
+    },
+  };
+
+  const stillness = stillnessProfiles[style] || stillnessProfiles.softening;
+
+  return {
+    ...residualStyleProfile,
+    version: "runtime-profile-en-v0.1",
+    trait,
+    tone,
+    silenceStyle,
+    responseStyle,
+    voice: silenceStyle === "strong_avoidance" ? "quiet-protective" : "quiet-direct",
+    distance: residualStyleProfile?.ending === "safe-distance" ? "near-but-safe" : "soft",
+    tempo: residualStyleProfile?.persistence === "slow" ? "slow" : "soft",
+    pressure: silenceStyle === "strong_avoidance" || responseStyle === "defensive" ? "low" : "soft-low",
+    stillness,
+  };
+}
+
+
 function getResidualStyleProfileEn(responsePattern, compound, silencePattern, echoState, afterimageState, residueState, maskingState) {
   const trait = compound?.primaryTrait || "";
   const tone = getEmotionTone(compound);
@@ -4247,8 +4327,26 @@ ${buildSectionAwareNarrative(buildResidualEndingNarrative(compound, emotionTone)
 }
 
 
-function buildMovementNarrativeEn(compound) {
+function buildMovementNarrativeEn(compound, runtimeProfile = null) {
   const trait = compound?.primaryTrait || "";
+  const movement = runtimeProfile?.movement || "settling";
+  const tempo = runtimeProfile?.tempo || "soft";
+  const pressure = runtimeProfile?.pressure || "soft-low";
+
+  const closingByMovement = {
+    away: "For now,\nneither part has to force itself into clarity.",
+    inward: "For now,\nsomething in you may be turning back toward its own place.",
+    nearby: "For now,\nboth parts may stay close without needing to decide the distance.",
+    forward: "For now,\nyour heart may need more safety before it follows.",
+    emerging: "For now,\nit may be enough that the outline is beginning to appear.",
+    loosening: "For now,\nwhat you carry may be allowed to loosen before it disappears.",
+    settling: "For now,\nboth parts can remain without becoming an answer.",
+  };
+
+  const quietClosing =
+    pressure === "low"
+      ? closingByMovement[movement] || closingByMovement.settling
+      : "For now,\nboth parts can remain without becoming an answer.";
 
   if (trait === "emotional_fatigue") {
     return `Part of you seems ready to rest.
@@ -4256,7 +4354,7 @@ function buildMovementNarrativeEn(compound) {
 Another part
 still doesn't know how to stop.
 
-Both remain quietly present.`;
+${quietClosing}`;
   }
 
   if (trait === "people_pleasing") {
@@ -4265,7 +4363,7 @@ Both remain quietly present.`;
 even while
 something inside quietly waits.
 
-Neither side has disappeared.`;
+${quietClosing}`;
   }
 
   if (trait === "attachment_anxiety") {
@@ -4275,7 +4373,7 @@ hasn't disappeared.
 Neither has the instinct
 to protect yourself.
 
-Both continue to exist together.`;
+${quietClosing}`;
   }
 
   if (trait === "future_anxiety") {
@@ -4284,7 +4382,7 @@ Both continue to exist together.`;
 Your heart
 hasn't quite followed yet.
 
-Both are still trying to meet.`;
+${quietClosing}`;
   }
 
   if (trait === "identity_confusion") {
@@ -4293,7 +4391,7 @@ Both are still trying to meet.`;
 It simply hasn't
 taken a clear shape yet.
 
-Something is still quietly becoming itself.`;
+${quietClosing}`;
   }
 
   if (trait === "role_pressure") {
@@ -4303,7 +4401,7 @@ what feels expected of you.
 Something quieter
 has begun asking how much longer.
 
-Both remain with you.`;
+${quietClosing}`;
   }
 
   return `Something inside you
@@ -4312,7 +4410,7 @@ moves forward carefully.
 Another part
 still wants a little more time.
 
-Both continue quietly together.`;
+${quietClosing}`;
 }
 function buildObservationTraitNarrativeEn(compound) {
   const trait = compound?.primaryTrait || "";
@@ -4396,6 +4494,21 @@ function stablePaidFortuneEn(score, answers = [], depth = "deep", previousPatter
   const silencePattern = analyzeSilencePattern(answers, expectedQuestionCount);
   const emotionTone = getEmotionTone(compound);
 
+  const echoState = analyzeEmotionalEcho(responsePattern, compound, silencePattern, previousPatterns);
+  const afterimageState = analyzeEmotionalAfterimage(responsePattern, compound, silencePattern, previousPatterns);
+  const residueState = analyzeEmotionalResidue(responsePattern, compound, silencePattern, previousPatterns);
+  const maskingState = analyzeEmotionalMasking(responsePattern, compound, silencePattern, previousPatterns);
+  const runtimeProfile = buildRuntimeProfileEn(
+    responsePattern,
+    compound,
+    silencePattern,
+    echoState,
+    afterimageState,
+    residueState,
+    maskingState,
+    emotionTone
+  );
+
   const toneLabel = getObservationToneLabelEn(compound, emotionTone);
   const tonePhrase = getObservationTonePhraseEn(compound, emotionTone);
 
@@ -4413,7 +4526,7 @@ ${buildObservationTraitNarrativeEn(compound)}
 ${buildObservationClosingEn(compound)}
 
 [How the Feeling Moves]
-${buildMovementNarrativeEn(compound)}
+${buildMovementNarrativeEn(compound, runtimeProfile)}
 
 [What Still Remains]
 ${buildResidualAfterwaveNarrativeEn(
@@ -4435,7 +4548,7 @@ ${buildEmotionalContactNarrativeEn(
 ${buildQuietHonestCoreNarrativeEn(compound)}
 
 [Where It Leaves You]
-${buildResidualEndingNarrativeEn(compound, emotionTone)}`;
+${buildResidualEndingNarrativeEn(compound, emotionTone, runtimeProfile)}`;
 }
 
 function getRuntimeTitleEn(unresolvedMovement, trait = "") {
@@ -5902,9 +6015,30 @@ function capitalizeFirst(text) {
 
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
-function buildResidualEndingNarrativeEn(compound, emotionTone = null) {
-  const residualSubject = getResidualSubjectProfileEn(compound);
+function buildResidualEndingNarrativeEn(compound, emotionTone = null, runtimeProfile = null) {
+  const residualSubject = runtimeProfile?.stillness || getResidualSubjectProfileEn(compound);
   const contactProfile = buildEmotionalContactProfile(compound, emotionTone);
+  const pressure = runtimeProfile?.pressure || "soft-low";
+  const distance = runtimeProfile?.distance || "soft";
+
+  if (runtimeProfile?.stillness) {
+    const lines = [
+      `${capitalizeFirst(residualSubject.subject)}`,
+      `${residualSubject.state}.`,
+      "",
+      `${residualSubject.anchor}.`,
+    ];
+
+    if (pressure === "low" || distance === "near-but-safe") {
+      lines.push("");
+      lines.push(residualSubject.finalLine);
+      return lines.join("\n");
+    }
+
+    lines.push("");
+    lines.push(residualSubject.finalLine || "It can stay unfinished for now.");
+    return lines.join("\n");
+  }
 
   const endingLine =
     contactProfile.silenceDensity === "very_high"
