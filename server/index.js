@@ -4058,6 +4058,43 @@ But underneath it, the feeling seems to gather around the weight of what has had
   return `On the surface, this may look like a concern around ${category}.
 But underneath it, something quieter seems to be responding before it becomes clear.`;
 }
+function buildObservationClosingEn(compound) {
+  const trait = compound?.primaryTrait || "";
+
+  if (trait === "emotional_fatigue") {
+    return `A tiredness that learned to stay quiet
+may still be close to the center.`;
+  }
+
+  if (trait === "people_pleasing") {
+    return `A small voice of your own
+may still be waiting for room.`;
+  }
+
+  if (trait === "attachment_anxiety") {
+    return `A careful wish for closeness
+may still be holding its breath.`;
+  }
+
+  if (trait === "future_anxiety") {
+    return `A need for certainty
+may still be standing before the next step.`;
+  }
+
+  if (trait === "identity_confusion") {
+    return `A quiet outline of yourself
+may still be trying to appear.`;
+  }
+
+  if (trait === "role_pressure") {
+    return `A weight you learned to carry
+may still be asking to be noticed.`;
+  }
+
+  return `Something that has not yet become words
+still seems to remain a little inside.`;
+}
+
 function stablePaidFortuneEn(score, answers = [], depth = "deep", previousPatterns = [], expectedQuestionCount = 15) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
@@ -4080,8 +4117,7 @@ ${tonePhrase}
 
 ${buildObservationTraitNarrativeEn(compound)}
 
-Something that has not yet become words
-still seems to remain a little inside.
+${buildObservationClosingEn(compound)}
 
 [How the Feeling Moves]
 ${buildMovementNarrativeEn(compound)}
