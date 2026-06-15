@@ -4263,7 +4263,7 @@ It does not need to become clear all at once.
 For now, it is enough
 that it has begun to soften.`;
 }
-function buildResidualAfterwaveNarrativeEn(responsePattern, compound, silencePattern, previousPatterns = []) {
+function buildResidualAfterwaveNarrativeEn(responsePattern, compound, silencePattern, previousPatterns = [], runtimeProfile = null) {
   const echoState = analyzeEmotionalEcho(responsePattern, compound, silencePattern, previousPatterns);
   const afterimageState = analyzeEmotionalAfterimage(responsePattern, compound, silencePattern, previousPatterns);
   const residueState = analyzeEmotionalResidue(responsePattern, compound, silencePattern, previousPatterns);
@@ -4279,7 +4279,26 @@ function buildResidualAfterwaveNarrativeEn(responsePattern, compound, silencePat
     maskingState
   );
 
-  const integrated = buildIntegratedEmotionalAfterwaveNarrativeEn(echoState, afterimageState, residueState, residualStyleProfile);
+  const afterwaveRuntimeProfile = runtimeProfile
+    ? {
+        ...residualStyleProfile,
+        ...runtimeProfile,
+      }
+    : residualStyleProfile;
+
+  const gravity = afterwaveRuntimeProfile?.gravity || "light";
+  const afterimageGravityLineByGravity = {
+    weighted: "Something heavy may still be present, but it does not have to become the whole shape of this feeling.",
+    "forward-pulled": "Part of the feeling may still be leaning toward what comes next, before it has fully rested here.",
+    "nearby-held": "Something may still be staying close, not asking to be solved, only to be held with care.",
+    unformed: "The feeling may still be without a clear shape, and that unfinishedness can remain gentle for now.",
+    "inward-returning": "Something in you may be quietly returning to its own voice, even if it is still small.",
+    "guarded-light": "A little distance may still be protecting the feeling, and that distance does not have to be forced open.",
+  };
+
+  const afterimageGravityLine = afterimageGravityLineByGravity[gravity] || "";
+
+  const integrated = buildIntegratedEmotionalAfterwaveNarrativeEn(echoState, afterimageState, residueState, afterwaveRuntimeProfile);
   const masking = buildEmotionalMaskingNarrativeEn(maskingState);
 
   if (
@@ -4287,17 +4306,17 @@ function buildResidualAfterwaveNarrativeEn(responsePattern, compound, silencePat
     afterimageState?.state === "not_enough_history" &&
     residueState?.state === "not_enough_history"
   ) {
-    return buildAfterimageFallbackNarrativeEn(compound, residualStyleProfile);
+    return buildAfterimageFallbackNarrativeEn(compound, afterwaveRuntimeProfile) + (afterimageGravityLine ? "\n\n" + afterimageGravityLine : "");
   }
 
   if (
     masking &&
     ["protective_masking", "quiet_overextension", "uncertain_self_masking"].includes(maskingState?.state)
   ) {
-    return integrated + "\n\n" + masking;
+    return integrated + "\n\n" + masking + (afterimageGravityLine ? "\n\n" + afterimageGravityLine : "");
   }
 
-  return integrated;
+  return integrated + (afterimageGravityLine ? "\n\n" + afterimageGravityLine : "");
 }
 
 function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null, previousPrimaryTrait = null, previousPatterns = [], expectedQuestionCount = 15) {
@@ -4512,8 +4531,11 @@ But underneath it, the feeling seems to gather around the weight of what has had
   return `On the surface, this may look like a concern around ${category}.
 But underneath it, something quieter seems to be responding before it becomes clear.`;
 }
-function buildObservationClosingEn(compound) {
+function buildObservationClosingEn(compound, runtimeProfile = null) {
   const trait = compound?.primaryTrait || "";
+  const pressure = runtimeProfile?.pressure || "soft-low";
+  const voice = runtimeProfile?.voice || "quiet-direct";
+  const protectedOpening = pressure === "low" || voice === "quiet-protective";
 
   if (trait === "emotional_fatigue") {
     return `A tiredness that learned to stay quiet
@@ -4543,6 +4565,11 @@ may still be trying to appear.`;
   if (trait === "role_pressure") {
     return `A weight you learned to carry
 may still be asking to be noticed.`;
+  }
+
+  if (protectedOpening) {
+    return `Something that has not yet become words
+can stay quiet for now, without being pulled open too quickly.`;
   }
 
   return `Something that has not yet become words
@@ -4586,7 +4613,7 @@ ${tonePhrase}
 
 ${buildObservationTraitNarrativeEn(compound)}
 
-${buildObservationClosingEn(compound)}
+${buildObservationClosingEn(compound, runtimeProfile)}
 
 [How the Feeling Moves]
 ${buildMovementNarrativeEn(compound, runtimeProfile)}
@@ -4596,7 +4623,8 @@ ${buildResidualAfterwaveNarrativeEn(
   responsePattern,
   compound,
   silencePattern,
-  previousPatterns
+  previousPatterns,
+  runtimeProfile
 )}
 
 [How It Comes Closer]
