@@ -5854,6 +5854,7 @@ function applyRuntimeSentenceBreath(text, runtimeRendering) {
   if (sentenceBreath === "slow-soft") {
     return text
       .replace(/。/g, "。\n")
+      .replace(/([.!?])\s+/g, "$1\n\n")
       .replace(/\n{3,}/g, "\n\n")
       .trim();
   }
@@ -5861,6 +5862,7 @@ function applyRuntimeSentenceBreath(text, runtimeRendering) {
   if (sentenceBreath === "balanced") {
     return text
       .replace(/。\s*/g, "。\n")
+      .replace(/([.!?])\s+/g, "$1\n")
       .replace(/\n{3,}/g, "\n\n")
       .trim();
   }
