@@ -4069,12 +4069,12 @@ function stablePaidFortuneEn(score, answers = [], depth = "deep", previousPatter
   const toneLabel = getObservationToneLabelEn(compound, emotionTone);
   const tonePhrase = getObservationTonePhraseEn(compound, emotionTone);
 
-  return `[Opening]
+  return `[A Quiet Beginning]
 You may not need a loud answer right now.
 
 What seems to matter is the quiet movement beneath your responses.
 
-[Observation]
+[What Your Heart Is Showing]
 The emotional tone of this reading feels like ${toneLabel}.
 ${tonePhrase}
 
@@ -4083,10 +4083,10 @@ ${buildObservationTraitNarrativeEn(compound)}
 Something that has not yet become words
 still seems to remain a little inside.
 
-[Movement]
+[How the Feeling Moves]
 ${buildMovementNarrativeEn(compound)}
 
-[Afterimage]
+[What Still Remains]
 ${buildResidualAfterwaveNarrativeEn(
   responsePattern,
   compound,
@@ -4094,7 +4094,7 @@ ${buildResidualAfterwaveNarrativeEn(
   previousPatterns
 )}
 
-[Emotional Contact]
+[How It Comes Closer]
 ${buildEmotionalContactNarrativeEn(
   responsePattern,
   silencePattern,
@@ -4102,10 +4102,10 @@ ${buildEmotionalContactNarrativeEn(
   compound
 )}
 
-[Quiet Truth]
+[The Quiet Truth]
 ${buildQuietHonestCoreNarrativeEn(compound)}
 
-[Stillness]
+[Where It Leaves You]
 ${buildResidualEndingNarrativeEn(compound, emotionTone)}`;
 }
 
