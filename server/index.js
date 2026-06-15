@@ -3830,6 +3830,32 @@ function buildRuntimeProfileEn(responsePattern, compound, silencePattern, echoSt
 
   const stillness = stillnessProfiles[style] || stillnessProfiles.softening;
 
+  let gravity = "light";
+
+  if (trait === "emotional_fatigue" || trait === "role_pressure") {
+    gravity = "weighted";
+  }
+
+  if (trait === "future_anxiety" || style === "searching") {
+    gravity = "forward-pulled";
+  }
+
+  if (trait === "attachment_anxiety" || style === "lingering") {
+    gravity = "nearby-held";
+  }
+
+  if (trait === "identity_confusion" || style === "forming") {
+    gravity = "unformed";
+  }
+
+  if (trait === "people_pleasing" || style === "returning") {
+    gravity = "inward-returning";
+  }
+
+  if (silenceStyle === "strong_avoidance" || responseStyle === "defensive") {
+    gravity = gravity === "light" ? "guarded-light" : gravity;
+  }
+
   return {
     ...residualStyleProfile,
     version: "runtime-profile-en-v0.1",
@@ -3841,6 +3867,7 @@ function buildRuntimeProfileEn(responsePattern, compound, silencePattern, echoSt
     distance: residualStyleProfile?.ending === "safe-distance" ? "near-but-safe" : "soft",
     tempo: residualStyleProfile?.persistence === "slow" ? "slow" : "soft",
     pressure: silenceStyle === "strong_avoidance" || responseStyle === "defensive" ? "low" : "soft-low",
+    gravity,
     stillness,
   };
 }
@@ -6057,6 +6084,7 @@ function buildResidualEndingNarrativeEn(compound, emotionTone = null, runtimePro
   const contactProfile = buildEmotionalContactProfile(compound, emotionTone);
   const pressure = runtimeProfile?.pressure || "soft-low";
   const distance = runtimeProfile?.distance || "soft";
+  const gravity = runtimeProfile?.gravity || "light";
 
   if (runtimeProfile?.stillness) {
     const lines = [
@@ -6068,7 +6096,11 @@ function buildResidualEndingNarrativeEn(compound, emotionTone = null, runtimePro
 
     if (pressure === "low" || distance === "near-but-safe") {
       lines.push("");
-      lines.push(residualSubject.finalLine);
+      if (gravity === "weighted") {
+        lines.push("The weight may still be there, but it no longer has to speak as loudly.");
+      } else {
+        lines.push(residualSubject.finalLine);
+      }
       return lines.join("\n");
     }
 
