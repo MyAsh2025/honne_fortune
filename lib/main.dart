@@ -825,6 +825,7 @@ class ReadingPage extends StatefulWidget {
 class _ReadingPageState extends State<ReadingPage>
     with SingleTickerProviderStateMixin {
   int step = 0;
+  bool _startedReading = false;
   late final AnimationController _pulseController;
 
   final readingKeys = const ['loading_1', 'loading_2', 'loading_3'];
@@ -837,7 +838,15 @@ class _ReadingPageState extends State<ReadingPage>
       vsync: this,
       duration: const Duration(milliseconds: 1850),
     )..repeat(reverse: true);
+  }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (_startedReading) return;
+
+    _startedReading = true;
     _startReading();
   }
 
@@ -854,7 +863,7 @@ class _ReadingPageState extends State<ReadingPage>
     final apiFuture = HonneFortuneApi.generateFortune(
       score: widget.score,
       answers: widget.answers,
-      locale: WidgetsBinding.instance.platformDispatcher.locale.languageCode,
+      locale: context.locale.languageCode,
     );
 
     await Future.delayed(const Duration(milliseconds: 900));
@@ -871,7 +880,7 @@ class _ReadingPageState extends State<ReadingPage>
         onTimeout: () => '',
       );
 
-      if (generatedText == null || generatedText!.trim().isEmpty) {
+      if (generatedText.trim().isEmpty) {
         usedFallback = true;
         generatedText = null;
       }
@@ -1315,7 +1324,9 @@ class ResultPage extends StatelessWidget {
                           if (!context.mounted) return;
 
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('paid_reading_fetch_failed'.tr())),
+                            SnackBar(
+                              content: Text('paid_reading_fetch_failed'.tr()),
+                            ),
                           );
                         }
                       },
@@ -1343,4 +1354,3 @@ class ResultPage extends StatelessWidget {
     );
   }
 }
-

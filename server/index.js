@@ -4109,6 +4109,110 @@ ${buildQuietHonestCoreNarrativeEn(compound)}
 ${buildResidualEndingNarrativeEn(compound, emotionTone)}`;
 }
 
+function getRuntimeTitleEn(unresolvedMovement, trait = "") {
+  if (unresolvedMovement === "difficulty_resting") {
+    return "When Quiet Strength Grows Heavy";
+  }
+
+  if (unresolvedMovement === "truth_waiting_behind_kindness") {
+    return "When Your Voice Waits";
+  }
+
+  if (unresolvedMovement === "distance_safety_checking") {
+    return "Between Nearness and Distance";
+  }
+
+  if (unresolvedMovement === "decision_pressure_remaining") {
+    return "Before the Next Step Feels Clear";
+  }
+
+  if (unresolvedMovement === "self_outline_forming") {
+    return "Before the Shape Becomes Clear";
+  }
+
+  if (unresolvedMovement === "role_weight_remaining") {
+    return "The Weight You Never Put Down";
+  }
+
+  if (trait === "emotional_fatigue") {
+    return "When Quiet Strength Grows Heavy";
+  }
+
+  if (trait === "people_pleasing") {
+    return "When Your Voice Waits";
+  }
+
+  if (trait === "attachment_anxiety") {
+    return "Between Nearness and Distance";
+  }
+
+  if (trait === "future_anxiety") {
+    return "Before the Next Step Feels Clear";
+  }
+
+  if (trait === "identity_confusion") {
+    return "Before the Shape Becomes Clear";
+  }
+
+  if (trait === "role_pressure") {
+    return "The Weight You Never Put Down";
+  }
+
+  return "Something Quietly Moving Beneath";
+}
+
+function buildFreeEssenceOpeningEn(unresolvedMovement, trait = "") {
+  if (unresolvedMovement === "difficulty_resting") {
+    return "You may have been staying strong for longer than your heart could comfortably hold.";
+  }
+
+  if (unresolvedMovement === "truth_waiting_behind_kindness") {
+    return "You may have learned to keep your own feeling quiet while making room for others.";
+  }
+
+  if (unresolvedMovement === "distance_safety_checking") {
+    return "You may be wanting closeness while still checking what distance feels safe.";
+  }
+
+  if (unresolvedMovement === "decision_pressure_remaining") {
+    return "You may be looking ahead while part of you is still trying to feel steady where you are.";
+  }
+
+  if (unresolvedMovement === "self_outline_forming") {
+    return "You may be standing just before your own shape becomes clear.";
+  }
+
+  if (unresolvedMovement === "role_weight_remaining") {
+    return "You may have been carrying a role while leaving your own weight unspoken.";
+  }
+
+  if (trait === "emotional_fatigue") {
+    return "You may have been staying strong for longer than your heart could comfortably hold.";
+  }
+
+  if (trait === "people_pleasing") {
+    return "You may have learned to keep your own feeling quiet while making room for others.";
+  }
+
+  if (trait === "attachment_anxiety") {
+    return "You may be wanting closeness while still checking what distance feels safe.";
+  }
+
+  if (trait === "future_anxiety") {
+    return "You may be looking ahead while part of you is still trying to feel steady where you are.";
+  }
+
+  if (trait === "identity_confusion") {
+    return "You may be standing just before your own shape becomes clear.";
+  }
+
+  if (trait === "role_pressure") {
+    return "You may have been carrying a role while leaving your own weight unspoken.";
+  }
+
+  return "Something in you may be responding more quietly than it appears.";
+}
+
 function stableFortuneEn(score, answers = []) {
   const categoryResult = getPrimaryCategory(answers || []);
   const traitResult = getPrimaryTrait(answers || []);
@@ -4116,10 +4220,15 @@ function stableFortuneEn(score, answers = []) {
 
   const category = getCategoryLabelEn(compound.primaryCategory);
   const trait = compound.primaryTrait || "";
+  const anchorProfile = buildEmotionalAnchorProfile({ compound });
+  const unresolvedMovement = anchorProfile?.unresolvedMovement || "";
 
   if (trait === "emotional_fatigue") {
-    return `[Essence]
-You may have been carrying more than your heart could quietly show.
+    return `[Title]
+${getRuntimeTitleEn(unresolvedMovement, trait)}
+
+[Essence]
+${buildFreeEssenceOpeningEn(unresolvedMovement, trait)}
 
 [Hidden Feeling]
 On the surface, this may look like a concern around ${category}.
@@ -4135,8 +4244,11 @@ than can be understood all at once.`;
   }
 
   if (trait === "people_pleasing") {
-    return `[Essence]
-You may have become used to placing your own voice behind others.
+    return `[Title]
+${getRuntimeTitleEn(unresolvedMovement, trait)}
+
+[Essence]
+${buildFreeEssenceOpeningEn(unresolvedMovement, trait)}
 
 [Hidden Feeling]
 On the surface, this may look like a concern around ${category}.
@@ -4152,8 +4264,11 @@ may still have more to show.`;
   }
 
   if (trait === "attachment_anxiety") {
-    return `[Essence]
-You may be wanting closeness while still protecting yourself from being hurt.
+    return `[Title]
+${getRuntimeTitleEn(unresolvedMovement, trait)}
+
+[Essence]
+${buildFreeEssenceOpeningEn(unresolvedMovement, trait)}
 
 [Hidden Feeling]
 On the surface, this may look like a concern around ${category}.
@@ -4169,8 +4284,11 @@ than can be seen all at once.`;
   }
 
   if (trait === "future_anxiety") {
-    return `[Essence]
-You may be looking ahead before your feeling has fully caught up.
+    return `[Title]
+${getRuntimeTitleEn(unresolvedMovement, trait)}
+
+[Essence]
+${buildFreeEssenceOpeningEn(unresolvedMovement, trait)}
 
 [Hidden Feeling]
 On the surface, this may look like a concern around ${category}.
@@ -4187,8 +4305,11 @@ Something quieter may still be waiting underneath it.`;
   }
 
   if (trait === "identity_confusion") {
-    return `[Essence]
-You may be searching for yourself before the shape has fully appeared.
+    return `[Title]
+${getRuntimeTitleEn(unresolvedMovement, trait)}
+
+[Essence]
+${buildFreeEssenceOpeningEn(unresolvedMovement, trait)}
 
 [Hidden Feeling]
 On the surface, this may look like a concern around ${category}.
@@ -4205,8 +4326,11 @@ Some things may still be taking shape.`;
   }
 
   if (trait === "role_pressure") {
-    return `[Essence]
-You may have been holding a role even after it became heavy.
+    return `[Title]
+${getRuntimeTitleEn(unresolvedMovement, trait)}
+
+[Essence]
+${buildFreeEssenceOpeningEn(unresolvedMovement, trait)}
 
 [Hidden Feeling]
 On the surface, this may look like a concern around ${category}.
@@ -4221,8 +4345,11 @@ The weight you have carried
 may still have more to say.`;
   }
 
-  return `[Essence]
-Something in you may be responding more quietly than it appears.
+  return `[Title]
+${getRuntimeTitleEn(unresolvedMovement, trait)}
+
+[Essence]
+${buildFreeEssenceOpeningEn(unresolvedMovement, trait)}
 
 [Hidden Feeling]
 On the surface, this may look like a concern around ${category}.
@@ -4444,6 +4571,13 @@ function buildEmotionalAnchorProfile({
     profile.unresolvedMovement = "truth_waiting_behind_kindness";
   }
 
+  if (trait === "attachment_anxiety") {
+    profile.observedState = "distance_sensitivity";
+    profile.interpretedCondition = "近づきたい気持ちと、傷つかない距離を探す感覚が同時に残っている状態";
+    profile.readableMeaning = "心を閉じているのではなく、安心できる距離をまだ確かめている";
+    profile.unresolvedMovement = "distance_safety_checking";
+  }
+
   if (trait === "future_anxiety") {
     profile.observedState = "future_pressure";
     profile.interpretedCondition = "先のことを考え続けるほど、今の自分の呼吸が浅くなっている状態";
@@ -4456,6 +4590,13 @@ function buildEmotionalAnchorProfile({
     profile.interpretedCondition = "自分が何を望んでいるのか、まだ輪郭を探している状態";
     profile.readableMeaning = "答えがないのではなく、自分の声を見つける前の静かな迷いが残っている";
     profile.unresolvedMovement = "self_outline_forming";
+  }
+
+  if (trait === "role_pressure") {
+    profile.observedState = "role_weight";
+    profile.interpretedCondition = "役割を果たそうとするほど、自分の重さを後回しにしている状態";
+    profile.readableMeaning = "責任を手放したいのではなく、背負い続けた重さにまだ気づききれていない";
+    profile.unresolvedMovement = "role_weight_remaining";
   }
 
   if (tone === "low" && profile.observedState === "soft_emotional_signal") {
@@ -5615,3 +5756,4 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
