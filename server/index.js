@@ -6416,6 +6416,41 @@ app.post("/deep-fortune", async (req, res) => {
     "movement section pause density is low while movement density is high"
   );
 
+  const runtimeCalibration = [];
+  const addRuntimeCalibration = (condition, target, suggestion, reason) => {
+    if (condition) {
+      runtimeCalibration.push({ target, suggestion, reason });
+    }
+  };
+
+  addRuntimeCalibration(
+    runtimeComposition?.movementDensity === "light" && runtimeRendering?.pauseDensity === "high",
+    "movementDensity",
+    "raise movement density to middle or reduce pause density",
+    "movement is light while global pause density is high"
+  );
+
+  addRuntimeCalibration(
+    runtimeComposition?.residualDensity === "heavy" && runtimeRendering?.endingFade === "short-fade",
+    "endingFade",
+    "use soft-fade or longer fade for heavy residual density",
+    "heavy residual output should not end too abruptly"
+  );
+
+  addRuntimeCalibration(
+    runtimeComposition?.meaningDensity === "deep" && runtimeRendering?.pauseDensity === "low",
+    "pauseDensity",
+    "raise pause density to middle or high",
+    "deep quiet truth needs enough breathing space"
+  );
+
+  addRuntimeCalibration(
+    runtimeComposition?.residualDensity === "light" && runtimeRendering?.lingeringPressure === "high",
+    "residualDensity",
+    "raise residual density to middle or lower lingering pressure",
+    "light residual density conflicts with high lingering pressure"
+  );
+
 
   res.json({
     ok: true,
@@ -6523,6 +6558,7 @@ app.post("/deep-fortune", async (req, res) => {
             stillness: !!sectionBreathMap?.residual,
           },
           warnings: runtimeWarnings,
+          calibration: runtimeCalibration,
           score: (() => {
             const warningPenalty = runtimeWarnings.length * 5;
             const coverageCount = [
