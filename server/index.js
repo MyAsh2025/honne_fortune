@@ -6240,27 +6240,59 @@ function buildResidualEndingNarrativeEn(compound, emotionTone = null, runtimePro
   const distance = runtimeProfile?.distance || "soft";
   const gravity = runtimeProfile?.gravity || "light";
 
-  if (runtimeProfile?.stillness) {
-    const lines = [
-      `${capitalizeFirst(residualSubject.subject)}`,
-      `${residualSubject.state}.`,
-      "",
-      `${residualSubject.anchor}.`,
-    ];
+  const lingeringPressure = runtimeProfile?.lingeringPressure || "controlled-low";
+  const endingFade = runtimeProfile?.endingFade || runtimeProfile?.fade || "soft-fade";
+  const density = runtimeProfile?.density || runtimeProfile?.residualDensity || "light";
 
-    if (pressure === "low" || distance === "near-but-safe") {
+  const stillnessDensity =
+    gravity === "weighted" || pressure === "high" || density === "heavy"
+      ? "weighted"
+      : lingeringPressure === "middle-high" || lingeringPressure === "high"
+        ? "lingering"
+        : endingFade === "short-fade" || density === "light"
+          ? "short"
+          : "balanced";
+
+  const buildStillnessLines = ({ subject, state, anchor, finalLine }) => {
+    const lines = [capitalizeFirst(subject), `${state}.`];
+
+    if (stillnessDensity !== "short") {
       lines.push("");
-      if (gravity === "weighted") {
-        lines.push("The weight may still be there, but it no longer has to speak as loudly.");
-      } else {
-        lines.push(residualSubject.finalLine);
-      }
+      lines.push(`${anchor}.`);
+    }
+
+    if (stillnessDensity === "weighted") {
+      lines.push("");
+      lines.push("The weight may still be there, but it no longer has to speak as loudly.");
+      return lines.join("\n");
+    }
+
+    if (stillnessDensity === "lingering") {
+      lines.push("");
+      lines.push(finalLine || "It can stay unfinished for now.");
+      lines.push("");
+      lines.push("Something may still remain, quietly, without needing to become an answer.");
+      return lines.join("\n");
+    }
+
+    if (stillnessDensity === "balanced") {
+      lines.push("");
+      lines.push(finalLine || "It can stay unfinished for now.");
       return lines.join("\n");
     }
 
     lines.push("");
-    lines.push(residualSubject.finalLine || "It can stay unfinished for now.");
+    lines.push(finalLine || "It can stay unfinished for now.");
     return lines.join("\n");
+  };
+
+  if (runtimeProfile?.stillness) {
+    return buildStillnessLines({
+      subject: residualSubject.subject,
+      state: residualSubject.state,
+      anchor: residualSubject.anchor,
+      finalLine: residualSubject.finalLine,
+    });
   }
 
   const endingLine =
@@ -6268,12 +6300,12 @@ function buildResidualEndingNarrativeEn(compound, emotionTone = null, runtimePro
       ? "That feeling still seems to remain in a small, quiet way."
       : "That feeling still seems to remain, just a little.";
 
-  return `${capitalizeFirst(residualSubject.subject)}
-${residualSubject.state}.
-
-${residualSubject.anchor}.
-
-${endingLine}`;
+  return buildStillnessLines({
+    subject: residualSubject.subject,
+    state: residualSubject.state,
+    anchor: residualSubject.anchor,
+    finalLine: endingLine,
+  });
 }
 
 function generateReadingId() {
