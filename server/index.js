@@ -6833,6 +6833,45 @@ app.post("/deep-fortune", async (req, res) => {
       ? "actionable section regeneration queue generated"
       : "no section regeneration needed",
   };
+  const buildVirtualSectionRewrite = (queueItem) => {
+    if (!queueItem) return null;
+
+    return {
+      mode: "virtual-section-rewrite",
+      version: "auto-calibration-runtime-v1.0",
+      section: queueItem.section,
+      action: queueItem.action,
+      reason: queueItem.reason || null,
+      priority: queueItem.priority,
+      candidateText: null,
+      changed: false,
+      applied: false,
+      status: "planned-only",
+    };
+  };
+
+  const sectionRewriteCandidates = sectionRegenerationPlan.queue.map(buildVirtualSectionRewrite);
+
+  const sectionRewriteDecision = {
+    mode: "section-rewrite-decision",
+    version: "auto-calibration-runtime-v1.0",
+    candidateCount: sectionRewriteCandidates.length,
+    nextSection: sectionRewriteCandidates[0]?.section || null,
+    accepted: false,
+    applied: false,
+    reason: sectionRewriteCandidates.length > 0
+      ? "section rewrite candidates prepared but not applied"
+      : "no section rewrite candidates generated",
+  };
+
+  const sectionRegenerationExecutor = {
+    mode: "section-regeneration-executor",
+    version: "auto-calibration-runtime-v1.0",
+    source: "section-regeneration-plan",
+    candidates: sectionRewriteCandidates,
+    decision: sectionRewriteDecision,
+    applied: false,
+  };
   res.json({
     ok: true,
     mode: "stable-paid-template",
@@ -6954,6 +6993,7 @@ app.post("/deep-fortune", async (req, res) => {
           adjustedNarrativeProfile,
           narrativeRegenerationPlan,
           sectionRegenerationPlan,
+          sectionRegenerationExecutor,
           originalNarrativePreview: originalNarrativeText.slice(0, 300),
           rebuiltNarrativePreview: rebuiltNarrativeText.slice(0, 300),
           score: (() => {
