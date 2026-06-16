@@ -6337,7 +6337,7 @@ function getRecommendedPrice(depth) {
 }
 
 app.post("/deep-fortune", async (req, res) => {
-  const { score, answers, depth, locale, previousResponseStyle, previousEmotionTone, previousPrimaryTrait, previousPatterns, expectedQuestionCount } = req.body || {};
+  const { score, answers, depth, locale, previousResponseStyle, previousEmotionTone, previousPrimaryTrait, previousPatterns, expectedQuestionCount, audit } = req.body || {};
   const safeAnswers = answers || [];
 
   const categoryResult = getPrimaryCategory(safeAnswers);
@@ -6345,6 +6345,22 @@ app.post("/deep-fortune", async (req, res) => {
   const compound = buildCompoundInsight(categoryResult, traitResult);
   const responsePattern = analyzeResponsePattern(safeAnswers);
   const silencePattern = analyzeSilencePattern(safeAnswers, Number(expectedQuestionCount || 15));
+
+  const safePreviousPatterns = Array.isArray(previousPatterns) ? previousPatterns : [];
+  const emotionTone = getEmotionTone(compound);
+  const runtimeRouter = buildRuntimeRouterProfile({
+    responsePattern,
+    silencePattern,
+    compound,
+    previousPatterns: safePreviousPatterns,
+    emotionTone,
+  });
+  const runtimeSectionController = buildRuntimeSectionController(runtimeRouter);
+  const runtimeComposition = buildRuntimeCompositionProfile(runtimeSectionController);
+  const runtimeNarrativeSelection = buildRuntimeNarrativeSelection(runtimeComposition);
+  const runtimeRendering = buildRuntimeRenderingProfile(runtimeNarrativeSelection);
+  const sectionBreathMap = buildSectionBreathMap(runtimeRendering);
+  const isAuditMode = audit === true || audit === "true";
 
   res.json({
     ok: true,
@@ -6399,48 +6415,12 @@ app.post("/deep-fortune", async (req, res) => {
     emotionalAdaptationNarrative: buildEmotionalAdaptationNarrative(analyzeEmotionalAdaptation(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : [])),
     emotionalMasking: analyzeEmotionalMasking(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : []),
     emotionalMaskingNarrative: buildEmotionalMaskingNarrative(analyzeEmotionalMasking(responsePattern, compound, silencePattern, Array.isArray(previousPatterns) ? previousPatterns : [])),
-    runtimeRouter: buildRuntimeRouterProfile({
-      responsePattern,
-      silencePattern,
-      compound,
-      previousPatterns: Array.isArray(previousPatterns) ? previousPatterns : [],
-      emotionTone: getEmotionTone(compound),
-    }),
-    runtimeSectionController: buildRuntimeSectionController(buildRuntimeRouterProfile({
-      responsePattern,
-      silencePattern,
-      compound,
-      previousPatterns: Array.isArray(previousPatterns) ? previousPatterns : [],
-      emotionTone: getEmotionTone(compound),
-    })),
-    runtimeComposition: buildRuntimeCompositionProfile(buildRuntimeSectionController(buildRuntimeRouterProfile({
-      responsePattern,
-      silencePattern,
-      compound,
-      previousPatterns: Array.isArray(previousPatterns) ? previousPatterns : [],
-      emotionTone: getEmotionTone(compound),
-    }))),
-    runtimeNarrativeSelection: buildRuntimeNarrativeSelection(buildRuntimeCompositionProfile(buildRuntimeSectionController(buildRuntimeRouterProfile({
-      responsePattern,
-      silencePattern,
-      compound,
-      previousPatterns: Array.isArray(previousPatterns) ? previousPatterns : [],
-      emotionTone: getEmotionTone(compound),
-    })))),
-    runtimeRendering: buildRuntimeRenderingProfile(buildRuntimeNarrativeSelection(buildRuntimeCompositionProfile(buildRuntimeSectionController(buildRuntimeRouterProfile({
-      responsePattern,
-      silencePattern,
-      compound,
-      previousPatterns: Array.isArray(previousPatterns) ? previousPatterns : [],
-      emotionTone: getEmotionTone(compound),
-    }))))),
-    sectionBreathMap: buildSectionBreathMap(buildRuntimeRenderingProfile(buildRuntimeNarrativeSelection(buildRuntimeCompositionProfile(buildRuntimeSectionController(buildRuntimeRouterProfile({
-      responsePattern,
-      silencePattern,
-      compound,
-      previousPatterns: Array.isArray(previousPatterns) ? previousPatterns : [],
-      emotionTone: getEmotionTone(compound),
-    })))))),
+    runtimeRouter,
+    runtimeSectionController,
+    runtimeComposition,
+    runtimeNarrativeSelection,
+    runtimeRendering,
+    sectionBreathMap,
 
     primaryCategory: compound.primaryCategory,
     secondaryCategory: compound.secondaryCategory,
@@ -6448,15 +6428,47 @@ app.post("/deep-fortune", async (req, res) => {
     secondaryTrait: compound.secondaryTrait,
     traitStrength: compound.traitStrength,
     compoundSummary: compound.summary,
-    emotionTone: getEmotionTone(compound),
-    emotionToneLabel: getEmotionToneLabel(getEmotionTone(compound)),
+    emotionTone,
+    emotionToneLabel: getEmotionToneLabel(emotionTone),
 
     categoryRanking: categoryResult.ranking,
     traitRanking: traitResult.ranking,
 
     recommendedPrice: getRecommendedPrice(depth || "deep"),
     depth: depth || "deep",
-    text: locale === "en" ? stablePaidFortuneEn(score || 0, safeAnswers, depth || "deep", Array.isArray(previousPatterns) ? previousPatterns : [], Number(expectedQuestionCount || 15)) : stablePaidFortune(score || 0, safeAnswers, depth || "deep", previousResponseStyle || null, previousEmotionTone || null, previousPrimaryTrait || null, Array.isArray(previousPatterns) ? previousPatterns : [], Number(expectedQuestionCount || 15)),
+    text: locale === "en" ? stablePaidFortuneEn(score || 0, safeAnswers, depth || "deep", safePreviousPatterns, Number(expectedQuestionCount || 15)) : stablePaidFortune(score || 0, safeAnswers, depth || "deep", previousResponseStyle || null, previousEmotionTone || null, previousPrimaryTrait || null, safePreviousPatterns, Number(expectedQuestionCount || 15)),
+    runtimeAudit: isAuditMode
+      ? {
+          enabled: true,
+          trace: [
+            "runtime-router",
+            "runtime-section-controller",
+            "runtime-composition",
+            "runtime-narrative-selection",
+            "runtime-rendering",
+            "section-breath-map",
+          ],
+          snapshot: {
+            router: runtimeRouter?.version || null,
+            compositionDepth: runtimeComposition?.compositionDepth || null,
+            movementDensity: runtimeComposition?.movementDensity || null,
+            residualDensity: runtimeComposition?.residualDensity || null,
+            meaningDensity: runtimeComposition?.meaningDensity || null,
+            sentenceBreath: runtimeRendering?.sentenceBreath || null,
+            pauseDensity: runtimeRendering?.pauseDensity || null,
+            lingeringPressure: runtimeRendering?.lingeringPressure || null,
+            endingFade: runtimeRendering?.endingFade || null,
+          },
+          coverage: {
+            observation: !!sectionBreathMap?.observation,
+            movement: !!sectionBreathMap?.movement,
+            afterimage: !!sectionBreathMap?.residual,
+            contact: !!sectionBreathMap?.contact,
+            quietTruth: !!sectionBreathMap?.outline,
+            stillness: !!sectionBreathMap?.residual,
+          },
+        }
+      : undefined,
   });
 });
 
