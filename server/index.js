@@ -6536,7 +6536,16 @@ app.post("/deep-fortune", async (req, res) => {
             const coverageBonus = coverageCount * 2;
             const overall = Math.max(0, Math.min(100, 90 + coverageBonus - warningPenalty));
 
+            const status =
+              overall >= 95 && runtimeWarnings.length === 0
+                ? "pass"
+                : overall >= 85
+                  ? "watch"
+                  : "fail";
+
             return {
+              status,
+              warningCount: runtimeWarnings.length,
               consistency: Math.max(0, 100 - warningPenalty),
               coverage: coverageCount,
               overall,
