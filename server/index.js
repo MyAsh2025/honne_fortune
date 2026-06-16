@@ -6643,6 +6643,34 @@ app.post("/deep-fortune", async (req, res) => {
       }
     : null;
 
+  const originalNarrativeText = locale === "en"
+    ? stablePaidFortuneEn(score || 0, safeAnswers, depth || "deep", safePreviousPatterns, Number(expectedQuestionCount || 15))
+    : stablePaidFortune(score || 0, safeAnswers, depth || "deep", previousResponseStyle || null, previousEmotionTone || null, previousPrimaryTrait || null, safePreviousPatterns, Number(expectedQuestionCount || 15), null);
+
+  const rebuiltNarrativeText = locale === "en"
+    ? originalNarrativeText
+    : stablePaidFortune(score || 0, safeAnswers, depth || "deep", previousResponseStyle || null, previousEmotionTone || null, previousPrimaryTrait || null, safePreviousPatterns, Number(expectedQuestionCount || 15), finalRuntimeOverrideProfile);
+
+  const narrativeComparison = {
+    mode: "narrative-comparison",
+    version: "auto-calibration-runtime-v0.5",
+    originalLength: originalNarrativeText.length,
+    rebuiltLength: rebuiltNarrativeText.length,
+    changed: originalNarrativeText !== rebuiltNarrativeText,
+    runtimeSelected: selectedRuntime.selected,
+    shouldPreferRebuilt: selectedRuntime.selected === "rebuilt" && originalNarrativeText !== rebuiltNarrativeText,
+  };
+
+  const selectedNarrative = {
+    mode: "best-narrative-selection",
+    version: "auto-calibration-runtime-v0.5",
+    selected: narrativeComparison.shouldPreferRebuilt ? "rebuilt" : "original",
+    accepted: narrativeComparison.shouldPreferRebuilt,
+    applied: false,
+    reason: narrativeComparison.shouldPreferRebuilt
+      ? "rebuilt narrative differs and was selected by runtime comparison"
+      : "original narrative preserved by controlled audit policy",
+  };
   res.json({
     ok: true,
     mode: "stable-paid-template",
@@ -6717,7 +6745,7 @@ app.post("/deep-fortune", async (req, res) => {
 
     recommendedPrice: getRecommendedPrice(depth || "deep"),
     depth: depth || "deep",
-    text: locale === "en" ? stablePaidFortuneEn(score || 0, safeAnswers, depth || "deep", safePreviousPatterns, Number(expectedQuestionCount || 15)) : stablePaidFortune(score || 0, safeAnswers, depth || "deep", previousResponseStyle || null, previousEmotionTone || null, previousPrimaryTrait || null, safePreviousPatterns, Number(expectedQuestionCount || 15), finalRuntimeOverrideProfile),
+    text: originalNarrativeText,
     runtimeAudit: isAuditMode
       ? {
           enabled: true,
@@ -6757,6 +6785,10 @@ app.post("/deep-fortune", async (req, res) => {
           secondAudit,
           runtimeComparison,
           selectedRuntime,
+          narrativeComparison,
+          selectedNarrative,
+          originalNarrativePreview: originalNarrativeText.slice(0, 300),
+          rebuiltNarrativePreview: rebuiltNarrativeText.slice(0, 300),
           score: (() => {
             const warningPenalty = runtimeWarnings.length * 5;
             const coverageCount = [
