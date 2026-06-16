@@ -6777,6 +6777,25 @@ app.post("/deep-fortune", async (req, res) => {
     rebuilt: narrativeCalibration.rebuilt.suggestions,
     applied: false,
   };
+  const activeNarrativeSuggestions = selectedNarrative.selected === "rebuilt"
+    ? adjustedNarrativeProfile.rebuilt
+    : adjustedNarrativeProfile.original;
+
+  const shouldRegenerateNarrative = Array.isArray(activeNarrativeSuggestions) &&
+    activeNarrativeSuggestions.some((item) => item.action && item.action !== "keep");
+
+  const narrativeRegenerationPlan = {
+    mode: "narrative-regeneration-plan",
+    version: "auto-calibration-runtime-v0.8",
+    source: "adjusted-narrative-profile",
+    selectedNarrative: selectedNarrative.selected,
+    shouldRegenerate: shouldRegenerateNarrative,
+    suggestions: activeNarrativeSuggestions,
+    applied: false,
+    reason: shouldRegenerateNarrative
+      ? "narrative calibration produced actionable regeneration suggestions"
+      : "narrative calibration returned keep; regeneration skipped",
+  };
   res.json({
     ok: true,
     mode: "stable-paid-template",
@@ -6896,6 +6915,7 @@ app.post("/deep-fortune", async (req, res) => {
           narrativeAudit,
           narrativeCalibration,
           adjustedNarrativeProfile,
+          narrativeRegenerationPlan,
           originalNarrativePreview: originalNarrativeText.slice(0, 300),
           rebuiltNarrativePreview: rebuiltNarrativeText.slice(0, 300),
           score: (() => {
