@@ -4298,6 +4298,39 @@ function buildResidualAfterwaveNarrativeEn(responsePattern, compound, silencePat
 
   const afterimageGravityLine = afterimageGravityLineByGravity[gravity] || "";
 
+  const residualDensity = afterwaveRuntimeProfile?.residualDensity || afterwaveRuntimeProfile?.density || "light";
+  const lingeringPressure = afterwaveRuntimeProfile?.lingeringPressure || "controlled-low";
+  const residualCompression =
+    residualDensity === "heavy" || gravity === "weighted" || lingeringPressure === "high"
+      ? "heavy"
+      : residualDensity === "light" || lingeringPressure === "low" || lingeringPressure === "controlled-low"
+        ? "compact"
+        : lingeringPressure === "middle-high"
+          ? "lingering"
+          : "balanced";
+
+  const buildAfterwaveOutput = ({ base, maskingText = "", gravityLine = "" }) => {
+    const parts = [base];
+
+    if (maskingText && residualCompression !== "compact") {
+      parts.push(maskingText);
+    }
+
+    if (gravityLine && residualCompression !== "compact") {
+      parts.push(gravityLine);
+    }
+
+    if (gravityLine && residualCompression === "compact" && gravity === "weighted") {
+      parts.push("Something heavy may still be present, but it does not need to take over the whole reading.");
+    }
+
+    if (residualCompression === "lingering" && !gravityLine) {
+      parts.push("Something about this feeling may still remain near the edge of awareness.");
+    }
+
+    return parts.filter(Boolean).join("\n\n");
+  };
+
   const integrated = buildIntegratedEmotionalAfterwaveNarrativeEn(echoState, afterimageState, residueState, afterwaveRuntimeProfile);
   const masking = buildEmotionalMaskingNarrativeEn(maskingState);
 
@@ -4306,17 +4339,17 @@ function buildResidualAfterwaveNarrativeEn(responsePattern, compound, silencePat
     afterimageState?.state === "not_enough_history" &&
     residueState?.state === "not_enough_history"
   ) {
-    return buildAfterimageFallbackNarrativeEn(compound, afterwaveRuntimeProfile) + (afterimageGravityLine ? "\n\n" + afterimageGravityLine : "");
+    return buildAfterwaveOutput({ base: buildAfterimageFallbackNarrativeEn(compound, afterwaveRuntimeProfile), gravityLine: afterimageGravityLine });
   }
 
   if (
     masking &&
     ["protective_masking", "quiet_overextension", "uncertain_self_masking"].includes(maskingState?.state)
   ) {
-    return integrated + "\n\n" + masking + (afterimageGravityLine ? "\n\n" + afterimageGravityLine : "");
+    return buildAfterwaveOutput({ base: integrated, maskingText: masking, gravityLine: afterimageGravityLine });
   }
 
-  return integrated + (afterimageGravityLine ? "\n\n" + afterimageGravityLine : "");
+  return buildAfterwaveOutput({ base: integrated, gravityLine: afterimageGravityLine });
 }
 
 function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null, previousPrimaryTrait = null, previousPatterns = [], expectedQuestionCount = 15) {
@@ -6390,6 +6423,4 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
-
-
 
