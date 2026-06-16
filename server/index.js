@@ -4414,6 +4414,21 @@ function buildMovementNarrativeEn(compound, runtimeProfile = null) {
   const movement = runtimeProfile?.movement || "settling";
   const tempo = runtimeProfile?.tempo || "soft";
   const pressure = runtimeProfile?.pressure || "soft-low";
+  const gravity = runtimeProfile?.gravity || "light";
+  const lingeringPressure = runtimeProfile?.lingeringPressure || "low";
+
+  const isHeavy = gravity === "heavy" || pressure === "high";
+  const isQuick = tempo === "quick" || movement === "forward" || movement === "emerging";
+  const isLingering = lingeringPressure === "high" || lingeringPressure === "middle-high";
+  const isSoft = pressure === "low" || pressure === "soft-low";
+
+  const rhythm = isHeavy
+    ? "heavy"
+    : isQuick
+      ? "quick"
+      : isLingering
+        ? "lingering"
+        : "quiet";
 
   const closingByMovement = {
     away: "For now,\nneither part has to force itself into clarity.",
@@ -4426,73 +4441,89 @@ function buildMovementNarrativeEn(compound, runtimeProfile = null) {
   };
 
   const quietClosing =
-    pressure === "low"
+    isSoft
       ? closingByMovement[movement] || closingByMovement.settling
-      : "For now,\nboth parts can remain without becoming an answer.";
+      : isHeavy
+        ? "For now,\nit may be too much to turn this into an answer too quickly."
+        : "For now,\nboth parts can remain without becoming an answer.";
+
+  const movementRuntimeBreath = isHeavy
+    ? "The movement feels heavier than the words around it."
+    : isQuick
+      ? "The feeling is already beginning to move, even before it feels fully safe."
+      : isLingering
+        ? "Some part of it still lingers, not quite ready to become simple."
+        : "";
+
+  const movementClosing = movementRuntimeBreath
+    ? `${movementRuntimeBreath}\n\n${quietClosing}`
+    : quietClosing;
+
+  const renderMovement = (variants) => {
+    const selected = variants[rhythm] || variants.quiet;
+    return `${selected}\n\n${movementClosing}`;
+  };
 
   if (trait === "emotional_fatigue") {
-    return `Part of you seems ready to rest.
-
-Another part
-still doesn't know how to stop.
-
-${quietClosing}`;
+    return renderMovement({
+      quiet: "Part of you seems ready to rest.\n\nAnother part\nstill does not know how to stop.",
+      quick: "Part of you is already reaching for rest.\n\nBut something in you\nstill keeps moving.",
+      heavy: "Part of you is tired.\nAnother part still cannot stop.\nThe movement itself has become heavy.",
+      lingering: "Part of you seems ready to rest.\n\nAnother part\nstill stays awake inside the pause.",
+    });
   }
 
   if (trait === "people_pleasing") {
-    return `Your attention still turns outward,
-
-even while
-something inside quietly waits.
-
-${quietClosing}`;
+    return renderMovement({
+      quiet: "Your attention still turns outward,\n\neven while\nsomething inside quietly waits.",
+      quick: "Your attention moves toward others first.\n\nYour own feeling\narrives a little later.",
+      heavy: "Your attention keeps leaving you.\nSomething inside still waits for a place to stand.",
+      lingering: "Your attention still turns outward,\n\nand somewhere behind that,\nyour own voice waits without pushing.",
+    });
   }
 
   if (trait === "attachment_anxiety") {
-    return `The wish to move closer
-hasn't disappeared.
-
-Neither has the instinct
-to protect yourself.
-
-${quietClosing}`;
+    return renderMovement({
+      quiet: "The wish to move closer\nhas not disappeared.\n\nNeither has the instinct\nto protect yourself.",
+      quick: "Something in you wants to move closer.\n\nSomething else\nchecks the distance first.",
+      heavy: "The wish for closeness is still there.\nSo is the fear of what closeness might ask from you.",
+      lingering: "The wish to move closer\nhas not disappeared.\n\nIt only keeps pausing\nwhere safety still feels uncertain.",
+    });
   }
 
   if (trait === "future_anxiety") {
-    return `Your thoughts keep moving forward.
-
-Your heart
-hasn't quite followed yet.
-
-${quietClosing}`;
+    return renderMovement({
+      quiet: "Your thoughts keep moving forward.\n\nYour heart\nhas not quite followed yet.",
+      quick: "Your mind is already ahead.\n\nYour heart\nis still catching up.",
+      heavy: "Your thoughts keep reaching forward.\nYour heart stays behind, trying not to be dragged.",
+      lingering: "Your thoughts keep moving forward.\n\nYour heart remains a little behind,\nwaiting for the future to feel less sharp.",
+    });
   }
 
   if (trait === "identity_confusion") {
-    return `Nothing feels completely lost.
-
-It simply hasn't
-taken a clear shape yet.
-
-${quietClosing}`;
+    return renderMovement({
+      quiet: "Nothing feels completely lost.\n\nIt simply has not\ntaken a clear shape yet.",
+      quick: "Something is beginning to move.\n\nIt just has not\nbecome a shape you can trust yet.",
+      heavy: "Nothing is fully lost.\nBut the outline still feels too unstable to hold.",
+      lingering: "Nothing feels completely lost.\n\nThe shape is only staying quiet\nbefore it becomes nameable.",
+    });
   }
 
   if (trait === "role_pressure") {
-    return `You keep carrying
-what feels expected of you.
-
-Something quieter
-has begun asking how much longer.
-
-${quietClosing}`;
+    return renderMovement({
+      quiet: "You keep carrying\nwhat feels expected of you.\n\nSomething quieter\nhas begun asking how much longer.",
+      quick: "You keep moving through what is expected.\n\nSomething quieter\nstarts asking where you are in it.",
+      heavy: "You are still carrying what is expected.\nBut something quieter is beginning to feel the weight.",
+      lingering: "You keep carrying\nwhat feels expected of you.\n\nAnd underneath it,\nsomething quieter keeps asking how long it has to stay useful.",
+    });
   }
 
-  return `Something inside you
-moves forward carefully.
-
-Another part
-still wants a little more time.
-
-${quietClosing}`;
+  return renderMovement({
+    quiet: "Something inside you\nmoves forward carefully.\n\nAnother part\nstill wants a little more time.",
+    quick: "Something inside you begins to move.\n\nAnother part\nasks for time before following.",
+    heavy: "Something inside you is moving.\nAnother part still needs more time before it can trust the movement.",
+    lingering: "Something inside you\nmoves forward carefully.\n\nAnother part stays close to the pause,\nnot ready to disappear yet.",
+  });
 }
 function buildObservationTraitNarrativeEn(compound) {
   const trait = compound?.primaryTrait || "";
