@@ -6671,6 +6671,53 @@ app.post("/deep-fortune", async (req, res) => {
       ? "rebuilt narrative differs and was selected by runtime comparison"
       : "original narrative preserved by controlled audit policy",
   };
+  const buildNarrativeAudit = (text, label) => {
+    const safeText = String(text || "");
+    const sections = {
+      readingStart: safeText.includes("【読みはじめ】"),
+      observation: safeText.includes("【観測】"),
+      movement: safeText.includes("【流れ】"),
+      afterimage: safeText.includes("【余波】"),
+      contact: safeText.includes("【触れ方】"),
+      quietTruth: safeText.includes("【本音の手前】"),
+      stillness: safeText.includes("【静止】"),
+    };
+
+    const sectionCount = Object.values(sections).filter(Boolean).length;
+    const lineBreakCount = (safeText.match(/\n/g) || []).length;
+    const warnings = [];
+
+    if (!sections.observation) warnings.push("observation section missing");
+    if (!sections.movement) warnings.push("movement section missing");
+    if (!sections.afterimage) warnings.push("afterimage section missing");
+    if (!sections.contact) warnings.push("contact section missing");
+    if (!sections.quietTruth) warnings.push("quiet truth section missing");
+    if (!sections.stillness) warnings.push("stillness section missing");
+    if (safeText.length < 300) warnings.push("narrative is too short for deep runtime");
+    if (safeText.length > 1800) warnings.push("narrative may be too dense");
+    if (lineBreakCount < 8) warnings.push("breath markers may be too low");
+
+    const score = Math.max(0, Math.min(100, 70 + sectionCount * 4 - warnings.length * 5));
+
+    return {
+      mode: "narrative-audit",
+      version: "auto-calibration-runtime-v0.6",
+      label,
+      length: safeText.length,
+      lineBreakCount,
+      sections,
+      sectionCount,
+      warnings,
+      score,
+    };
+  };
+
+  const narrativeAudit = {
+    mode: "dual-narrative-audit",
+    version: "auto-calibration-runtime-v0.6",
+    original: buildNarrativeAudit(originalNarrativeText, "original"),
+    rebuilt: buildNarrativeAudit(rebuiltNarrativeText, "rebuilt"),
+  };
   res.json({
     ok: true,
     mode: "stable-paid-template",
@@ -6787,6 +6834,7 @@ app.post("/deep-fortune", async (req, res) => {
           selectedRuntime,
           narrativeComparison,
           selectedNarrative,
+          narrativeAudit,
           originalNarrativePreview: originalNarrativeText.slice(0, 300),
           rebuiltNarrativePreview: rebuiltNarrativeText.slice(0, 300),
           score: (() => {
