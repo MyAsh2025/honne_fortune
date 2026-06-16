@@ -6532,6 +6532,82 @@ app.post("/deep-fortune", async (req, res) => {
       mode: "audit-only",
     };
   })();
+  const rebuiltRuntimeProfile = {
+    source: "adjusted-runtime-profile",
+    mode: "virtual-rebuild",
+    applied: false,
+    version: "auto-calibration-runtime-v0.3",
+    movementDensity: adjustedRuntimeProfile.adjusted.movementDensity,
+    residualDensity: adjustedRuntimeProfile.adjusted.residualDensity,
+    meaningDensity: adjustedRuntimeProfile.adjusted.meaningDensity,
+    pauseDensity: adjustedRuntimeProfile.adjusted.pauseDensity,
+    endingFade: adjustedRuntimeProfile.adjusted.endingFade,
+    lingeringPressure: adjustedRuntimeProfile.adjusted.lingeringPressure,
+  };
+
+  const secondAuditWarnings = [];
+
+  if (rebuiltRuntimeProfile.movementDensity === "low") {
+    secondAuditWarnings.push("movement density remains low after rebuild");
+  }
+
+  if (rebuiltRuntimeProfile.pauseDensity === "low") {
+    secondAuditWarnings.push("pause density remains low after rebuild");
+  }
+
+  if (rebuiltRuntimeProfile.endingFade === "flat") {
+    secondAuditWarnings.push("ending fade remains flat after rebuild");
+  }
+
+  if (
+    rebuiltRuntimeProfile.residualDensity === "light" &&
+    rebuiltRuntimeProfile.lingeringPressure === "high"
+  ) {
+    secondAuditWarnings.push("residual density still conflicts with lingering pressure");
+  }
+
+  const secondAudit = (() => {
+    const coverageCount = [
+      sectionBreathMap?.observation,
+      sectionBreathMap?.movement,
+      sectionBreathMap?.residual,
+      sectionBreathMap?.contact,
+      sectionBreathMap?.outline,
+    ].filter(Boolean).length;
+
+    const coverageBonus = coverageCount * 2;
+    const warningPenalty = secondAuditWarnings.length * 5;
+    const overall = Math.max(0, Math.min(100, 90 + coverageBonus - warningPenalty));
+
+    return {
+      mode: "second-audit",
+      target: "rebuilt-runtime-profile",
+      warnings: secondAuditWarnings,
+      score: {
+        coverageBonus,
+        warningPenalty,
+        overall,
+      },
+    };
+  })();
+
+  const runtimeComparison = {
+    before: calibrationResult.before.overall,
+    after: secondAudit.score.overall,
+    improvement: secondAudit.score.overall - calibrationResult.before.overall,
+    improved: secondAudit.score.overall > calibrationResult.before.overall,
+    selected: secondAudit.score.overall > calibrationResult.before.overall ? "rebuilt" : "original",
+  };
+
+  const selectedRuntime = {
+    mode: "better-runtime-selection",
+    selected: runtimeComparison.selected,
+    accepted: runtimeComparison.improved,
+    applied: false,
+    reason: runtimeComparison.improved
+      ? "rebuilt runtime profile produced a higher audit score"
+      : "original runtime profile remained equal or better",
+  };
 
   res.json({
     ok: true,
@@ -6643,6 +6719,10 @@ app.post("/deep-fortune", async (req, res) => {
           calibrationProfile: runtimeCalibrationProfile,
           adjustedRuntimeProfile,
           calibrationResult,
+          rebuiltRuntimeProfile,
+          secondAudit,
+          runtimeComparison,
+          selectedRuntime,
           score: (() => {
             const warningPenalty = runtimeWarnings.length * 5;
             const coverageCount = [
