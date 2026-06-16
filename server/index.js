@@ -6452,6 +6452,35 @@ app.post("/deep-fortune", async (req, res) => {
   );
 
 
+  const runtimeCalibrationProfile = {
+    movementDensity: runtimeComposition?.movementDensity || null,
+    residualDensity: runtimeComposition?.residualDensity || null,
+    meaningDensity: runtimeComposition?.meaningDensity || null,
+    pauseDensity: runtimeRendering?.pauseDensity || null,
+    endingFade: runtimeRendering?.endingFade || null,
+    lingeringPressure: runtimeRendering?.lingeringPressure || null,
+    applied: false,
+    suggestions: runtimeCalibration.length,
+  };
+
+  for (const item of runtimeCalibration) {
+    if (item.target === "movementDensity") {
+      runtimeCalibrationProfile.movementDensity = "middle";
+    }
+
+    if (item.target === "endingFade") {
+      runtimeCalibrationProfile.endingFade = "soft-fade";
+    }
+
+    if (item.target === "pauseDensity") {
+      runtimeCalibrationProfile.pauseDensity = "middle";
+    }
+
+    if (item.target === "residualDensity") {
+      runtimeCalibrationProfile.residualDensity = "middle";
+    }
+  }
+
   res.json({
     ok: true,
     mode: "stable-paid-template",
@@ -6559,6 +6588,7 @@ app.post("/deep-fortune", async (req, res) => {
           },
           warnings: runtimeWarnings,
           calibration: runtimeCalibration,
+          calibrationProfile: runtimeCalibrationProfile,
           score: (() => {
             const warningPenalty = runtimeWarnings.length * 5;
             const coverageCount = [
