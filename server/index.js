@@ -6718,6 +6718,65 @@ app.post("/deep-fortune", async (req, res) => {
     original: buildNarrativeAudit(originalNarrativeText, "original"),
     rebuilt: buildNarrativeAudit(rebuiltNarrativeText, "rebuilt"),
   };
+  const buildNarrativeCalibration = (auditResult) => {
+    const suggestions = [];
+    const sections = auditResult?.sections || {};
+    const warnings = Array.isArray(auditResult?.warnings) ? auditResult.warnings : [];
+
+    if (!sections.afterimage) {
+      suggestions.push({ target: "afterimage", action: "strengthen", reason: "afterimage section is missing" });
+    }
+
+    if (!sections.contact) {
+      suggestions.push({ target: "contact", action: "add-emotional-contact", reason: "contact section is missing" });
+    }
+
+    if (!sections.quietTruth) {
+      suggestions.push({ target: "quietTruth", action: "restore-quiet-truth", reason: "quiet truth section is missing" });
+    }
+
+    if (!sections.stillness) {
+      suggestions.push({ target: "stillness", action: "soften-ending", reason: "stillness section is missing" });
+    }
+
+    if (warnings.includes("breath markers may be too low")) {
+      suggestions.push({ target: "breath", action: "increase-line-breaks", reason: "breath markers are too low" });
+    }
+
+    if (warnings.includes("narrative may be too dense")) {
+      suggestions.push({ target: "density", action: "reduce-density", reason: "narrative density is high" });
+    }
+
+    if (warnings.length === 0 && suggestions.length === 0) {
+      suggestions.push({ target: "narrative", action: "keep", reason: "narrative audit passed without warnings" });
+    }
+
+    return {
+      mode: "narrative-calibration",
+      version: "auto-calibration-runtime-v0.7",
+      sourceAudit: auditResult?.label || null,
+      suggestionCount: suggestions.length,
+      suggestions,
+      accepted: suggestions.some((item) => item.action !== "keep"),
+      applied: false,
+    };
+  };
+
+  const narrativeCalibration = {
+    mode: "dual-narrative-calibration",
+    version: "auto-calibration-runtime-v0.7",
+    original: buildNarrativeCalibration(narrativeAudit.original),
+    rebuilt: buildNarrativeCalibration(narrativeAudit.rebuilt),
+  };
+
+  const adjustedNarrativeProfile = {
+    mode: "adjusted-narrative-profile",
+    version: "auto-calibration-runtime-v0.7",
+    source: "narrative-calibration",
+    original: narrativeCalibration.original.suggestions,
+    rebuilt: narrativeCalibration.rebuilt.suggestions,
+    applied: false,
+  };
   res.json({
     ok: true,
     mode: "stable-paid-template",
@@ -6835,6 +6894,8 @@ app.post("/deep-fortune", async (req, res) => {
           narrativeComparison,
           selectedNarrative,
           narrativeAudit,
+          narrativeCalibration,
+          adjustedNarrativeProfile,
           originalNarrativePreview: originalNarrativeText.slice(0, 300),
           rebuiltNarrativePreview: rebuiltNarrativeText.slice(0, 300),
           score: (() => {
