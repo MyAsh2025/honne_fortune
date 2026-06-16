@@ -6362,22 +6362,59 @@ app.post("/deep-fortune", async (req, res) => {
   const sectionBreathMap = buildSectionBreathMap(runtimeRendering);
   const isAuditMode = audit === true || audit === "true";
   const runtimeWarnings = [];
+  const addRuntimeWarning = (condition, message) => {
+    if (condition) runtimeWarnings.push(message);
+  };
 
-  if (runtimeComposition?.movementDensity === "high" && runtimeComposition?.compositionDepth === "shallow") {
-    runtimeWarnings.push("movement density is high while composition depth is shallow");
-  }
+  addRuntimeWarning(
+    runtimeComposition?.movementDensity === "high" && runtimeComposition?.compositionDepth === "shallow",
+    "movement density is high while composition depth is shallow"
+  );
 
-  if (runtimeComposition?.residualDensity === "heavy" && runtimeRendering?.endingFade === "short-fade") {
-    runtimeWarnings.push("residual density is heavy while ending fade is short");
-  }
+  addRuntimeWarning(
+    runtimeComposition?.residualDensity === "heavy" && runtimeRendering?.endingFade === "short-fade",
+    "residual density is heavy while ending fade is short"
+  );
 
-  if (runtimeComposition?.meaningDensity === "deep" && runtimeRendering?.pauseDensity === "low") {
-    runtimeWarnings.push("quiet truth meaning density is deep while pause density is low");
-  }
+  addRuntimeWarning(
+    runtimeComposition?.meaningDensity === "deep" && runtimeRendering?.pauseDensity === "low",
+    "quiet truth meaning density is deep while pause density is low"
+  );
 
-  if (!sectionBreathMap?.movement || !sectionBreathMap?.residual || !sectionBreathMap?.contact) {
-    runtimeWarnings.push("one or more section breath mappings are missing");
-  }
+  addRuntimeWarning(
+    !sectionBreathMap?.movement || !sectionBreathMap?.residual || !sectionBreathMap?.contact,
+    "one or more section breath mappings are missing"
+  );
+
+  addRuntimeWarning(
+    runtimeComposition?.residualDensity === "light" && runtimeRendering?.lingeringPressure === "high",
+    "residual density is light while lingering pressure is high"
+  );
+
+  addRuntimeWarning(
+    runtimeComposition?.movementDensity === "light" && runtimeRendering?.pauseDensity === "high",
+    "movement density is light while pause density is high"
+  );
+
+  addRuntimeWarning(
+    runtimeComposition?.understandingVisibility === "low-visible" && runtimeComposition?.meaningDensity === "deep",
+    "understanding visibility is low while meaning density is deep"
+  );
+
+  addRuntimeWarning(
+    runtimeRendering?.endingFade === "soft-fade" && runtimeComposition?.residualDensity === "heavy",
+    "ending fade is soft while residual density is heavy"
+  );
+
+  addRuntimeWarning(
+    runtimeRendering?.sentenceBreath === "short" && runtimeRendering?.pauseDensity === "high",
+    "sentence breath is short while pause density is high"
+  );
+
+  addRuntimeWarning(
+    sectionBreathMap?.movement?.pauseDensity === "low" && runtimeComposition?.movementDensity === "high",
+    "movement section pause density is low while movement density is high"
+  );
 
 
   res.json({
