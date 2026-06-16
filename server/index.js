@@ -4371,13 +4371,20 @@ function buildResidualAfterwaveNarrativeEn(responsePattern, compound, silencePat
   return buildAfterwaveOutput({ base: integrated, gravityLine: afterimageGravityLine });
 }
 
-function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null, previousPrimaryTrait = null, previousPatterns = [], expectedQuestionCount = 15) {
+function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null, previousPrimaryTrait = null, previousPatterns = [], expectedQuestionCount = 15, runtimeOverrideProfile = null) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
   const compound = buildCompoundInsight(categoryResult, traitResult);
   const responsePattern = analyzeResponsePattern(answers);
   const silencePattern = analyzeSilencePattern(answers, expectedQuestionCount);
   const emotionTone = getEmotionTone(compound);
+  const finalRuntimeProfile = runtimeOverrideProfile
+    ? {
+        source: "runtime-override",
+        applied: false,
+        ...runtimeOverrideProfile,
+      }
+    : null;
   const runtimeRouter = buildRuntimeRouterProfile({
     responsePattern,
     silencePattern,
@@ -4386,9 +4393,28 @@ function stablePaidFortune(score, answers = [], depth = "deep", previousResponse
     emotionTone,
   });
   const runtimeSectionController = buildRuntimeSectionController(runtimeRouter);
-  const runtimeComposition = buildRuntimeCompositionProfile(runtimeSectionController);
+  let runtimeComposition = buildRuntimeCompositionProfile(runtimeSectionController);
   const runtimeNarrativeSelection = buildRuntimeNarrativeSelection(runtimeComposition);
-  const runtimeRendering = buildRuntimeRenderingProfile(runtimeNarrativeSelection);
+  let runtimeRendering = buildRuntimeRenderingProfile(runtimeNarrativeSelection);
+  if (finalRuntimeProfile) {
+    runtimeComposition = {
+      ...runtimeComposition,
+      movementDensity: finalRuntimeProfile.movementDensity || runtimeComposition.movementDensity,
+      residualDensity: finalRuntimeProfile.residualDensity || runtimeComposition.residualDensity,
+      meaningDensity: finalRuntimeProfile.meaningDensity || runtimeComposition.meaningDensity,
+      overrideApplied: true,
+      overrideVersion: "auto-calibration-runtime-v0.4",
+    };
+
+    runtimeRendering = {
+      ...runtimeRendering,
+      pauseDensity: finalRuntimeProfile.pauseDensity || runtimeRendering.pauseDensity,
+      endingFade: finalRuntimeProfile.endingFade || runtimeRendering.endingFade,
+      lingeringPressure: finalRuntimeProfile.lingeringPressure || runtimeRendering.lingeringPressure,
+      overrideApplied: true,
+      overrideVersion: "auto-calibration-runtime-v0.4",
+    };
+  }
   const previousPattern = getLastPreviousPattern(previousPatterns);
 
   const resolvedPreviousResponseStyle =
@@ -6608,6 +6634,14 @@ app.post("/deep-fortune", async (req, res) => {
       ? "rebuilt runtime profile produced a higher audit score"
       : "original runtime profile remained equal or better",
   };
+  const finalRuntimeOverrideProfile = selectedRuntime.selected === "rebuilt"
+    ? {
+        ...rebuiltRuntimeProfile,
+        selectedBy: "better-runtime-selection",
+        rebuildAppliedToNarrative: true,
+        version: "auto-calibration-runtime-v0.4",
+      }
+    : null;
 
   res.json({
     ok: true,
@@ -6683,7 +6717,7 @@ app.post("/deep-fortune", async (req, res) => {
 
     recommendedPrice: getRecommendedPrice(depth || "deep"),
     depth: depth || "deep",
-    text: locale === "en" ? stablePaidFortuneEn(score || 0, safeAnswers, depth || "deep", safePreviousPatterns, Number(expectedQuestionCount || 15)) : stablePaidFortune(score || 0, safeAnswers, depth || "deep", previousResponseStyle || null, previousEmotionTone || null, previousPrimaryTrait || null, safePreviousPatterns, Number(expectedQuestionCount || 15)),
+    text: locale === "en" ? stablePaidFortuneEn(score || 0, safeAnswers, depth || "deep", safePreviousPatterns, Number(expectedQuestionCount || 15)) : stablePaidFortune(score || 0, safeAnswers, depth || "deep", previousResponseStyle || null, previousEmotionTone || null, previousPrimaryTrait || null, safePreviousPatterns, Number(expectedQuestionCount || 15), finalRuntimeOverrideProfile),
     runtimeAudit: isAuditMode
       ? {
           enabled: true,
