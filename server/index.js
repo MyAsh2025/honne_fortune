@@ -966,10 +966,29 @@ function buildQuietHonestCoreNarrativeEn(compound, runtimeProfile = null) {
   const pressure = runtimeProfile?.pressure || "soft-low";
   const voice = runtimeProfile?.voice || "quiet-direct";
 
-  const quietEnding =
-    pressure === "low" || voice === "quiet-protective"
+  const density = runtimeProfile?.density || runtimeProfile?.meaningDensity || "readable-light";
+  const gravity = runtimeProfile?.gravity || "light";
+  const lingeringPressure = runtimeProfile?.lingeringPressure || "controlled-low";
+
+  const quietTruthDensity =
+    pressure === "high" || gravity === "weighted" || density === "deep"
+      ? "deep"
+      : lingeringPressure === "middle-high" || lingeringPressure === "high"
+        ? "lingering"
+        : density === "low" || density === "readable-light"
+          ? "light"
+          : "balanced";
+
+  const quietEndingByDensity = {
+    light: pressure === "low" || voice === "quiet-protective"
       ? "It does not need to become louder to be real."
-      : "It may be small, but it is still part of you.";
+      : "It may be small, but it is still part of you.",
+    balanced: "It may be small, but it is still part of you.",
+    lingering: "It may be small, but it is still part of you.\n\nIt can remain quiet and still matter.",
+    deep: "It may be small, but it is still part of you.\n\nAnd it may be asking to be protected before it is understood.",
+  };
+
+  const quietEnding = quietEndingByDensity[quietTruthDensity] || quietEndingByDensity.light;
 
   if (trait === "emotional_fatigue") {
     return `Behind the part of you
