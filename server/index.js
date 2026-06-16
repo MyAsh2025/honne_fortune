@@ -6796,6 +6796,43 @@ app.post("/deep-fortune", async (req, res) => {
       ? "narrative calibration produced actionable regeneration suggestions"
       : "narrative calibration returned keep; regeneration skipped",
   };
+  const buildSectionRegenerationQueue = (suggestions = []) => {
+    const priorityMap = {
+      afterimage: 90,
+      contact: 80,
+      quietTruth: 70,
+      stillness: 60,
+      breath: 50,
+      density: 40,
+      narrative: 0,
+    };
+
+    return suggestions
+      .filter((item) => item?.action && item.action !== "keep")
+      .map((item) => ({
+        section: item.target || "narrative",
+        action: item.action,
+        reason: item.reason || null,
+        priority: priorityMap[item.target] ?? 30,
+        applied: false,
+      }))
+      .sort((a, b) => b.priority - a.priority);
+  };
+
+  const sectionRegenerationQueue = buildSectionRegenerationQueue(activeNarrativeSuggestions);
+
+  const sectionRegenerationPlan = {
+    mode: "section-regeneration-plan",
+    version: "auto-calibration-runtime-v0.9",
+    source: "narrative-regeneration-plan",
+    shouldRegenerate: sectionRegenerationQueue.length > 0,
+    queue: sectionRegenerationQueue,
+    nextSection: sectionRegenerationQueue[0]?.section || null,
+    applied: false,
+    reason: sectionRegenerationQueue.length > 0
+      ? "actionable section regeneration queue generated"
+      : "no section regeneration needed",
+  };
   res.json({
     ok: true,
     mode: "stable-paid-template",
@@ -6916,6 +6953,7 @@ app.post("/deep-fortune", async (req, res) => {
           narrativeCalibration,
           adjustedNarrativeProfile,
           narrativeRegenerationPlan,
+          sectionRegenerationPlan,
           originalNarrativePreview: originalNarrativeText.slice(0, 300),
           rebuiltNarrativePreview: rebuiltNarrativeText.slice(0, 300),
           score: (() => {
