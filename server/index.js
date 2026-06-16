@@ -6361,6 +6361,24 @@ app.post("/deep-fortune", async (req, res) => {
   const runtimeRendering = buildRuntimeRenderingProfile(runtimeNarrativeSelection);
   const sectionBreathMap = buildSectionBreathMap(runtimeRendering);
   const isAuditMode = audit === true || audit === "true";
+  const runtimeWarnings = [];
+
+  if (runtimeComposition?.movementDensity === "high" && runtimeComposition?.compositionDepth === "shallow") {
+    runtimeWarnings.push("movement density is high while composition depth is shallow");
+  }
+
+  if (runtimeComposition?.residualDensity === "heavy" && runtimeRendering?.endingFade === "short-fade") {
+    runtimeWarnings.push("residual density is heavy while ending fade is short");
+  }
+
+  if (runtimeComposition?.meaningDensity === "deep" && runtimeRendering?.pauseDensity === "low") {
+    runtimeWarnings.push("quiet truth meaning density is deep while pause density is low");
+  }
+
+  if (!sectionBreathMap?.movement || !sectionBreathMap?.residual || !sectionBreathMap?.contact) {
+    runtimeWarnings.push("one or more section breath mappings are missing");
+  }
+
 
   res.json({
     ok: true,
@@ -6467,6 +6485,7 @@ app.post("/deep-fortune", async (req, res) => {
             quietTruth: !!sectionBreathMap?.outline,
             stillness: !!sectionBreathMap?.residual,
           },
+          warnings: runtimeWarnings,
         }
       : undefined,
   });
@@ -6486,4 +6505,5 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
