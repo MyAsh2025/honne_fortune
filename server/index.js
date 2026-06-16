@@ -6523,6 +6523,25 @@ app.post("/deep-fortune", async (req, res) => {
             stillness: !!sectionBreathMap?.residual,
           },
           warnings: runtimeWarnings,
+          score: (() => {
+            const warningPenalty = runtimeWarnings.length * 5;
+            const coverageCount = [
+              sectionBreathMap?.observation,
+              sectionBreathMap?.movement,
+              sectionBreathMap?.residual,
+              sectionBreathMap?.contact,
+              sectionBreathMap?.outline,
+            ].filter(Boolean).length;
+
+            const coverageBonus = coverageCount * 2;
+            const overall = Math.max(0, Math.min(100, 90 + coverageBonus - warningPenalty));
+
+            return {
+              consistency: Math.max(0, 100 - warningPenalty),
+              coverage: coverageCount,
+              overall,
+            };
+          })(),
         }
       : undefined,
   });
