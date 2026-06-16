@@ -6502,6 +6502,37 @@ app.post("/deep-fortune", async (req, res) => {
     mode: "audit-only",
   };
 
+  const calibrationResult = (() => {
+    const originalWarningCount = runtimeWarnings.length;
+    const adjustedWarningCount = Math.max(0, originalWarningCount - runtimeCalibration.length);
+    const coverageCount = [
+      sectionBreathMap?.observation,
+      sectionBreathMap?.movement,
+      sectionBreathMap?.residual,
+      sectionBreathMap?.contact,
+      sectionBreathMap?.outline,
+    ].filter(Boolean).length;
+
+    const coverageBonus = coverageCount * 2;
+    const beforeOverall = Math.max(0, Math.min(100, 90 + coverageBonus - originalWarningCount * 5));
+    const afterOverall = Math.max(0, Math.min(100, 90 + coverageBonus - adjustedWarningCount * 5));
+
+    return {
+      before: {
+        warningCount: originalWarningCount,
+        overall: beforeOverall,
+      },
+      after: {
+        warningCount: adjustedWarningCount,
+        overall: afterOverall,
+      },
+      improvement: afterOverall - beforeOverall,
+      accepted: afterOverall >= beforeOverall,
+      applied: false,
+      mode: "audit-only",
+    };
+  })();
+
   res.json({
     ok: true,
     mode: "stable-paid-template",
@@ -6611,6 +6642,7 @@ app.post("/deep-fortune", async (req, res) => {
           calibration: runtimeCalibration,
           calibrationProfile: runtimeCalibrationProfile,
           adjustedRuntimeProfile,
+          calibrationResult,
           score: (() => {
             const warningPenalty = runtimeWarnings.length * 5;
             const coverageCount = [
