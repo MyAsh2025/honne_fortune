@@ -7000,6 +7000,54 @@ app.post("/deep-fortune", async (req, res) => {
     ).filter(Boolean),
     applied: false,
   };
+  const sectionLabelMap = {
+    afterimage: "【余波】",
+    contact: "【触れ方】",
+    quietTruth: "【本音の手前】",
+    stillness: "【静止】",
+  };
+
+  const buildVirtualMergedNarrativeText = (baseText, selectedRewrite, candidates) => {
+    if (!selectedRewrite?.accepted || !selectedRewrite.selectedSection) return baseText;
+
+    const sectionLabel = sectionLabelMap[selectedRewrite.selectedSection];
+    if (!sectionLabel) return baseText;
+
+    const candidate = candidates.find((item) => item.section === selectedRewrite.selectedSection);
+    if (!candidate?.candidateText) return baseText;
+
+    const sectionStart = baseText.indexOf(sectionLabel);
+    if (sectionStart < 0) return baseText;
+
+    const nextSectionMatch = baseText.slice(sectionStart + sectionLabel.length).match(/\n【[^】]+】/);
+    const sectionEnd = nextSectionMatch
+      ? sectionStart + sectionLabel.length + nextSectionMatch.index
+      : baseText.length;
+
+    const replacement = sectionLabel + "`n" + candidate.candidateText.trim() + "`n";
+
+    return baseText.slice(0, sectionStart) + replacement + baseText.slice(sectionEnd);
+  };
+
+  const virtualMergedNarrativeText = buildVirtualMergedNarrativeText(
+    originalNarrativeText,
+    selectedSectionRewrite,
+    sectionRewriteCandidates
+  );
+
+  const controlledSectionReplacement = {
+    mode: "controlled-section-replacement",
+    version: "auto-calibration-runtime-v1.5",
+    selectedSection: selectedSectionRewrite.selectedSection,
+    accepted: selectedSectionRewrite.accepted,
+    changed: virtualMergedNarrativeText !== originalNarrativeText,
+    originalLength: originalNarrativeText.length,
+    mergedLength: virtualMergedNarrativeText.length,
+    applied: false,
+    reason: virtualMergedNarrativeText !== originalNarrativeText
+      ? "virtual merged narrative generated; response text remains original"
+      : "no controlled replacement applied",
+  };
   res.json({
     ok: true,
     mode: "stable-paid-template",
@@ -7127,6 +7175,8 @@ app.post("/deep-fortune", async (req, res) => {
           sectionRewriteAudits,
           selectedSectionRewrite,
           sectionComparisonRuntime,
+          controlledSectionReplacement,
+          virtualMergedNarrativePreview: virtualMergedNarrativeText.slice(0, 300),
           originalNarrativePreview: originalNarrativeText.slice(0, 300),
           rebuiltNarrativePreview: rebuiltNarrativeText.slice(0, 300),
           score: (() => {
