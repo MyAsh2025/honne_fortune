@@ -6969,6 +6969,37 @@ app.post("/deep-fortune", async (req, res) => {
         : "no section rewrite candidate passed audit",
     };
   })();
+  const buildSectionComparison = (candidate, audit) => {
+    if (!candidate || !audit) return null;
+
+    const originalSectionScore = 85;
+    const candidateSectionScore = audit.score;
+    const scoreDelta = candidateSectionScore - originalSectionScore;
+
+    return {
+      mode: "section-comparison",
+      version: "auto-calibration-runtime-v1.4",
+      section: candidate.section,
+      originalScore: originalSectionScore,
+      candidateScore: candidateSectionScore,
+      scoreDelta,
+      winner: scoreDelta > 0 && audit.warnings.length === 0 ? "candidate" : "original",
+      accepted: scoreDelta > 0 && audit.warnings.length === 0,
+      applied: false,
+      reason: scoreDelta > 0 && audit.warnings.length === 0
+        ? "candidate section scored higher than original baseline"
+        : "original section retained by comparison runtime",
+    };
+  };
+
+  const sectionComparisonRuntime = {
+    mode: "section-comparison-runtime",
+    version: "auto-calibration-runtime-v1.4",
+    comparisons: sectionRewriteCandidates.map((candidate, index) =>
+      buildSectionComparison(candidate, sectionRewriteAudits[index])
+    ).filter(Boolean),
+    applied: false,
+  };
   res.json({
     ok: true,
     mode: "stable-paid-template",
@@ -7095,6 +7126,7 @@ app.post("/deep-fortune", async (req, res) => {
           sectionRewriteQualityDecision,
           sectionRewriteAudits,
           selectedSectionRewrite,
+          sectionComparisonRuntime,
           originalNarrativePreview: originalNarrativeText.slice(0, 300),
           rebuiltNarrativePreview: rebuiltNarrativeText.slice(0, 300),
           score: (() => {
