@@ -6892,6 +6892,42 @@ app.post("/deep-fortune", async (req, res) => {
     decision: sectionRewriteDecision,
     applied: false,
   };
+  const buildSectionRewriteQualityPrediction = (candidate) => {
+    if (!candidate) return null;
+
+    const hasCandidateText = Boolean(candidate.candidateText);
+    const predictedWarningDelta = hasCandidateText ? -1 : 0;
+    const predictedScoreDelta = hasCandidateText ? 3 : 0;
+
+    return {
+      mode: "section-rewrite-quality-prediction",
+      version: "auto-calibration-runtime-v1.2",
+      section: candidate.section,
+      action: candidate.action,
+      hasCandidateText,
+      predictedWarningDelta,
+      predictedScoreDelta,
+      shouldApply: false,
+      applied: false,
+      reason: hasCandidateText
+        ? "candidate text generated; awaiting section-level audit before apply"
+        : "no candidate text generated; apply skipped",
+    };
+  };
+
+  const sectionRewriteQualityPredictions = sectionRewriteCandidates.map(buildSectionRewriteQualityPrediction);
+
+  const sectionRewriteQualityDecision = {
+    mode: "section-rewrite-quality-decision",
+    version: "auto-calibration-runtime-v1.2",
+    predictionCount: sectionRewriteQualityPredictions.length,
+    bestSection: sectionRewriteQualityPredictions.find((item) => item?.hasCandidateText)?.section || null,
+    shouldApplyAny: false,
+    applied: false,
+    reason: sectionRewriteQualityPredictions.some((item) => item?.hasCandidateText)
+      ? "quality prediction generated; apply blocked until section audit exists"
+      : "no rewrite candidate available for quality prediction",
+  };
   res.json({
     ok: true,
     mode: "stable-paid-template",
@@ -7014,6 +7050,8 @@ app.post("/deep-fortune", async (req, res) => {
           narrativeRegenerationPlan,
           sectionRegenerationPlan,
           sectionRegenerationExecutor,
+          sectionRewriteQualityPredictions,
+          sectionRewriteQualityDecision,
           originalNarrativePreview: originalNarrativeText.slice(0, 300),
           rebuiltNarrativePreview: rebuiltNarrativeText.slice(0, 300),
           score: (() => {
