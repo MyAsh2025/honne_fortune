@@ -6836,17 +6836,37 @@ app.post("/deep-fortune", async (req, res) => {
   const buildVirtualSectionRewrite = (queueItem) => {
     if (!queueItem) return null;
 
+    const sectionRewriteText = (() => {
+      if (queueItem.section === "afterimage") {
+        return buildResidualAfterwaveNarrative(responsePattern, compound, silencePattern, previousPatterns);
+      }
+
+      if (queueItem.section === "contact") {
+        return buildEmotionalContactNarrative(responsePattern, silencePattern, previousPatterns);
+      }
+
+      if (queueItem.section === "quietTruth") {
+        return buildQuietHonestCoreNarrative(compound);
+      }
+
+      if (queueItem.section === "stillness") {
+        return buildResidualEndingNarrative(compound, emotionTone);
+      }
+
+      return null;
+    })();
+
     return {
       mode: "virtual-section-rewrite",
-      version: "auto-calibration-runtime-v1.0",
+      version: "auto-calibration-runtime-v1.1",
       section: queueItem.section,
       action: queueItem.action,
       reason: queueItem.reason || null,
       priority: queueItem.priority,
-      candidateText: null,
-      changed: false,
+      candidateText: sectionRewriteText,
+      changed: Boolean(sectionRewriteText),
       applied: false,
-      status: "planned-only",
+      status: sectionRewriteText ? "candidate-generated" : "planned-only",
     };
   };
 
@@ -6854,7 +6874,7 @@ app.post("/deep-fortune", async (req, res) => {
 
   const sectionRewriteDecision = {
     mode: "section-rewrite-decision",
-    version: "auto-calibration-runtime-v1.0",
+    version: "auto-calibration-runtime-v1.1",
     candidateCount: sectionRewriteCandidates.length,
     nextSection: sectionRewriteCandidates[0]?.section || null,
     accepted: false,
@@ -6866,7 +6886,7 @@ app.post("/deep-fortune", async (req, res) => {
 
   const sectionRegenerationExecutor = {
     mode: "section-regeneration-executor",
-    version: "auto-calibration-runtime-v1.0",
+    version: "auto-calibration-runtime-v1.1",
     source: "section-regeneration-plan",
     candidates: sectionRewriteCandidates,
     decision: sectionRewriteDecision,
