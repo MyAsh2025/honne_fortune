@@ -6928,6 +6928,47 @@ app.post("/deep-fortune", async (req, res) => {
       ? "quality prediction generated; apply blocked until section audit exists"
       : "no rewrite candidate available for quality prediction",
   };
+  const buildSectionRewriteAudit = (candidate) => {
+    if (!candidate) return null;
+
+    const safeText = String(candidate.candidateText || "");
+    const warnings = [];
+
+    if (!safeText) warnings.push("candidate text missing");
+    if (safeText && safeText.length < 20) warnings.push("candidate text too short");
+    if (safeText && safeText.length > 800) warnings.push("candidate text too dense");
+
+    const score = Math.max(0, Math.min(100, 80 + (safeText ? 10 : 0) - warnings.length * 10));
+
+    return {
+      mode: "section-rewrite-audit",
+      version: "auto-calibration-runtime-v1.3",
+      section: candidate.section,
+      action: candidate.action,
+      length: safeText.length,
+      warnings,
+      score,
+      applied: false,
+    };
+  };
+
+  const sectionRewriteAudits = sectionRewriteCandidates.map(buildSectionRewriteAudit);
+
+  const selectedSectionRewrite = (() => {
+    const validAudits = sectionRewriteAudits.filter((item) => item && item.score >= 85 && item.warnings.length === 0);
+    const bestAudit = validAudits.sort((a, b) => b.score - a.score)[0] || null;
+
+    return {
+      mode: "automatic-section-selection",
+      version: "auto-calibration-runtime-v1.3",
+      selectedSection: bestAudit?.section || null,
+      accepted: Boolean(bestAudit),
+      applied: false,
+      reason: bestAudit
+        ? "section rewrite candidate passed audit but apply remains blocked"
+        : "no section rewrite candidate passed audit",
+    };
+  })();
   res.json({
     ok: true,
     mode: "stable-paid-template",
@@ -7052,6 +7093,8 @@ app.post("/deep-fortune", async (req, res) => {
           sectionRegenerationExecutor,
           sectionRewriteQualityPredictions,
           sectionRewriteQualityDecision,
+          sectionRewriteAudits,
+          selectedSectionRewrite,
           originalNarrativePreview: originalNarrativeText.slice(0, 300),
           rebuiltNarrativePreview: rebuiltNarrativeText.slice(0, 300),
           score: (() => {
