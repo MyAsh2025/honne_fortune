@@ -63,7 +63,6 @@ Write-Host "== git status before commit =="
 git status
 
 Write-Host "== commit / push =="
-Write-Host "== commit / push =="
 git add .\server\index.js .\scripts\*.ps1
 
 $pending = git status --porcelain
