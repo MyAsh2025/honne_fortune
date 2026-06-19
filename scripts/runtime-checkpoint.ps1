@@ -63,9 +63,24 @@ Write-Host "== git status before commit =="
 git status
 
 Write-Host "== commit / push =="
+Write-Host "== commit / push =="
 git add .\server\index.js .\scripts\*.ps1
-git commit -m $CommitMessage
-git push
+
+$pending = git status --porcelain
+if ([string]::IsNullOrWhiteSpace($pending)) {
+  Write-Host "No changes to commit. Skipping commit / push."
+} else {
+  git commit -m $CommitMessage
+  if ($LASTEXITCODE -ne 0) {
+    throw "git commit failed"
+  }
+
+  git push
+  if ($LASTEXITCODE -ne 0) {
+    throw "git push failed"
+  }
+}
+
 
 Write-Host "== git status after push =="
 git status
