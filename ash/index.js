@@ -13,6 +13,8 @@ const { buildPlan } = require("./runtime/planner");
 const { buildWorkflow } = require("./runtime/workflow");
 const { selectAgents } = require("./runtime/agent-selector");
 const { runAgentBus } = require("./runtime/agent-bus");
+const { evaluateConversationHealth } = require("./runtime/conversation-health");
+const { writeHandover } = require("./runtime/handover");
 const { executePlan } = require("./runtime/executor");
 
 function getArgValue(name, fallback = "") {
@@ -40,6 +42,10 @@ function main() {
   const plan = buildPlan(intent, task);
   const workflow = buildWorkflow({ governance, plan });
   const agentSelection = selectAgents({ task, intent, workflow });
+  const logDir = path.join(process.cwd(), "ash", "logs");
+  fs.mkdirSync(logDir, { recursive: true });
+  const logCount = fs.readdirSync(logDir).filter((name) => name.endsWith(".json")).length;
+
   const agentBus = workflow.autoExecutable
     ? runAgentBus(agentSelection)
     : {
@@ -52,6 +58,28 @@ function main() {
         reason: workflow.message,
         completedAt: new Date().toISOString()
       };
+
+  const conversationHealth = evaluateConversationHealth({
+    observation,
+    repository,
+    runtimeResult: { logCount }
+  });
+
+  const handover = conversationHealth.shouldPrepareHandover
+    ? writeHandover({
+        task,
+        observation,
+        repository,
+        decision,
+        policy,
+        executive,
+        governance,
+        workflow,
+        agentSelection,
+        agentBus,
+        conversationHealth
+      })
+    : null;
 
   const runtimeResult = {
     mode: "ash-local-runtime",
@@ -70,11 +98,10 @@ function main() {
     workflow,
     agentSelection,
     agentBus,
+    conversationHealth,
+    handover,
     createdAt: new Date().toISOString(),
   };
-
-  const logDir = path.join(process.cwd(), "ash", "logs");
-  fs.mkdirSync(logDir, { recursive: true });
 
   const logPath = path.join(
     logDir,
@@ -115,6 +142,14 @@ function main() {
 
   console.log("== Agent Bus ==");
   console.log(JSON.stringify(agentBus, null, 2));
+
+  console.log("== Conversation Health ==");
+  console.log(JSON.stringify(conversationHealth, null, 2));
+
+  if (handover) {
+    console.log("== Handover Prepared ==");
+    console.log(JSON.stringify({ path: handover.path, prepared: handover.prepared }, null, 2));
+  }
 
   console.log(`Log: ${logPath}`);
 
