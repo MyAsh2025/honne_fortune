@@ -33,6 +33,16 @@ Write-Host "ExpectedAuditKey: $ExpectedAuditKey"
 "== git status before ==" | Add-Content $logPath -Encoding UTF8
 git status 2>&1 | Tee-Object -FilePath $logPath -Append
 
+"== corecheck before checkpoint ==" | Add-Content $logPath -Encoding UTF8
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runtime-corecheck.ps1 `
+  -Intent $Task `
+  -BeforeCheckpoint `
+  -BeforeGit 2>&1 | Tee-Object -FilePath $logPath -Append
+
+if ($LASTEXITCODE -ne 0) {
+  throw "runtime-corecheck failed"
+}
+
 "== checkpoint ==" | Add-Content $logPath -Encoding UTF8
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\runtime-checkpoint.ps1 `
   -CommitMessage $CommitMessage `
@@ -49,3 +59,4 @@ git status 2>&1 | Tee-Object -FilePath $logPath -Append
 
 Write-Host "Ash Development Runtime complete."
 Write-Host "Log: $logPath"
+
