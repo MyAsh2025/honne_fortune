@@ -7000,12 +7000,22 @@ app.post("/deep-fortune", async (req, res) => {
     ).filter(Boolean),
     applied: false,
   };
-  const sectionLabelMap = {
-    afterimage: "【余波】",
-    contact: "【触れ方】",
-    quietTruth: "【本音の手前】",
-    stillness: "【静止】",
+  const sectionLabelMapByLocale = {
+    ja: {
+      afterimage: '【余波】',
+      contact: '【触れ方】',
+      quietTruth: '【本音の手前】',
+      stillness: '【静止】',
+    },
+    en: {
+      afterimage: '[What Still Remains]',
+      contact: '[How It Comes Closer]',
+      quietTruth: '[The Quiet Truth]',
+      stillness: '[Where It Leaves You]',
+    },
   };
+
+  const sectionLabelMap = sectionLabelMapByLocale[locale] || sectionLabelMapByLocale.ja;
 
   const extractNarrativeSections = (text, labelMap) => {
     const sections = {};
@@ -7024,7 +7034,7 @@ app.post("/deep-fortune", async (req, res) => {
       }
 
       const bodyStart = sectionStart + label.length;
-      const nextSectionMatch = text.slice(bodyStart).match(/\n【[^】]+】/);
+      const nextSectionMatch = text.slice(bodyStart).match(/\n(?:【[^】]+】|\[[^\]]+\])/);
       const sectionEnd = nextSectionMatch
         ? bodyStart + nextSectionMatch.index
         : text.length;
@@ -7300,6 +7310,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
