@@ -7225,6 +7225,71 @@ app.post("/deep-fortune", async (req, res) => {
   const sectionMergePlanRuntime = buildSectionMergePlan(
     sectionSelectionRuntime
   );
+  const buildSectionMergeValidation = (mergePlanRuntime, labelMap) => {
+    const plannedSections = Array.isArray(mergePlanRuntime?.plannedSections)
+      ? mergePlanRuntime.plannedSections
+      : [];
+
+    if (plannedSections.length === 0) {
+      return {
+        mode: "section-merge-validation-runtime",
+        version: "auto-calibration-runtime-v1.9",
+        valid: true,
+        safeToMerge: false,
+        issues: [],
+        applied: false,
+        reason: "no planned sections to validate",
+      };
+    }
+
+    const knownSections = new Set(Object.keys(labelMap || {}));
+    const seenSections = new Set();
+    const issues = [];
+
+    plannedSections.forEach((item) => {
+      if (!item?.section || !knownSections.has(item.section)) {
+        issues.push({
+          section: item?.section || null,
+          issue: "unknown section",
+        });
+      }
+
+      if (!item?.label) {
+        issues.push({
+          section: item?.section || null,
+          issue: "missing section label",
+        });
+      }
+
+      if (seenSections.has(item.section)) {
+        issues.push({
+          section: item.section,
+          issue: "duplicate planned section",
+        });
+      }
+
+      seenSections.add(item.section);
+    });
+
+    const valid = issues.length === 0;
+
+    return {
+      mode: "section-merge-validation-runtime",
+      version: "auto-calibration-runtime-v1.9",
+      valid,
+      safeToMerge: valid,
+      issues,
+      applied: false,
+      reason: valid
+        ? "merge plan passed structural validation"
+        : "merge plan failed structural validation",
+    };
+  };
+
+  const sectionMergeValidationRuntime = buildSectionMergeValidation(
+    sectionMergePlanRuntime,
+    sectionLabelMap
+  );
   const buildVirtualMergedNarrativeText = (baseText, selectedRewrite, candidates) => {
     if (!selectedRewrite?.accepted || !selectedRewrite.selectedSection) return baseText;
 
@@ -7396,6 +7461,7 @@ app.post("/deep-fortune", async (req, res) => {
           sectionLevelComparisonRuntime,
           sectionSelectionRuntime,
           sectionMergePlanRuntime,
+          sectionMergeValidationRuntime,
           controlledSectionReplacement,
           virtualMergedNarrativePreview: virtualMergedNarrativeText.slice(0, 300),
           originalNarrativePreview: originalNarrativeText.slice(0, 300),
@@ -7447,6 +7513,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
