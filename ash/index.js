@@ -11,6 +11,7 @@ const { makeExecutiveDecision } = require("./runtime/executive");
 const { applyGovernance } = require("./runtime/governance");
 const { buildPlan } = require("./runtime/planner");
 const { buildWorkflow } = require("./runtime/workflow");
+const { selectAgents } = require("./runtime/agent-selector");
 const { executePlan } = require("./runtime/executor");
 
 function getArgValue(name, fallback = "") {
@@ -37,6 +38,7 @@ function main() {
   const intent = classifyIntent(observation, decision, policy);
   const plan = buildPlan(intent, task);
   const workflow = buildWorkflow({ governance, plan });
+  const agentSelection = selectAgents({ task, intent, workflow });
 
   const runtimeResult = {
     mode: "ash-local-runtime",
@@ -53,6 +55,7 @@ function main() {
     intent,
     plan,
     workflow,
+    agentSelection,
     createdAt: new Date().toISOString(),
   };
 
@@ -92,6 +95,9 @@ function main() {
 
   console.log("== Workflow ==");
   console.log(JSON.stringify(workflow, null, 2));
+
+  console.log("== Agent Selection ==");
+  console.log(JSON.stringify(agentSelection, null, 2));
 
   console.log(`Log: ${logPath}`);
 
