@@ -7194,6 +7194,37 @@ app.post("/deep-fortune", async (req, res) => {
   const sectionSelectionRuntime = buildSelectedSectionsFromConfidence(
     sectionLevelComparisonRuntime
   );
+  const buildSectionMergePlan = (selectionRuntime) => {
+    const selectedSections = Array.isArray(selectionRuntime?.selectedSections)
+      ? selectionRuntime.selectedSections
+      : [];
+
+    const plannedSections = selectedSections.map((item, index) => ({
+      section: item.section,
+      label: item.label,
+      order: index + 1,
+      confidence: item.confidence,
+      qualityGain: item.qualityGain,
+      mergeStrategy: "replace-section-body",
+      applied: false,
+      reason: item.reason,
+    }));
+
+    return {
+      mode: "section-merge-plan-runtime",
+      version: "auto-calibration-runtime-v1.8",
+      plannedSections,
+      plannedCount: plannedSections.length,
+      applied: false,
+      reason: plannedSections.length > 0
+        ? "selected sections converted into merge plan"
+        : "no selected sections available for merge planning",
+    };
+  };
+
+  const sectionMergePlanRuntime = buildSectionMergePlan(
+    sectionSelectionRuntime
+  );
   const buildVirtualMergedNarrativeText = (baseText, selectedRewrite, candidates) => {
     if (!selectedRewrite?.accepted || !selectedRewrite.selectedSection) return baseText;
 
@@ -7364,6 +7395,7 @@ app.post("/deep-fortune", async (req, res) => {
           sectionComparisonRuntime,
           sectionLevelComparisonRuntime,
           sectionSelectionRuntime,
+          sectionMergePlanRuntime,
           controlledSectionReplacement,
           virtualMergedNarrativePreview: virtualMergedNarrativeText.slice(0, 300),
           originalNarrativePreview: originalNarrativeText.slice(0, 300),
@@ -7415,6 +7447,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
