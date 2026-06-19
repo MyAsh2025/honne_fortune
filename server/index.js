@@ -7067,6 +7067,65 @@ app.post("/deep-fortune", async (req, res) => {
     };
   };
 
+  const buildSectionConfidence = (comparison) => {
+    if (!comparison?.comparable) {
+      return {
+        confidence: 0,
+        qualityGain: 0,
+        replacementSafe: false,
+        adoptable: false,
+        reason: "section is not comparable",
+      };
+    }
+
+    if (!comparison.changed) {
+      return {
+        confidence: 50,
+        qualityGain: 0,
+        replacementSafe: true,
+        adoptable: false,
+        reason: "candidate matches original section",
+      };
+    }
+
+    const originalLength = comparison.originalLength || 0;
+    const candidateLength = comparison.candidateLength || 0;
+    const lengthDeltaAbs = Math.abs(comparison.lengthDelta || 0);
+    const lengthDeltaRatio = originalLength > 0 ? lengthDeltaAbs / originalLength : 1;
+
+    if (candidateLength < 40) {
+      return {
+        confidence: 20,
+        qualityGain: -10,
+        replacementSafe: false,
+        adoptable: false,
+        reason: "candidate section is too short",
+      };
+    }
+
+    if (lengthDeltaRatio > 0.65) {
+      return {
+        confidence: 30,
+        qualityGain: -5,
+        replacementSafe: false,
+        adoptable: false,
+        reason: "candidate section length drift is too large",
+      };
+    }
+
+    const confidence = lengthDeltaRatio < 0.25 ? 78 : 62;
+    const qualityGain = lengthDeltaRatio < 0.25 ? 8 : 3;
+
+    return {
+      confidence,
+      qualityGain,
+      replacementSafe: true,
+      adoptable: confidence >= 70,
+      reason: confidence >= 70
+        ? "candidate section is safely comparable and within drift limits"
+        : "candidate section is comparable but confidence remains moderate",
+    };
+  };
   const originalNarrativeSections = extractNarrativeSections(
     originalNarrativeText,
     sectionLabelMap
@@ -7080,14 +7139,19 @@ app.post("/deep-fortune", async (req, res) => {
   const sectionLevelComparisonRuntime = {
     mode: "section-level-comparison-runtime",
     version: "auto-calibration-runtime-v1.6",
-    comparisons: Object.keys(sectionLabelMap).map((section) => ({
-      section,
-      label: sectionLabelMap[section],
-      ...compareSectionTexts(
+    comparisons: Object.keys(sectionLabelMap).map((section) => {
+      const comparison = compareSectionTexts(
         originalNarrativeSections[section],
         candidateNarrativeSections[section]
-      ),
-    })),
+      );
+
+      return {
+        section,
+        label: sectionLabelMap[section],
+        ...comparison,
+        confidenceRuntime: buildSectionConfidence(comparison),
+      };
+    }),
     applied: false,
   };
   const buildVirtualMergedNarrativeText = (baseText, selectedRewrite, candidates) => {
@@ -7310,6 +7374,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
