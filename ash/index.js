@@ -1,8 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 
-const { observe } = require("./runtime/observation");
-const { observeRepository } = require("./runtime/repository");
+const { observeConversation } = require("./sensors/conversation");
+const { observeRepository } = require("./sensors/repository");
+const { mergeObservations } = require("./runtime/observation");
 const { classifyIntent } = require("./runtime/intent");
 const { makeDecision } = require("./runtime/decision");
 const { applyPolicy } = require("./runtime/policy");
@@ -23,8 +24,9 @@ function main() {
   console.log(`Task: ${task}`);
   console.log(`DryRun: ${dryRun}`);
 
-  const observation = observe(task);
+  const conversation = observeConversation(task);
   const repository = observeRepository();
+  const observation = mergeObservations({ conversation, repository });
   const decision = makeDecision(observation);
   const policy = applyPolicy(observation, decision);
   const intent = classifyIntent(observation, decision, policy);
@@ -35,8 +37,9 @@ function main() {
     version: "v0.1",
     task,
     dryRun,
-    observation,
+    conversation,
     repository,
+    observation,
     decision,
     policy,
     intent,
