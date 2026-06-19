@@ -1,32 +1,19 @@
-function classifyIntent(observation, decision = null) {
-  const signals = observation?.signals || [];
+function classifyIntent(observation, decision = null, policy = null) {
+  const rules = policy?.rules || {};
 
-  const intent = {
+  return {
     mode: "intent-runtime",
-    version: "ash-local-runtime-v0.2",
+    version: "ash-local-runtime-v0.3",
     primary: observation?.domain || "general",
-    requiresCoreCheck: Boolean(decision?.requiresCoreCheck),
-    requiresCheckpoint: Boolean(decision?.requiresCheckpoint),
-    requiresHandover: Boolean(decision?.requiresHandover),
-    requiresAshCoreSave: Boolean(decision?.requiresAshCoreSave),
-    requiresMemorySave: Boolean(decision?.requiresMemorySave),
+    requiresCoreCheck: Boolean(rules.coreCheck),
+    requiresCheckpoint: Boolean(rules.checkpoint),
+    requiresHandover: Boolean(rules.handover),
+    requiresAshCoreSave: Boolean(rules.ashCoreSave),
+    requiresMemorySave: Boolean(rules.memorySave),
+    requiresExecutiveReview: Boolean(rules.executiveReview),
+    requiresMarketReview: Boolean(rules.marketReview),
+    requiresCashflowReview: Boolean(rules.cashflowReview)
   };
-
-  if (!decision) {
-    if (signals.includes("development-task")) {
-      intent.primary = "development";
-      intent.requiresCoreCheck = true;
-      intent.requiresCheckpoint = true;
-    }
-
-    if (signals.includes("runtime-change") || signals.includes("architecture-change")) {
-      intent.primary = "architecture";
-      intent.requiresCoreCheck = true;
-      intent.requiresAshCoreSave = true;
-    }
-  }
-
-  return intent;
 }
 
 module.exports = { classifyIntent };
