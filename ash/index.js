@@ -10,6 +10,7 @@ const { applyPolicy } = require("./runtime/policy");
 const { makeExecutiveDecision } = require("./runtime/executive");
 const { applyGovernance } = require("./runtime/governance");
 const { buildPlan } = require("./runtime/planner");
+const { buildWorkflow } = require("./runtime/workflow");
 const { executePlan } = require("./runtime/executor");
 
 function getArgValue(name, fallback = "") {
@@ -35,6 +36,7 @@ function main() {
   const governance = applyGovernance({ observation, policy, executive });
   const intent = classifyIntent(observation, decision, policy);
   const plan = buildPlan(intent, task);
+  const workflow = buildWorkflow({ governance, plan });
 
   const runtimeResult = {
     mode: "ash-local-runtime",
@@ -50,6 +52,7 @@ function main() {
     governance,
     intent,
     plan,
+    workflow,
     createdAt: new Date().toISOString(),
   };
 
@@ -87,10 +90,21 @@ function main() {
   console.log("== Plan ==");
   console.log(JSON.stringify(plan, null, 2));
 
+  console.log("== Workflow ==");
+  console.log(JSON.stringify(workflow, null, 2));
+
   console.log(`Log: ${logPath}`);
 
   if (!dryRun) {
-    executePlan(plan);
+    if (workflow.autoExecutable) {
+      executePlan({
+        ...plan,
+        steps: workflow.executableSteps
+      });
+    } else {
+      console.log("== Execution blocked by Governance ==");
+      console.log(workflow.message);
+    }
   }
 
   console.log("== Ash Local Runtime complete ==");
