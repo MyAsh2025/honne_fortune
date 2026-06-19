@@ -12,6 +12,7 @@ const { applyGovernance } = require("./runtime/governance");
 const { buildPlan } = require("./runtime/planner");
 const { buildWorkflow } = require("./runtime/workflow");
 const { selectAgents } = require("./runtime/agent-selector");
+const { runAgentBus } = require("./runtime/agent-bus");
 const { executePlan } = require("./runtime/executor");
 
 function getArgValue(name, fallback = "") {
@@ -39,6 +40,18 @@ function main() {
   const plan = buildPlan(intent, task);
   const workflow = buildWorkflow({ governance, plan });
   const agentSelection = selectAgents({ task, intent, workflow });
+  const agentBus = workflow.autoExecutable
+    ? runAgentBus(agentSelection)
+    : {
+        mode: "agent-bus-runtime",
+        version: "ash-local-runtime-v0.1",
+        executedAgents: [],
+        skippedAgents: agentSelection.selectedAgents || [],
+        results: [],
+        blocked: true,
+        reason: workflow.message,
+        completedAt: new Date().toISOString()
+      };
 
   const runtimeResult = {
     mode: "ash-local-runtime",
@@ -56,6 +69,7 @@ function main() {
     plan,
     workflow,
     agentSelection,
+    agentBus,
     createdAt: new Date().toISOString(),
   };
 
@@ -98,6 +112,9 @@ function main() {
 
   console.log("== Agent Selection ==");
   console.log(JSON.stringify(agentSelection, null, 2));
+
+  console.log("== Agent Bus ==");
+  console.log(JSON.stringify(agentBus, null, 2));
 
   console.log(`Log: ${logPath}`);
 
