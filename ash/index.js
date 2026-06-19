@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const { observe } = require("./runtime/observation");
+const { observeRepository } = require("./runtime/repository");
 const { classifyIntent } = require("./runtime/intent");
 const { makeDecision } = require("./runtime/decision");
 const { applyPolicy } = require("./runtime/policy");
@@ -23,6 +24,7 @@ function main() {
   console.log(`DryRun: ${dryRun}`);
 
   const observation = observe(task);
+  const repository = observeRepository();
   const decision = makeDecision(observation);
   const policy = applyPolicy(observation, decision);
   const intent = classifyIntent(observation, decision, policy);
@@ -34,6 +36,7 @@ function main() {
     task,
     dryRun,
     observation,
+    repository,
     decision,
     policy,
     intent,
@@ -53,6 +56,9 @@ function main() {
 
   console.log("== Observation ==");
   console.log(JSON.stringify(observation, null, 2));
+
+  console.log("== Repository ==");
+  console.log(JSON.stringify(repository, null, 2));
 
   console.log("== Decision ==");
   console.log(JSON.stringify(decision, null, 2));
