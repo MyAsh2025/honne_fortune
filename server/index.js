@@ -7007,6 +7007,79 @@ app.post("/deep-fortune", async (req, res) => {
     stillness: "【静止】",
   };
 
+  const extractNarrativeSections = (text, labelMap) => {
+    const sections = {};
+
+    for (const [section, label] of Object.entries(labelMap)) {
+      const sectionStart = text.indexOf(label);
+
+      if (sectionStart < 0) {
+        sections[section] = {
+          found: false,
+          label,
+          text: "",
+          length: 0,
+        };
+        continue;
+      }
+
+      const bodyStart = sectionStart + label.length;
+      const nextSectionMatch = text.slice(bodyStart).match(/\n【[^】]+】/);
+      const sectionEnd = nextSectionMatch
+        ? bodyStart + nextSectionMatch.index
+        : text.length;
+
+      const sectionText = text.slice(bodyStart, sectionEnd).trim();
+
+      sections[section] = {
+        found: true,
+        label,
+        text: sectionText,
+        length: sectionText.length,
+      };
+    }
+
+    return sections;
+  };
+
+  const compareSectionTexts = (originalSection, candidateSection) => {
+    const originalText = originalSection?.text || "";
+    const candidateText = candidateSection?.text || "";
+
+    return {
+      originalFound: !!originalSection?.found,
+      candidateFound: !!candidateSection?.found,
+      originalLength: originalText.length,
+      candidateLength: candidateText.length,
+      changed: originalText !== candidateText,
+      lengthDelta: candidateText.length - originalText.length,
+      comparable: !!originalSection?.found && !!candidateSection?.found,
+    };
+  };
+
+  const originalNarrativeSections = extractNarrativeSections(
+    originalNarrativeText,
+    sectionLabelMap
+  );
+
+  const candidateNarrativeSections = extractNarrativeSections(
+    rebuiltNarrativeText,
+    sectionLabelMap
+  );
+
+  const sectionLevelComparisonRuntime = {
+    mode: "section-level-comparison-runtime",
+    version: "auto-calibration-runtime-v1.6",
+    comparisons: Object.keys(sectionLabelMap).map((section) => ({
+      section,
+      label: sectionLabelMap[section],
+      ...compareSectionTexts(
+        originalNarrativeSections[section],
+        candidateNarrativeSections[section]
+      ),
+    })),
+    applied: false,
+  };
   const buildVirtualMergedNarrativeText = (baseText, selectedRewrite, candidates) => {
     if (!selectedRewrite?.accepted || !selectedRewrite.selectedSection) return baseText;
 
@@ -7175,6 +7248,7 @@ app.post("/deep-fortune", async (req, res) => {
           sectionRewriteAudits,
           selectedSectionRewrite,
           sectionComparisonRuntime,
+          sectionLevelComparisonRuntime,
           controlledSectionReplacement,
           virtualMergedNarrativePreview: virtualMergedNarrativeText.slice(0, 300),
           originalNarrativePreview: originalNarrativeText.slice(0, 300),
@@ -7226,5 +7300,6 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
