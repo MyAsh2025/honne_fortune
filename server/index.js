@@ -7154,6 +7154,46 @@ app.post("/deep-fortune", async (req, res) => {
     }),
     applied: false,
   };
+  const buildSelectedSectionsFromConfidence = (comparisonRuntime) => {
+    const comparisons = Array.isArray(comparisonRuntime?.comparisons)
+      ? comparisonRuntime.comparisons
+      : [];
+
+    const selectedSections = comparisons
+      .filter((item) => {
+        const confidenceRuntime = item?.confidenceRuntime || {};
+
+        return (
+          item?.comparable === true &&
+          item?.changed === true &&
+          confidenceRuntime.replacementSafe === true &&
+          confidenceRuntime.adoptable === true &&
+          (confidenceRuntime.confidence || 0) >= 70
+        );
+      })
+      .map((item) => ({
+        section: item.section,
+        label: item.label,
+        confidence: item.confidenceRuntime.confidence,
+        qualityGain: item.confidenceRuntime.qualityGain,
+        reason: item.confidenceRuntime.reason,
+      }));
+
+    return {
+      mode: "section-selection-runtime",
+      version: "auto-calibration-runtime-v1.7",
+      selectedSections,
+      selectedCount: selectedSections.length,
+      applied: false,
+      reason: selectedSections.length > 0
+        ? "adoptable sections selected for virtual merge"
+        : "no adoptable sections selected",
+    };
+  };
+
+  const sectionSelectionRuntime = buildSelectedSectionsFromConfidence(
+    sectionLevelComparisonRuntime
+  );
   const buildVirtualMergedNarrativeText = (baseText, selectedRewrite, candidates) => {
     if (!selectedRewrite?.accepted || !selectedRewrite.selectedSection) return baseText;
 
@@ -7323,6 +7363,7 @@ app.post("/deep-fortune", async (req, res) => {
           selectedSectionRewrite,
           sectionComparisonRuntime,
           sectionLevelComparisonRuntime,
+          sectionSelectionRuntime,
           controlledSectionReplacement,
           virtualMergedNarrativePreview: virtualMergedNarrativeText.slice(0, 300),
           originalNarrativePreview: originalNarrativeText.slice(0, 300),
@@ -7374,6 +7415,7 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
+
 
 
 
