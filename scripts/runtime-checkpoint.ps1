@@ -63,7 +63,7 @@ Write-Host "== git status before commit =="
 git status
 
 Write-Host "== commit / push =="
-git add .\server\index.js .\scripts\runtime-checkpoint.ps1
+git add .\server\index.js .\scripts\*.ps1
 git commit -m $CommitMessage
 git push
 
