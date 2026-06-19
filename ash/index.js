@@ -7,6 +7,7 @@ const { mergeObservations } = require("./runtime/observation");
 const { classifyIntent } = require("./runtime/intent");
 const { makeDecision } = require("./runtime/decision");
 const { applyPolicy } = require("./runtime/policy");
+const { makeExecutiveDecision } = require("./runtime/executive");
 const { buildPlan } = require("./runtime/planner");
 const { executePlan } = require("./runtime/executor");
 
@@ -29,6 +30,7 @@ function main() {
   const observation = mergeObservations({ conversation, repository });
   const decision = makeDecision(observation);
   const policy = applyPolicy(observation, decision);
+  const executive = makeExecutiveDecision({ observation, policy, repository });
   const intent = classifyIntent(observation, decision, policy);
   const plan = buildPlan(intent, task);
 
@@ -42,6 +44,7 @@ function main() {
     observation,
     decision,
     policy,
+    executive,
     intent,
     plan,
     createdAt: new Date().toISOString(),
@@ -68,6 +71,9 @@ function main() {
 
   console.log("== Policy ==");
   console.log(JSON.stringify(policy, null, 2));
+
+  console.log("== Executive ==");
+  console.log(JSON.stringify(executive, null, 2));
 
   console.log("== Intent ==");
   console.log(JSON.stringify(intent, null, 2));
