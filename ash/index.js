@@ -3,6 +3,7 @@ const path = require("path");
 
 const { observe } = require("./runtime/observation");
 const { classifyIntent } = require("./runtime/intent");
+const { makeDecision } = require("./runtime/decision");
 const { buildPlan } = require("./runtime/planner");
 const { executePlan } = require("./runtime/executor");
 
@@ -21,7 +22,8 @@ function main() {
   console.log(`DryRun: ${dryRun}`);
 
   const observation = observe(task);
-  const intent = classifyIntent(observation);
+  const decision = makeDecision(observation);
+  const intent = classifyIntent(observation, decision);
   const plan = buildPlan(intent, task);
 
   const runtimeResult = {
@@ -30,6 +32,7 @@ function main() {
     task,
     dryRun,
     observation,
+    decision,
     intent,
     plan,
     createdAt: new Date().toISOString(),
@@ -48,6 +51,9 @@ function main() {
   console.log("== Observation ==");
   console.log(JSON.stringify(observation, null, 2));
 
+  console.log("== Decision ==");
+  console.log(JSON.stringify(decision, null, 2));
+
   console.log("== Intent ==");
   console.log(JSON.stringify(intent, null, 2));
 
@@ -64,3 +70,4 @@ function main() {
 }
 
 main();
+
