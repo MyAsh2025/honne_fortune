@@ -125,6 +125,109 @@ class ObservationAnswer {
 
 const String _jaReadingHistoryKey = 'ja_reading_history_v1';
 const int _maxReadingHistoryCount = 2;
+const String _observationProbeRotationKey = 'observation_probe_rotation_v1';
+const String _observationProbeRotationSchema = 'honne-probe-rotation-v1';
+
+const List<List<String>> _observationProbeRotation = [
+  ['ov1_satisfaction', 'ov1_change'],
+  ['ov1_satisfaction_behavior', 'ov1_change_future'],
+  ['ov1_satisfaction_value', 'ov1_change_tradeoff'],
+];
+
+Future<List<String>> _selectObservationProbeQuestions(
+  SharedPreferences prefs,
+) async {
+  var selectedIndex = 0;
+  var selectionReason = 'initial';
+  final encoded = prefs.getString(_observationProbeRotationKey);
+  if (encoded != null && encoded.isNotEmpty) {
+    try {
+      final decoded = jsonDecode(encoded);
+      if (decoded is Map &&
+          decoded['schemaVersion'] == _observationProbeRotationSchema) {
+        final activeQuestionIds = decoded['activeQuestionIds'];
+        final activeVariantIndex = decoded['activeVariantIndex'];
+        if (activeQuestionIds is List &&
+            activeVariantIndex is int &&
+            activeVariantIndex >= 0 &&
+            activeVariantIndex < _observationProbeRotation.length) {
+          final expected = _observationProbeRotation[activeVariantIndex];
+          final active = activeQuestionIds.whereType<String>().toList();
+          if (active.length == expected.length &&
+              active.asMap().entries.every(
+                (entry) => entry.value == expected[entry.key],
+              )) {
+            return active;
+          }
+        }
+
+        if (decoded['nextVariantIndex'] is int) {
+          final savedIndex = decoded['nextVariantIndex'] as int;
+          if (savedIndex >= 0 &&
+              savedIndex < _observationProbeRotation.length) {
+            selectedIndex = savedIndex;
+            selectionReason = 'round_robin_avoid_previous';
+          } else {
+            selectionReason = 'safe_fallback_invalid_state';
+          }
+        } else {
+          selectionReason = 'safe_fallback_invalid_state';
+        }
+      } else {
+        selectionReason = 'safe_fallback_invalid_state';
+      }
+    } catch (_) {
+      selectedIndex = 0;
+      selectionReason = 'safe_fallback_corrupt_state';
+    }
+  }
+
+  final selected = List<String>.from(_observationProbeRotation[selectedIndex]);
+  final nextIndex = (selectedIndex + 1) % _observationProbeRotation.length;
+  await prefs.setString(
+    _observationProbeRotationKey,
+    jsonEncode({
+      'schemaVersion': _observationProbeRotationSchema,
+      'activeVariantIndex': selectedIndex,
+      'activeQuestionIds': selected,
+      'nextVariantIndex': nextIndex,
+      'selectionReason': selectionReason,
+    }),
+  );
+  return selected;
+}
+
+Future<void> _completeObservationProbeSelection(
+  SharedPreferences prefs,
+  List<String> selected,
+) async {
+  final encoded = prefs.getString(_observationProbeRotationKey);
+  if (encoded == null || encoded.isEmpty) return;
+  try {
+    final decoded = jsonDecode(encoded);
+    if (decoded is! Map ||
+        decoded['schemaVersion'] != _observationProbeRotationSchema) {
+      return;
+    }
+    final active = decoded['activeQuestionIds'];
+    if (active is! List ||
+        active.whereType<String>().join('|') != selected.join('|')) {
+      return;
+    }
+    await prefs.setString(
+      _observationProbeRotationKey,
+      jsonEncode({
+        'schemaVersion': _observationProbeRotationSchema,
+        'lastVariantIndex': decoded['activeVariantIndex'],
+        'lastQuestionIds': selected,
+        'nextVariantIndex': decoded['nextVariantIndex'],
+        'selectionReason': 'session_completed',
+      }),
+    );
+  } catch (_) {
+    return;
+  }
+}
 
 Future<List<Map<String, dynamic>>> _loadJaReadingHistory(
   SharedPreferences prefs,
@@ -651,15 +754,28 @@ class _QuestionPageState extends State<QuestionPage> {
     'q14',
     'q15',
   ];
-  static const _observationProbeQuestions = ['ov1_satisfaction', 'ov1_change'];
+  List<String>? _observationProbeQuestions;
   List<String> get questions => [
     ..._legacyQuestions,
-    ..._observationProbeQuestions,
+    ...?_observationProbeQuestions,
   ];
 
-  void answer(String answerKey, int value) {
+  @override
+  void initState() {
+    super.initState();
+    _initializeObservationProbeSelection();
+  }
+
+  Future<void> _initializeObservationProbeSelection() async {
+    final prefs = await SharedPreferences.getInstance();
+    final selected = await _selectObservationProbeQuestions(prefs);
+    if (!mounted) return;
+    setState(() => _observationProbeQuestions = selected);
+  }
+
+  Future<void> answer(String answerKey, int value) async {
     final questionKey = questions[index];
-    if (_observationProbeQuestions.contains(questionKey)) {
+    if (_observationProbeQuestions!.contains(questionKey)) {
       observationAnswers.add(
         ObservationAnswer(questionId: questionKey, value: value),
       );
@@ -678,6 +794,12 @@ class _QuestionPageState extends State<QuestionPage> {
     if (index < questions.length - 1) {
       setState(() => index++);
     } else {
+      final prefs = await SharedPreferences.getInstance();
+      await _completeObservationProbeSelection(
+        prefs,
+        _observationProbeQuestions!,
+      );
+      if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -830,6 +952,12 @@ class _QuestionPageState extends State<QuestionPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_observationProbeQuestions == null) {
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     final progress = (index + 1) / questions.length;
 
     return Scaffold(
