@@ -6,6 +6,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get("/health", (req, res) => {
+  res.status(200).json({ ok: true });
+});
+
 const PHASE = "stable-paid-v54-runtime-policy-layer-v01";
 
 function getScoreType(score) {
@@ -7499,12 +7503,15 @@ app.post("/deep-fortune", async (req, res) => {
   });
 });
 
-const server = app.listen(8787, "127.0.0.1", () => {
+const port = Number(process.env.PORT || 8787);
+const host = process.env.HOST || "127.0.0.1";
+
+const server = app.listen(port, host, () => {
   console.log("=================================");
   console.log("FREE: /fortune stable-free-template");
   console.log("DEEP: /deep-fortune stable-paid-template");
   console.log(`Phase: ${PHASE}`);
-  console.log("Listening: http://127.0.0.1:8787");
+  console.log(`Listening: http://${host}:${port}`);
   console.log("=================================");
 });
 

@@ -74,7 +74,12 @@ class FortuneAnswer {
 }
 
 class HonneFortuneApi {
-  static const String endpoint = 'http://127.0.0.1:8787/fortune';
+  static const String baseUrl = String.fromEnvironment(
+    'HONNE_API_BASE_URL',
+    defaultValue: 'http://127.0.0.1:8787',
+  );
+  static const String fortuneEndpoint = '$baseUrl/fortune';
+  static const String deepFortuneEndpoint = '$baseUrl/deep-fortune';
 
   static Future<String> generateFortune({
     required int score,
@@ -83,7 +88,7 @@ class HonneFortuneApi {
   }) async {
     final response = await http
         .post(
-          Uri.parse(endpoint),
+          Uri.parse(fortuneEndpoint),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'score': score,
@@ -1273,7 +1278,7 @@ class ResultPage extends StatelessWidget {
                       onTap: () async {
                         try {
                           final response = await http.post(
-                            Uri.parse('http://127.0.0.1:8787/deep-fortune'),
+                            Uri.parse(HonneFortuneApi.deepFortuneEndpoint),
                             headers: {'Content-Type': 'application/json'},
                             body: jsonEncode({
                               'score': score,
