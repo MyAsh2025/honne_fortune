@@ -14,6 +14,23 @@ const PHASE = "stable-paid-v54-runtime-policy-layer-v01";
 const NO_DOMINANT_EVIDENCE = "no_dominant_evidence";
 
 const OBSERVATION_SCHEMA_VERSION = "honne-observation-v1";
+const formalQuestion = (questionId, axes, domainAffinity, variantType, options = {}) => ({
+  questionId,
+  version: "v1",
+  localeKey: questionId,
+  axes,
+  weight: 1,
+  direction: 1,
+  domainAffinity: [domainAffinity],
+  measurementUse: options.measurementUse || "observation_only",
+  timeframe: options.timeframe || "today",
+  variantType,
+  responseScale: "likert_-2_to_2",
+  problemOriented: options.problemOriented === true,
+  anchorGroup: options.anchorGroup || null,
+  rotationGroup: options.rotationGroup || null,
+  selectionTags: options.selectionTags || [domainAffinity, variantType],
+});
 const OBSERVATION_QUESTION_METADATA_V1 = Object.freeze({
   q6: { questionId: "q6", axes: ["satisfaction"], weight: 1, direction: -1, domainAffinity: ["future_direction"], measurementUse: "current_state", timeframe: "current", variantType: "problem_worded", responseScale: "likert_-2_to_2", problemOriented: true },
   q11: { questionId: "q11", axes: ["approach_drive"], weight: 1, direction: -1, domainAffinity: ["future_direction"], measurementUse: "current_state", timeframe: "current", variantType: "problem_worded", responseScale: "likert_-2_to_2", problemOriented: true },
@@ -25,9 +42,40 @@ const OBSERVATION_QUESTION_METADATA_V1 = Object.freeze({
   ov1_satisfaction: { questionId: "ov1_satisfaction", axis: "satisfaction", axes: ["satisfaction"], weight: 1, direction: 1, domainAffinity: ["self_identity"], measurementUse: "current_state", timeframe: "today", variantType: "direct", responseScale: "likert_-2_to_2", problemOriented: false, rotationGroup: "satisfaction_v1" },
   ov1_satisfaction_behavior: { questionId: "ov1_satisfaction_behavior", axis: "satisfaction", axes: ["satisfaction"], weight: 1, direction: 1, domainAffinity: ["daily_life"], measurementUse: "current_state", timeframe: "today", variantType: "behavior", responseScale: "likert_-2_to_2", problemOriented: false, rotationGroup: "satisfaction_v1" },
   ov1_satisfaction_value: { questionId: "ov1_satisfaction_value", axis: "satisfaction", axes: ["satisfaction"], weight: 1, direction: 1, domainAffinity: ["self_identity"], measurementUse: "current_state", timeframe: "current", variantType: "loss_value", responseScale: "likert_-2_to_2", problemOriented: false, rotationGroup: "satisfaction_v1" },
-  ov1_change: { questionId: "ov1_change", axis: "change_motivation", axes: ["change_motivation"], weight: 1, direction: 1, domainAffinity: ["future_direction"], measurementUse: "current_state", timeframe: "today", variantType: "direct", responseScale: "likert_-2_to_2", problemOriented: false, rotationGroup: "change_motivation_v1" },
-  ov1_change_future: { questionId: "ov1_change_future", axis: "change_motivation", axes: ["change_motivation"], weight: 1, direction: 1, domainAffinity: ["future_direction"], measurementUse: "current_state", timeframe: "near_future", variantType: "future_projection", responseScale: "likert_-2_to_2", problemOriented: false, rotationGroup: "change_motivation_v1" },
-  ov1_change_tradeoff: { questionId: "ov1_change_tradeoff", axis: "change_motivation", axes: ["change_motivation"], weight: 1, direction: 1, domainAffinity: ["future_direction"], measurementUse: "current_state", timeframe: "current", variantType: "choice_tradeoff", responseScale: "likert_-2_to_2", problemOriented: false, rotationGroup: "change_motivation_v1" },
+  ov1_change: formalQuestion("ov1_change", ["change_motivation"], "future_direction", "direct", { rotationGroup: "change_motivation_v1" }),
+  ov1_change_future: formalQuestion("ov1_change_future", ["change_motivation"], "future_direction", "future_projection", { rotationGroup: "change_motivation_v1", timeframe: "near_future" }),
+  ov1_change_tradeoff: formalQuestion("ov1_change_tradeoff", ["change_motivation"], "future_direction", "choice_tradeoff", { rotationGroup: "change_motivation_v1", timeframe: "current" }),
+  a1_approach: formalQuestion("a1_approach", ["approach_drive"], "future_direction", "direct", { anchorGroup: "approach_drive_v1" }),
+  a2_protection: formalQuestion("a2_protection", ["protective_avoidance"], "self_identity", "direct", { anchorGroup: "protective_avoidance_v1" }),
+  a3_alignment: formalQuestion("a3_alignment", ["self_alignment"], "self_identity", "direct", { anchorGroup: "self_alignment_v1" }),
+  a4_load: formalQuestion("a4_load", ["emotional_load"], "rest_physical_load", "direct", { anchorGroup: "emotional_load_v1" }),
+  a5_satisfaction: formalQuestion("a5_satisfaction", ["satisfaction"], "self_identity", "direct", { anchorGroup: "satisfaction_v1" }),
+  r_approach_behavior: formalQuestion("r_approach_behavior", ["approach_drive"], "future_direction", "behavior", { rotationGroup: "approach_drive_v1" }),
+  r_approach_scenario: formalQuestion("r_approach_scenario", ["approach_drive"], "future_direction", "scenario", { rotationGroup: "approach_drive_v1" }),
+  r_approach_future: formalQuestion("r_approach_future", ["approach_drive"], "future_direction", "future_projection", { rotationGroup: "approach_drive_v1" }),
+  r_protection_behavior: formalQuestion("r_protection_behavior", ["protective_avoidance"], "self_identity", "behavior", { rotationGroup: "protective_avoidance_v1" }),
+  r_protection_scenario: formalQuestion("r_protection_scenario", ["protective_avoidance"], "relationship_romance", "scenario", { rotationGroup: "protective_avoidance_v1" }),
+  r_protection_tradeoff: formalQuestion("r_protection_tradeoff", ["protective_avoidance"], "work_achievement", "choice_tradeoff", { rotationGroup: "protective_avoidance_v1" }),
+  r_alignment_behavior: formalQuestion("r_alignment_behavior", ["self_alignment"], "self_identity", "behavior", { rotationGroup: "self_alignment_v1" }),
+  r_alignment_other: formalQuestion("r_alignment_other", ["self_alignment"], "social_belonging", "self_vs_other", { rotationGroup: "self_alignment_v1" }),
+  r_alignment_choice: formalQuestion("r_alignment_choice", ["self_alignment"], "self_identity", "choice_tradeoff", { rotationGroup: "self_alignment_v1" }),
+  r_connection_direct: formalQuestion("r_connection_direct", ["connection_distance"], "social_belonging", "direct", { rotationGroup: "connection_distance_v1" }),
+  r_connection_behavior: formalQuestion("r_connection_behavior", ["connection_distance"], "social_belonging", "behavior", { rotationGroup: "connection_distance_v1" }),
+  r_connection_scenario: formalQuestion("r_connection_scenario", ["connection_distance"], "relationship_romance", "scenario", { rotationGroup: "connection_distance_v1" }),
+  r_commitment_direct: formalQuestion("r_commitment_direct", ["commitment_clarity"], "future_direction", "direct", { rotationGroup: "commitment_clarity_v1" }),
+  r_commitment_choice: formalQuestion("r_commitment_choice", ["commitment_clarity"], "work_achievement", "choice_tradeoff", { rotationGroup: "commitment_clarity_v1" }),
+  r_commitment_future: formalQuestion("r_commitment_future", ["commitment_clarity"], "future_direction", "future_projection", { rotationGroup: "commitment_clarity_v1" }),
+  r_load_behavior: formalQuestion("r_load_behavior", ["emotional_load"], "rest_physical_load", "behavior", { rotationGroup: "emotional_load_v1" }),
+  r_load_emotion: formalQuestion("r_load_emotion", ["emotional_load"], "self_identity", "emotion", { rotationGroup: "emotional_load_v1" }),
+  r_load_rest: formalQuestion("r_load_rest", ["emotional_load"], "rest_physical_load", "scenario", { rotationGroup: "emotional_load_v1" }),
+  d_romance: formalQuestion("d_romance", ["connection_distance"], "relationship_romance", "domain_probe", { measurementUse: "legacy_compatible", problemOriented: true }),
+  d_work: formalQuestion("d_work", ["emotional_load"], "work_achievement", "domain_probe", { measurementUse: "legacy_compatible", problemOriented: true }),
+  d_family: formalQuestion("d_family", ["protective_avoidance"], "family", "domain_probe", { measurementUse: "legacy_compatible", problemOriented: true }),
+  d_social: formalQuestion("d_social", ["connection_distance"], "social_belonging", "domain_probe", { measurementUse: "legacy_compatible", problemOriented: true }),
+  d_identity: formalQuestion("d_identity", ["self_alignment"], "self_identity", "domain_probe", { measurementUse: "legacy_compatible", problemOriented: true }),
+  d_future: formalQuestion("d_future", ["commitment_clarity"], "future_direction", "domain_probe", { measurementUse: "legacy_compatible", problemOriented: true }),
+  d_money: formalQuestion("d_money", ["protective_avoidance"], "money_security", "domain_probe", { measurementUse: "legacy_compatible", problemOriented: true }),
+  d_rest: formalQuestion("d_rest", ["emotional_load"], "rest_physical_load", "domain_probe", { measurementUse: "legacy_compatible", problemOriented: true }),
 });
 
 function getObservationDirection(metadata, axis) {
@@ -58,17 +106,17 @@ function buildObservationHypotheses(currentState) {
 }
 
 function buildObservationSnapshotV1(answers = [], observationAnswers = []) {
-  const axisNames = ["approach_drive", "protective_avoidance", "satisfaction", "change_motivation"];
+  const axisNames = ["approach_drive", "protective_avoidance", "self_alignment", "connection_distance", "commitment_clarity", "emotional_load", "satisfaction", "change_motivation"];
   const makeAccumulators = () => Object.fromEntries(axisNames.map((axis) => [axis, { weightedTotal: 0, totalWeight: 0, evidenceCount: 0, positiveEvidence: 0, negativeEvidence: 0 }]));
   const indirectAccumulators = makeAccumulators();
   const directAccumulators = makeAccumulators();
 
-  const collectEvidence = (sourceAnswers, accumulators, expectProblemOriented) => {
+  const collectEvidence = (sourceAnswers, accumulators, expectProblemOriented = null) => {
     for (const answer of Array.isArray(sourceAnswers) ? sourceAnswers : []) {
       const questionId = answer?.questionId || answer?.questionKey;
       const metadata = OBSERVATION_QUESTION_METADATA_V1[questionId];
       const value = Number(answer?.value);
-      if (!metadata || metadata.problemOriented !== expectProblemOriented || !Number.isFinite(value) || value < -2 || value > 2) continue;
+      if (!metadata || (typeof expectProblemOriented === "boolean" && metadata.problemOriented !== expectProblemOriented) || !Number.isFinite(value) || value < -2 || value > 2) continue;
       for (const axis of metadata.axes) {
         const direction = getObservationDirection(metadata, axis);
         const weight = Number(metadata.weight || 1);
@@ -83,7 +131,7 @@ function buildObservationSnapshotV1(answers = [], observationAnswers = []) {
     }
   };
   collectEvidence(answers, indirectAccumulators, true);
-  collectEvidence(observationAnswers, directAccumulators, false);
+  collectEvidence(observationAnswers, directAccumulators);
 
   const toAxisResult = (axis) => {
     const hasDirectEvidence = directAccumulators[axis].evidenceCount > 0;
@@ -94,10 +142,38 @@ function buildObservationSnapshotV1(answers = [], observationAnswers = []) {
   const currentState = {
     approachDrive: toAxisResult("approach_drive"),
     protectiveAvoidance: toAxisResult("protective_avoidance"),
+    selfAlignment: toAxisResult("self_alignment"),
+    connectionDistance: toAxisResult("connection_distance"),
+    commitmentClarity: toAxisResult("commitment_clarity"),
+    emotionalLoad: toAxisResult("emotional_load"),
     satisfaction: toAxisResult("satisfaction"),
     changeMotivation: toAxisResult("change_motivation"),
   };
-  return { schemaVersion: OBSERVATION_SCHEMA_VERSION, currentState, hypotheses: buildObservationHypotheses(currentState) };
+  const domainEvidence = {};
+  for (const answer of Array.isArray(observationAnswers) ? observationAnswers : []) {
+    const metadata = OBSERVATION_QUESTION_METADATA_V1[answer?.questionId];
+    const value = Number(answer?.value);
+    if (!metadata || !Number.isFinite(value)) continue;
+    for (const domain of metadata.domainAffinity || []) {
+      const state = domainEvidence[domain] || { activationTotal: 0, valenceTotal: 0, valenceCount: 0, evidenceCount: 0 };
+      state.activationTotal += Math.abs(value);
+      const positiveValenceAxis = metadata.axes.some((axis) => ["approach_drive", "self_alignment", "commitment_clarity", "satisfaction"].includes(axis));
+      const valenceDirection = metadata.problemOriented ? -1 : positiveValenceAxis ? 1 : 0;
+      if (valenceDirection !== 0) {
+        state.valenceTotal += value * valenceDirection;
+        state.valenceCount += 1;
+      }
+      state.evidenceCount += 1;
+      domainEvidence[domain] = state;
+    }
+  }
+  const activeDomains = Object.fromEntries(Object.entries(domainEvidence).map(([domain, state]) => [domain, {
+    activation: Number((state.activationTotal / state.evidenceCount).toFixed(2)),
+    valence: state.valenceCount > 0 ? Number((state.valenceTotal / state.valenceCount).toFixed(2)) : null,
+    evidenceCount: state.evidenceCount,
+    status: state.evidenceCount > 0 ? "observed" : "insufficient_evidence",
+  }]));
+  return { schemaVersion: OBSERVATION_SCHEMA_VERSION, currentState, activeDomains, hypotheses: buildObservationHypotheses(currentState) };
 }
 
 function buildObservationShortNarrative(observationSnapshotV1) {
@@ -1263,14 +1339,34 @@ function getPrimaryObservationHypothesis(observationSnapshotV1) {
 
 function buildShortObservationSection(observationSnapshotV1) {
   const primaryHypothesis = getPrimaryObservationHypothesis(observationSnapshotV1);
-  if (primaryHypothesis) return primaryHypothesis.text;
+  const domains = Object.entries(observationSnapshotV1?.activeDomains || {})
+    .filter(([, state]) => Number(state?.activation || 0) >= 1)
+    .sort((a, b) => {
+      const activationOrder = Number(b[1]?.activation || 0) - Number(a[1]?.activation || 0);
+      if (activationOrder !== 0) return activationOrder;
+      return Number(a[1]?.valence ?? 0) - Number(b[1]?.valence ?? 0);
+    });
+  const domainLabels = {
+    relationship_romance: "大切な相手との関係",
+    work_achievement: "仕事や役割",
+    family: "家族との関係",
+    social_belonging: "周囲とのつながり",
+    self_identity: "自分らしさ",
+    future_direction: "これからの方向",
+    money_security: "お金や生活の安定",
+    rest_physical_load: "休息や心身の負担",
+  };
+  const domainLine = domains.length > 0
+    ? `\n今回、反応が比較的はっきり出た生活領域は「${domainLabels[domains[0][0]] || domains[0][0]}」です。`
+    : "";
+  if (primaryHypothesis) return `${primaryHypothesis.text}${domainLine}`;
 
   const satisfaction = observationSnapshotV1?.currentState?.satisfaction;
   const change = observationSnapshotV1?.currentState?.changeMotivation;
   if (satisfaction?.evidenceSource === "direct_observation" && change?.evidenceSource === "direct_observation") {
-    return "今を大切にしたい感覚と変えたい感覚は、今回の回答ではどちらか一方へ強く傾いていません。ここから先を無理に決めつける材料は、まだ十分ではありません。";
+    return `今を大切にしたい感覚と変えたい感覚は、今回の回答ではどちらか一方へ強く傾いていません。ここから先を無理に決めつける材料は、まだ十分ではありません。${domainLine}`;
   }
-  return "今回の観測だけでは、今を保ちたい感覚と変えたい感覚の関係を決めつけられるだけの材料はありません。";
+  return `今回の観測だけでは、今を保ちたい感覚と変えたい感覚の関係を決めつけられるだけの材料はありません。${domainLine}`;
 }
 
 function buildIntegratedShortHypothesis(compound, observationSnapshotV1) {
@@ -1306,6 +1402,30 @@ function buildShortTakeaway(observationSnapshotV1) {
     misalignment_without_change_intent: "今日は、残したいものがすぐ浮かばないことと、今すぐ変えたいかどうかを分けて受け取ってください。結論を急ぐ必要はありません。",
     approach_with_protection: "今日は、進みたい方向と、守っておきたい条件を一つずつ確かめてみてください。",
   }[hypothesisCode] || "今日は、表に出た反応をすぐ結論に変えず、自分にとって事実だと思える部分だけを一つ持ち帰ってください。";
+}
+
+function buildNoDominantShortFortune(observationSnapshotV1, previousPatterns = []) {
+  const observationNarrative = buildShortObservationSection(observationSnapshotV1);
+  const primaryHypothesis = getPrimaryObservationHypothesis(observationSnapshotV1);
+  const continuity = buildObservationContinuityNarrative(observationSnapshotV1, previousPatterns);
+  const historySection = continuity ? `\n\n【これまでの流れ】\n${continuity}` : "";
+  const hypothesis = primaryHypothesis
+    ? `特定の悩みが隠れていると決めつける材料はありません。そのうえで今回の観測から言える仮説は、${primaryHypothesis.text}`
+    : "特定の悩みが隠れていると決めつける材料はありません。今を保ちたい感覚と変えたい感覚についても、今回以上の理由はまだ断定しません。";
+  return `【読みはじめ】
+今回は、問題を探すのではなく、今の反応をそのまま読みます。
+
+【今、表に出ている反応】
+今回の互換質問では、特定の悩みや負担が強く出ているとは判定されませんでした。
+
+【その奥で同時に動いているもの】
+${observationNarrative}
+
+【今回の本音仮説】
+${hypothesis}${historySection}
+
+【今日持ち帰るなら】
+${buildShortTakeaway(observationSnapshotV1)}`;
 }
 
 function getComparableObservationAxis(previousAxis, currentAxis) {
@@ -4706,7 +4826,9 @@ function stablePaidFortune(score, answers = [], depth = "deep", previousResponse
   const observationSnapshotV1 = buildObservationSnapshotV1(answers, observationAnswers);
 
   if (!compound.hasDominantEvidence) {
-    return `${buildNoDominantEvidenceFortune()}${depth === "short" ? buildObservationShortNarrative(observationSnapshotV1) : ""}`;
+    return depth === "short"
+      ? buildNoDominantShortFortune(observationSnapshotV1, previousPatterns)
+      : buildNoDominantEvidenceFortune();
   }
   const finalRuntimeProfile = runtimeOverrideProfile
     ? {

@@ -125,105 +125,234 @@ class ObservationAnswer {
 
 const String _jaReadingHistoryKey = 'ja_reading_history_v1';
 const int _maxReadingHistoryCount = 2;
-const String _observationProbeRotationKey = 'observation_probe_rotation_v1';
-const String _observationProbeRotationSchema = 'honne-probe-rotation-v1';
+const String _questionSelectionKey = 'question_selection_v1';
+const String _questionSelectionSchema = 'honne-question-selection-v1';
 
-const List<List<String>> _observationProbeRotation = [
-  ['ov1_satisfaction', 'ov1_change'],
-  ['ov1_satisfaction_behavior', 'ov1_change_future'],
-  ['ov1_satisfaction_value', 'ov1_change_tradeoff'],
+class QuestionSpec {
+  final String questionId;
+  final String axis;
+  final String domain;
+  final String? legacyQuestionKey;
+
+  const QuestionSpec(
+    this.questionId,
+    this.axis,
+    this.domain, {
+    this.legacyQuestionKey,
+  });
+}
+
+const _anchorQuestions = [
+  QuestionSpec('a1_approach', 'approach_drive', 'future_direction'),
+  QuestionSpec('a2_protection', 'protective_avoidance', 'self_identity'),
+  QuestionSpec('a3_alignment', 'self_alignment', 'self_identity'),
+  QuestionSpec('a4_load', 'emotional_load', 'rest_physical_load'),
+  QuestionSpec('a5_satisfaction', 'satisfaction', 'self_identity'),
 ];
 
-Future<List<String>> _selectObservationProbeQuestions(
+const _rotatingQuestionForms = [
+  [
+    QuestionSpec('r_approach_behavior', 'approach_drive', 'future_direction'),
+    QuestionSpec(
+      'r_protection_behavior',
+      'protective_avoidance',
+      'self_identity',
+    ),
+    QuestionSpec('r_alignment_behavior', 'self_alignment', 'self_identity'),
+    QuestionSpec(
+      'r_connection_direct',
+      'connection_distance',
+      'social_belonging',
+    ),
+    QuestionSpec(
+      'r_commitment_direct',
+      'commitment_clarity',
+      'future_direction',
+    ),
+    QuestionSpec('r_load_behavior', 'emotional_load', 'rest_physical_load'),
+    QuestionSpec('ov1_change', 'change_motivation', 'future_direction'),
+  ],
+  [
+    QuestionSpec('r_approach_scenario', 'approach_drive', 'future_direction'),
+    QuestionSpec(
+      'r_protection_scenario',
+      'protective_avoidance',
+      'relationship_romance',
+    ),
+    QuestionSpec('r_alignment_other', 'self_alignment', 'social_belonging'),
+    QuestionSpec(
+      'r_connection_behavior',
+      'connection_distance',
+      'social_belonging',
+    ),
+    QuestionSpec(
+      'r_commitment_choice',
+      'commitment_clarity',
+      'work_achievement',
+    ),
+    QuestionSpec('r_load_emotion', 'emotional_load', 'self_identity'),
+    QuestionSpec('ov1_change_future', 'change_motivation', 'future_direction'),
+  ],
+  [
+    QuestionSpec('r_approach_future', 'approach_drive', 'future_direction'),
+    QuestionSpec(
+      'r_protection_tradeoff',
+      'protective_avoidance',
+      'work_achievement',
+    ),
+    QuestionSpec('r_alignment_choice', 'self_alignment', 'self_identity'),
+    QuestionSpec(
+      'r_connection_scenario',
+      'connection_distance',
+      'relationship_romance',
+    ),
+    QuestionSpec(
+      'r_commitment_future',
+      'commitment_clarity',
+      'future_direction',
+    ),
+    QuestionSpec('r_load_rest', 'emotional_load', 'rest_physical_load'),
+    QuestionSpec(
+      'ov1_change_tradeoff',
+      'change_motivation',
+      'future_direction',
+    ),
+  ],
+];
+
+const _domainQuestions = [
+  QuestionSpec(
+    'd_romance',
+    'connection_distance',
+    'relationship_romance',
+    legacyQuestionKey: 'q4',
+  ),
+  QuestionSpec(
+    'd_work',
+    'emotional_load',
+    'work_achievement',
+    legacyQuestionKey: 'q9',
+  ),
+  QuestionSpec(
+    'd_family',
+    'protective_avoidance',
+    'family',
+    legacyQuestionKey: 'q7',
+  ),
+  QuestionSpec(
+    'd_social',
+    'connection_distance',
+    'social_belonging',
+    legacyQuestionKey: 'q13',
+  ),
+  QuestionSpec(
+    'd_identity',
+    'self_alignment',
+    'self_identity',
+    legacyQuestionKey: 'q1',
+  ),
+  QuestionSpec(
+    'd_future',
+    'commitment_clarity',
+    'future_direction',
+    legacyQuestionKey: 'q6',
+  ),
+  QuestionSpec(
+    'd_money',
+    'protective_avoidance',
+    'money_security',
+    legacyQuestionKey: 'q11',
+  ),
+  QuestionSpec(
+    'd_rest',
+    'emotional_load',
+    'rest_physical_load',
+    legacyQuestionKey: 'q14',
+  ),
+];
+
+QuestionSpec? _questionSpec(String questionId) {
+  for (final question in [
+    ..._anchorQuestions,
+    ..._rotatingQuestionForms.expand((form) => form),
+    ..._domainQuestions,
+  ]) {
+    if (question.questionId == questionId) return question;
+  }
+  return null;
+}
+
+Future<List<String>> _selectSessionBaseQuestions(
   SharedPreferences prefs,
 ) async {
-  var selectedIndex = 0;
-  var selectionReason = 'initial';
-  final encoded = prefs.getString(_observationProbeRotationKey);
+  var formIndex = 0;
+  var reason = 'initial';
+  final encoded = prefs.getString(_questionSelectionKey);
   if (encoded != null && encoded.isNotEmpty) {
     try {
       final decoded = jsonDecode(encoded);
       if (decoded is Map &&
-          decoded['schemaVersion'] == _observationProbeRotationSchema) {
-        final activeQuestionIds = decoded['activeQuestionIds'];
-        final activeVariantIndex = decoded['activeVariantIndex'];
-        if (activeQuestionIds is List &&
-            activeVariantIndex is int &&
-            activeVariantIndex >= 0 &&
-            activeVariantIndex < _observationProbeRotation.length) {
-          final expected = _observationProbeRotation[activeVariantIndex];
-          final active = activeQuestionIds.whereType<String>().toList();
-          if (active.length == expected.length &&
-              active.asMap().entries.every(
-                (entry) => entry.value == expected[entry.key],
-              )) {
-            return active;
-          }
+          decoded['schemaVersion'] == _questionSelectionSchema) {
+        final activeIds = decoded['sessionQuestionIds'];
+        if (decoded['sessionComplete'] != true && activeIds is List) {
+          final restored = activeIds.whereType<String>().toList();
+          if ((restored.length == 12 || restored.length == 15) &&
+              restored.every((id) => _questionSpec(id) != null))
+            return restored;
         }
-
-        if (decoded['nextVariantIndex'] is int) {
-          final savedIndex = decoded['nextVariantIndex'] as int;
-          if (savedIndex >= 0 &&
-              savedIndex < _observationProbeRotation.length) {
-            selectedIndex = savedIndex;
-            selectionReason = 'round_robin_avoid_previous';
-          } else {
-            selectionReason = 'safe_fallback_invalid_state';
-          }
+        final next = decoded['nextFormIndex'];
+        if (next is int && next >= 0 && next < _rotatingQuestionForms.length) {
+          formIndex = next;
+          reason = 'round_robin_avoid_previous';
         } else {
-          selectionReason = 'safe_fallback_invalid_state';
+          reason = 'safe_fallback_invalid_state';
         }
       } else {
-        selectionReason = 'safe_fallback_invalid_state';
+        reason = 'safe_fallback_invalid_state';
       }
     } catch (_) {
-      selectedIndex = 0;
-      selectionReason = 'safe_fallback_corrupt_state';
+      reason = 'safe_fallback_corrupt_state';
     }
   }
-
-  final selected = List<String>.from(_observationProbeRotation[selectedIndex]);
-  final nextIndex = (selectedIndex + 1) % _observationProbeRotation.length;
+  final selected = [
+    ..._anchorQuestions.map((q) => q.questionId),
+    ..._rotatingQuestionForms[formIndex].map((q) => q.questionId),
+  ];
+  final next = (formIndex + 1) % _rotatingQuestionForms.length;
   await prefs.setString(
-    _observationProbeRotationKey,
+    _questionSelectionKey,
     jsonEncode({
-      'schemaVersion': _observationProbeRotationSchema,
-      'activeVariantIndex': selectedIndex,
-      'activeQuestionIds': selected,
-      'nextVariantIndex': nextIndex,
-      'selectionReason': selectionReason,
+      'schemaVersion': _questionSelectionSchema,
+      'sessionQuestionIds': selected,
+      'sessionFormId': 'form-${formIndex + 1}',
+      'rotationState': {'formIndex': formIndex, 'nextFormIndex': next},
+      'nextFormIndex': next,
+      'selectedAt': DateTime.now().toUtc().toIso8601String(),
+      'selectionReason': reason,
+      'sessionComplete': false,
     }),
   );
   return selected;
 }
 
-Future<void> _completeObservationProbeSelection(
+Future<void> _updateQuestionSelection(
   SharedPreferences prefs,
-  List<String> selected,
-) async {
-  final encoded = prefs.getString(_observationProbeRotationKey);
-  if (encoded == null || encoded.isEmpty) return;
+  List<String> ids, {
+  required bool complete,
+}) async {
+  final encoded = prefs.getString(_questionSelectionKey);
+  if (encoded == null) return;
   try {
     final decoded = jsonDecode(encoded);
-    if (decoded is! Map ||
-        decoded['schemaVersion'] != _observationProbeRotationSchema) {
+    if (decoded is! Map || decoded['schemaVersion'] != _questionSelectionSchema)
       return;
-    }
-    final active = decoded['activeQuestionIds'];
-    if (active is! List ||
-        active.whereType<String>().join('|') != selected.join('|')) {
-      return;
-    }
-    await prefs.setString(
-      _observationProbeRotationKey,
-      jsonEncode({
-        'schemaVersion': _observationProbeRotationSchema,
-        'lastVariantIndex': decoded['activeVariantIndex'],
-        'lastQuestionIds': selected,
-        'nextVariantIndex': decoded['nextVariantIndex'],
-        'selectionReason': 'session_completed',
-      }),
-    );
+    final updated = Map<String, dynamic>.from(decoded);
+    updated['sessionQuestionIds'] = ids;
+    updated['selectionReason'] = complete
+        ? 'session_completed'
+        : 'front12_domain_evidence';
+    updated['sessionComplete'] = complete;
+    await prefs.setString(_questionSelectionKey, jsonEncode(updated));
   } catch (_) {
     return;
   }
@@ -281,6 +410,10 @@ Map<String, dynamic>? _buildReadingSnapshot(Map<String, dynamic> data) {
     for (final axisName in const [
       'approachDrive',
       'protectiveAvoidance',
+      'selfAlignment',
+      'connectionDistance',
+      'commitmentClarity',
+      'emotionalLoad',
       'satisfaction',
       'changeMotivation',
     ]) {
@@ -737,53 +870,72 @@ class _QuestionPageState extends State<QuestionPage> {
   final answers = <FortuneAnswer>[];
   final observationAnswers = <ObservationAnswer>[];
 
-  static const _legacyQuestions = [
-    'q1',
-    'q2',
-    'q3',
-    'q4',
-    'q5',
-    'q6',
-    'q7',
-    'q8',
-    'q9',
-    'q10',
-    'q11',
-    'q12',
-    'q13',
-    'q14',
-    'q15',
-  ];
-  List<String>? _observationProbeQuestions;
-  List<String> get questions => [
-    ..._legacyQuestions,
-    ...?_observationProbeQuestions,
-  ];
+  static const _questionCount = 15;
+  List<String>? _sessionQuestions;
+  List<String> get questions => _sessionQuestions ?? const [];
 
   @override
   void initState() {
     super.initState();
-    _initializeObservationProbeSelection();
+    _initializeQuestionSelection();
   }
 
-  Future<void> _initializeObservationProbeSelection() async {
+  Future<void> _initializeQuestionSelection() async {
     final prefs = await SharedPreferences.getInstance();
-    final selected = await _selectObservationProbeQuestions(prefs);
+    final selected = await _selectSessionBaseQuestions(prefs);
     if (!mounted) return;
-    setState(() => _observationProbeQuestions = selected);
+    setState(() => _sessionQuestions = selected);
+  }
+
+  List<String> _selectDomainQuestionIds() {
+    final activation = <String, double>{
+      for (final question in _domainQuestions) question.domain: 0,
+    };
+    for (final answer in observationAnswers) {
+      final spec = _questionSpec(answer.questionId);
+      if (spec != null) {
+        activation[spec.domain] =
+            (activation[spec.domain] ?? 0) + answer.value.abs();
+      }
+    }
+    final descending = activation.entries.toList()
+      ..sort((a, b) {
+        final scoreOrder = b.value.compareTo(a.value);
+        return scoreOrder != 0 ? scoreOrder : a.key.compareTo(b.key);
+      });
+    final selectedDomains = <String>[descending.first.key];
+    final competing = descending.firstWhere(
+      (entry) => !selectedDomains.contains(entry.key),
+    );
+    selectedDomains.add(competing.key);
+    final ascending = activation.entries.toList()
+      ..sort((a, b) {
+        final scoreOrder = a.value.compareTo(b.value);
+        return scoreOrder != 0 ? scoreOrder : a.key.compareTo(b.key);
+      });
+    selectedDomains.add(
+      ascending.firstWhere((entry) => !selectedDomains.contains(entry.key)).key,
+    );
+    return selectedDomains
+        .map(
+          (domain) => _domainQuestions
+              .firstWhere((question) => question.domain == domain)
+              .questionId,
+        )
+        .toList();
   }
 
   Future<void> answer(String answerKey, int value) async {
     final questionKey = questions[index];
-    if (_observationProbeQuestions!.contains(questionKey)) {
-      observationAnswers.add(
-        ObservationAnswer(questionId: questionKey, value: value),
-      );
-    } else {
+    observationAnswers.add(
+      ObservationAnswer(questionId: questionKey, value: value),
+    );
+    final spec = _questionSpec(questionKey);
+    if (spec?.legacyQuestionKey != null) {
       answers.add(
         FortuneAnswer(
           index: answers.length + 1,
-          questionKey: questionKey,
+          questionKey: spec!.legacyQuestionKey!,
           answerKey: answerKey,
           value: value,
         ),
@@ -791,14 +943,24 @@ class _QuestionPageState extends State<QuestionPage> {
       score += value;
     }
 
-    if (index < questions.length - 1) {
+    if (index == 11 && questions.length == 12) {
+      final completedQuestions = [...questions, ..._selectDomainQuestionIds()];
+      final prefs = await SharedPreferences.getInstance();
+      await _updateQuestionSelection(
+        prefs,
+        completedQuestions,
+        complete: false,
+      );
+      if (!mounted) return;
+      setState(() {
+        _sessionQuestions = completedQuestions;
+        index++;
+      });
+    } else if (index < questions.length - 1) {
       setState(() => index++);
     } else {
       final prefs = await SharedPreferences.getInstance();
-      await _completeObservationProbeSelection(
-        prefs,
-        _observationProbeQuestions!,
-      );
+      await _updateQuestionSelection(prefs, questions, complete: true);
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -952,13 +1114,13 @@ class _QuestionPageState extends State<QuestionPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_observationProbeQuestions == null) {
+    if (_sessionQuestions == null) {
       return const Scaffold(
         backgroundColor: AppColors.background,
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    final progress = (index + 1) / questions.length;
+    final progress = (index + 1) / _questionCount;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -1002,7 +1164,7 @@ class _QuestionPageState extends State<QuestionPage> {
               ),
               const SizedBox(height: 18),
               Text(
-                '${index + 1} / ${questions.length}',
+                '${index + 1} / $_questionCount',
                 style: TextStyle(
                   fontSize: 13,
                   color: Colors.white.withOpacity(0.55),
@@ -1549,6 +1711,7 @@ class ResultPage extends StatelessWidget {
                             'observationAnswers': observationAnswers
                                 .map((answer) => answer.toJson())
                                 .toList(),
+                            'expectedQuestionCount': answers.length,
                           };
 
                           if (locale == 'ja') {
