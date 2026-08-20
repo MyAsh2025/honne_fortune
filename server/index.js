@@ -11,6 +11,96 @@ app.get("/health", (req, res) => {
 });
 
 const PHASE = "stable-paid-v54-runtime-policy-layer-v01";
+const NO_DOMINANT_EVIDENCE = "no_dominant_evidence";
+
+const OBSERVATION_SCHEMA_VERSION = "honne-observation-v1";
+const OBSERVATION_QUESTION_METADATA_V1 = Object.freeze({
+  q6: { questionId: "q6", axes: ["satisfaction"], weight: 1, direction: -1, domainAffinity: ["future_direction"], measurementUse: "current_state", timeframe: "current", variantType: "problem_worded", responseScale: "likert_-2_to_2", problemOriented: true },
+  q11: { questionId: "q11", axes: ["approach_drive"], weight: 1, direction: -1, domainAffinity: ["future_direction"], measurementUse: "current_state", timeframe: "current", variantType: "problem_worded", responseScale: "likert_-2_to_2", problemOriented: true },
+  q12: { questionId: "q12", axes: ["approach_drive", "protective_avoidance"], weight: 1, direction: { approach_drive: -1, protective_avoidance: 1 }, domainAffinity: ["self_identity"], measurementUse: "current_state", timeframe: "current", variantType: "problem_worded", responseScale: "likert_-2_to_2", problemOriented: true },
+  q13: { questionId: "q13", axes: ["protective_avoidance"], weight: 1, direction: 1, domainAffinity: ["social_belonging"], measurementUse: "current_state", timeframe: "current", variantType: "problem_worded", responseScale: "likert_-2_to_2", problemOriented: true },
+  q15: { questionId: "q15", axes: ["satisfaction"], weight: 1, direction: -1, domainAffinity: ["work_achievement"], measurementUse: "current_state", timeframe: "current", variantType: "problem_worded", responseScale: "likert_-2_to_2", problemOriented: true },
+  ov1_approach: { questionId: "ov1_approach", axes: ["approach_drive"], weight: 1, direction: 1, domainAffinity: ["future_direction"], measurementUse: "prototype_fixture", timeframe: "today", variantType: "direct_positive", responseScale: "likert_-2_to_2", problemOriented: false },
+  ov1_avoidance: { questionId: "ov1_avoidance", axes: ["protective_avoidance"], weight: 1, direction: 1, domainAffinity: ["self_identity"], measurementUse: "prototype_fixture", timeframe: "today", variantType: "direct_positive", responseScale: "likert_-2_to_2", problemOriented: false },
+  ov1_satisfaction: { questionId: "ov1_satisfaction", axes: ["satisfaction"], weight: 1, direction: 1, domainAffinity: ["self_identity"], measurementUse: "current_state", timeframe: "today", variantType: "direct_positive", responseScale: "likert_-2_to_2", problemOriented: false },
+  ov1_change: { questionId: "ov1_change", axes: ["change_motivation"], weight: 1, direction: 1, domainAffinity: ["future_direction"], measurementUse: "current_state", timeframe: "today", variantType: "direct_positive", responseScale: "likert_-2_to_2", problemOriented: false },
+});
+
+function getObservationDirection(metadata, axis) {
+  if (typeof metadata?.direction === "number") return metadata.direction;
+  return Number(metadata?.direction?.[axis] || 0);
+}
+
+function getObservationAxisStatus(score, evidenceCount) {
+  if (evidenceCount === 0) return "insufficient_evidence";
+  if (score >= 0.75) return "high";
+  if (score <= -0.75) return "low";
+  return "neutral_or_mixed";
+}
+
+function buildObservationHypotheses(currentState) {
+  const approach = currentState.approachDrive?.status;
+  const avoidance = currentState.protectiveAvoidance?.status;
+  const satisfaction = currentState.satisfaction?.status;
+  const change = currentState.changeMotivation?.status;
+  const hypotheses = [];
+
+  if (approach === "high" && avoidance === "high") hypotheses.push({ code: "approach_with_protection", text: "進みたい気持ちと、自分を守りたい気持ちが、どちらも今のあなたの中にあるのかもしれません。" });
+  if (satisfaction === "high" && change === "low") hypotheses.push({ code: "fulfilled_continuity", text: "変えずにいたい感覚は、単なる停滞ではなく、今あるものへの充足から来ている可能性があります。" });
+  if (satisfaction === "high" && change === "high") hypotheses.push({ code: "growth_from_fulfillment", text: "今の変化への意欲は、不満だけでなく、満足しているものをさらに育てたい気持ちから来ている可能性があります。" });
+  if (satisfaction === "low" && change === "high") hypotheses.push({ code: "misalignment_with_movement", text: "今の状態に大切に残したい感覚は強く出ず、もう少し変えてみたい気持ちは表れています。" });
+  if (satisfaction === "low" && change === "low") hypotheses.push({ code: "misalignment_without_change_intent", text: "今の状態に大切に残したい感覚も、今すぐ変えたい意向も、今回の回答では強く出ていません。" });
+  return hypotheses;
+}
+
+function buildObservationSnapshotV1(answers = [], observationAnswers = []) {
+  const axisNames = ["approach_drive", "protective_avoidance", "satisfaction", "change_motivation"];
+  const makeAccumulators = () => Object.fromEntries(axisNames.map((axis) => [axis, { weightedTotal: 0, totalWeight: 0, evidenceCount: 0, positiveEvidence: 0, negativeEvidence: 0 }]));
+  const indirectAccumulators = makeAccumulators();
+  const directAccumulators = makeAccumulators();
+
+  const collectEvidence = (sourceAnswers, accumulators, expectProblemOriented) => {
+    for (const answer of Array.isArray(sourceAnswers) ? sourceAnswers : []) {
+      const questionId = answer?.questionId || answer?.questionKey;
+      const metadata = OBSERVATION_QUESTION_METADATA_V1[questionId];
+      const value = Number(answer?.value);
+      if (!metadata || metadata.problemOriented !== expectProblemOriented || !Number.isFinite(value) || value < -2 || value > 2) continue;
+      for (const axis of metadata.axes) {
+        const direction = getObservationDirection(metadata, axis);
+        const weight = Number(metadata.weight || 1);
+        if (!accumulators[axis] || !direction || weight <= 0) continue;
+        const evidence = value * direction;
+        accumulators[axis].weightedTotal += evidence * weight;
+        accumulators[axis].totalWeight += weight;
+        accumulators[axis].evidenceCount += 1;
+        if (evidence > 0) accumulators[axis].positiveEvidence += 1;
+        if (evidence < 0) accumulators[axis].negativeEvidence += 1;
+      }
+    }
+  };
+  collectEvidence(answers, indirectAccumulators, true);
+  collectEvidence(observationAnswers, directAccumulators, false);
+
+  const toAxisResult = (axis) => {
+    const hasDirectEvidence = directAccumulators[axis].evidenceCount > 0;
+    const accumulator = hasDirectEvidence ? directAccumulators[axis] : indirectAccumulators[axis];
+    const score = accumulator.evidenceCount > 0 ? Number((accumulator.weightedTotal / accumulator.totalWeight).toFixed(2)) : null;
+    return { score, evidenceCount: accumulator.evidenceCount, status: getObservationAxisStatus(score, accumulator.evidenceCount), conflictingEvidence: accumulator.positiveEvidence > 0 && accumulator.negativeEvidence > 0, evidenceSource: hasDirectEvidence ? "direct_observation" : accumulator.evidenceCount > 0 ? "legacy_indirect" : "none" };
+  };
+  const currentState = {
+    approachDrive: toAxisResult("approach_drive"),
+    protectiveAvoidance: toAxisResult("protective_avoidance"),
+    satisfaction: toAxisResult("satisfaction"),
+    changeMotivation: toAxisResult("change_motivation"),
+  };
+  return { schemaVersion: OBSERVATION_SCHEMA_VERSION, currentState, hypotheses: buildObservationHypotheses(currentState) };
+}
+
+function buildObservationShortNarrative(observationSnapshotV1) {
+  const hypotheses = observationSnapshotV1?.hypotheses;
+  if (!Array.isArray(hypotheses) || hypotheses.length === 0) return "";
+  return `\n\n【今日の本音観測】\n${hypotheses.map((item) => item.text).join("\n")}`;
+}
 
 function getScoreType(score) {
   const n = Number(score || 0);
@@ -24,6 +114,19 @@ function getScoreType(score) {
 
 function sortScores(scores) {
   return Object.entries(scores).sort((a, b) => b[1] - a[1]);
+}
+
+function getDominantEvidence(scores) {
+  const ranking = sortScores(scores).map(([key, value]) => ({ key, value }));
+  const positiveRanking = ranking.filter((item) => item.value > 0);
+
+  return {
+    primary: positiveRanking[0]?.key || NO_DOMINANT_EVIDENCE,
+    secondary: positiveRanking[1]?.key || NO_DOMINANT_EVIDENCE,
+    hasDominantEvidence: positiveRanking.length > 0,
+    evidenceTotal: positiveRanking.reduce((sum, item) => sum + item.value, 0),
+    ranking,
+  };
 }
 
 function getPrimaryCategory(answers) {
@@ -58,17 +161,20 @@ function getPrimaryCategory(answers) {
     for (const answer of answers) {
       const category = map[answer.questionKey];
       if (!category) continue;
-      scores[category] += Number(answer.value || 0);
+      const evidence = Math.max(0, Number(answer.value || 0));
+      scores[category] += evidence;
     }
   }
 
-  const sorted = sortScores(scores);
+  const dominant = getDominantEvidence(scores);
 
   return {
-    primary: sorted[0]?.[0] || "self",
-    secondary: sorted[1]?.[0] || "mental",
+    primary: dominant.primary,
+    secondary: dominant.secondary,
+    hasDominantEvidence: dominant.hasDominantEvidence,
+    evidenceTotal: dominant.evidenceTotal,
     scores,
-    ranking: sorted.map(([key, value]) => ({ key, value })),
+    ranking: dominant.ranking,
   };
 }
 
@@ -104,7 +210,7 @@ function getPrimaryTrait(answers) {
     for (const answer of answers) {
       const trait = map[answer.questionKey];
       if (!trait) continue;
-            const value = Number(answer.value || 0);
+      const evidence = Math.max(0, Number(answer.value || 0));
 
       const weightMap = {
         q6: 1.35,
@@ -116,17 +222,19 @@ function getPrimaryTrait(answers) {
         q14: 1.15,
       };
 
-      scores[trait] += value * (weightMap[answer.questionKey] || 1);
+      scores[trait] += evidence * (weightMap[answer.questionKey] || 1);
     }
   }
 
-  const sorted = sortScores(scores);
+  const dominant = getDominantEvidence(scores);
 
   return {
-    primary: sorted[0]?.[0] || "identity_confusion",
-    secondary: sorted[1]?.[0] || "emotional_fatigue",
+    primary: dominant.primary,
+    secondary: dominant.secondary,
+    hasDominantEvidence: dominant.hasDominantEvidence,
+    evidenceTotal: dominant.evidenceTotal,
     scores,
-    ranking: sorted.map(([key, value]) => ({ key, value })),
+    ranking: dominant.ranking,
   };
 }
 
@@ -192,11 +300,31 @@ function getTraitLabelEn(trait) {
   return labels[trait] || "uncertainty around who you are";
 }
 function buildCompoundInsight(categoryResult, traitResult) {
-  const primaryCategory = categoryResult.primary;
-  const secondaryCategory = categoryResult.secondary;
-  const primaryTrait = traitResult.primary;
-  const secondaryTrait = traitResult.secondary;
+  const primaryCategory = categoryResult.hasDominantEvidence
+    ? categoryResult.primary
+    : null;
+  const secondaryCategory = categoryResult.secondary === NO_DOMINANT_EVIDENCE
+    ? null
+    : categoryResult.secondary;
+  const primaryTrait = traitResult.hasDominantEvidence
+    ? traitResult.primary
+    : null;
+  const secondaryTrait = traitResult.secondary === NO_DOMINANT_EVIDENCE
+    ? null
+    : traitResult.secondary;
   const strength = getTraitStrength(traitResult.scores, primaryTrait);
+
+  if (!primaryCategory || !primaryTrait) {
+    return {
+      primaryCategory,
+      secondaryCategory,
+      primaryTrait,
+      secondaryTrait,
+      traitStrength: "none",
+      hasDominantEvidence: false,
+      summary: "今回の回答範囲では、特定の悩みや問題傾向を強く示す材料は見つかりませんでした。",
+    };
+  }
 
   const categoryLabel = getCategoryLabel(primaryCategory);
   const secondaryCategoryLabel = getCategoryLabel(secondaryCategory);
@@ -209,6 +337,9 @@ function buildCompoundInsight(categoryResult, traitResult) {
     middle: "静かに出ています",
     low: "まだ小さく出ています",
   }[strength];
+  const secondaryContext = secondaryCategory && secondaryTrait
+    ? `さらに背景には「${secondaryCategoryLabel}」や「${secondaryTraitLabel}」も影響しています。`
+    : "";
 
   return {
     primaryCategory,
@@ -216,11 +347,28 @@ function buildCompoundInsight(categoryResult, traitResult) {
     primaryTrait,
     secondaryTrait,
     traitStrength: strength,
-    summary: `表面では「${categoryLabel}」の悩みに見えますが、奥には「${traitLabel}」が${strengthText}。さらに背景には「${secondaryCategoryLabel}」や「${secondaryTraitLabel}」も影響しています。`,
+    hasDominantEvidence: true,
+    summary: `表面では「${categoryLabel}」の悩みに見えますが、奥には「${traitLabel}」が${strengthText}。${secondaryContext}`,
   };
 }
 
-function stableFortune(score) {
+function buildNoDominantEvidenceFortune() {
+  return `【今回見えていること】
+今回の15問が扱う悩みや負担については、特定の問題傾向を強く示す回答は見つかりませんでした。
+
+【まだ決めつけないこと】
+これは、今が必ず幸せ・健康・順調だと断定するものではありません。
+今回の質問だけでは、満足感や自信、うまくいっている領域までは測っていないためです。
+
+【今のあなたへ】
+今は、無理に悩みを作ったり、隠れた不安があると決めつけたりせず、明確な問題の証拠が少なかったという結果をそのまま受け取ってください。`;
+}
+
+function stableFortune(score, answers = []) {
+  if (!getPrimaryTrait(answers).hasDominantEvidence) {
+    return buildNoDominantEvidenceFortune();
+  }
+
   const type = getScoreType(score);
 
   if (type === "inner_guarded") {
@@ -286,6 +434,8 @@ function getEmotionTone(compound) {
   const secondaryTrait = compound.secondaryTrait;
   const strength = compound.traitStrength;
 
+  if (!primaryTrait) return "unclear";
+
   if (primaryTrait === "emotional_fatigue") return "overloaded";
   if (primaryTrait === "future_anxiety") return "anxious";
   if (primaryTrait === "attachment_anxiety") return "anxious";
@@ -306,6 +456,7 @@ function getEmotionToneLabel(tone) {
     empty: "空白に近い迷い",
     overloaded: "抱えすぎた疲労",
     recovering: "回復前の揺れ",
+    unclear: "明確な問題傾向なし",
   };
 
   return labels[tone] || "回復前の揺れ";
@@ -318,6 +469,7 @@ function getEmotionTonePhrase(tone) {
     empty: "何かを強く望むより先に、自分の感覚が少し見えにくくなっています。",
     overloaded: "もう十分頑張ってきたのに、まだ止まれないような重さがあります。",
     recovering: "苦しさの中にも、少しずつ自分に戻ろうとする流れがあります。",
+    unclear: "今回の質問範囲では、特定の問題傾向を強く示す反応は見つかりませんでした。",
   };
 
   return phrases[tone] || "苦しさの中にも、少しずつ自分に戻ろうとする流れがあります。";
@@ -1071,35 +1223,200 @@ function buildReadingLead(compound) {
 今の心がどこで疲れ、どこでまだ耐えようとしているのかを、少し丁寧に見ていくためのものです。`;
 }
 
-function buildShortFortune(compound) {
+function getShortLegacyReaction(compound, responsePattern = null) {
+  const traitReaction = {
+    people_pleasing: "周囲との関係を保つために、自分の感覚を後へ回しやすい反応",
+    attachment_anxiety: "大切な相手との安心を確かめようとする反応",
+    role_pressure: "役割を引き受け続け、自分の負担を後回しにしやすい反応",
+    future_anxiety: "先の見通しを立てようとして、迷いが強くなる反応",
+    identity_confusion: "自分の気持ちを確かめる前に、判断を止めやすい反応",
+    emotional_fatigue: "気持ちを抱えたまま動き続け、疲れが表に出る反応",
+  }[compound?.primaryTrait];
+  const responseNote = responsePattern?.uniformity === 1
+    ? "回答全体では同じ強さの選択が続いており、今回の反応は一方向へまとまって出ています。"
+    : responsePattern?.neutralCount >= 8
+      ? "回答全体には中立の選択が多く、強い反応は一部の項目に限られています。"
+      : "回答全体には強弱があり、同じテーマの中でも反応が一様ではありません。";
+
+  return `今回の回答では「${getCategoryLabel(compound.primaryCategory)}」に関する反応が表に出ています。
+その中で確認できるのは、${traitReaction || `「${getTraitLabel(compound.primaryTrait)}」に関わる反応`}です。
+${responseNote}`;
+}
+
+function getPrimaryObservationHypothesis(observationSnapshotV1) {
+  const hypotheses = Array.isArray(observationSnapshotV1?.hypotheses)
+    ? observationSnapshotV1.hypotheses
+    : [];
+  const priority = [
+    "growth_from_fulfillment",
+    "fulfilled_continuity",
+    "misalignment_with_movement",
+    "misalignment_without_change_intent",
+    "approach_with_protection",
+  ];
+  return priority.map((code) => hypotheses.find((item) => item?.code === code)).find(Boolean) || null;
+}
+
+function buildShortObservationSection(observationSnapshotV1) {
+  const primaryHypothesis = getPrimaryObservationHypothesis(observationSnapshotV1);
+  if (primaryHypothesis) return primaryHypothesis.text;
+
+  const satisfaction = observationSnapshotV1?.currentState?.satisfaction;
+  const change = observationSnapshotV1?.currentState?.changeMotivation;
+  if (satisfaction?.evidenceSource === "direct_observation" && change?.evidenceSource === "direct_observation") {
+    return "今を大切にしたい感覚と変えたい感覚は、今回の回答ではどちらか一方へ強く傾いていません。ここから先を無理に決めつける材料は、まだ十分ではありません。";
+  }
+  return "今回の観測だけでは、今を保ちたい感覚と変えたい感覚の関係を決めつけられるだけの材料はありません。";
+}
+
+function buildIntegratedShortHypothesis(compound, observationSnapshotV1) {
+  const legacyCore = {
+    people_pleasing: "関係を壊さないよう自分を調整している",
+    attachment_anxiety: "大切な相手との安心を確かめようとしている",
+    role_pressure: "担っている役割と自分の負担の間を調整しようとしている",
+    future_anxiety: "先へ進む前に見通しを確かめようとしている",
+    identity_confusion: "周囲の基準より自分の感覚を確かめようとしている",
+    emotional_fatigue: "抱えてきた負担を意識しながら、自分にとって大切なものを見分けようとしている",
+  }[compound?.primaryTrait] || "表に出た反応の意味を確かめようとしている";
+  const hypothesisCode = getPrimaryObservationHypothesis(observationSnapshotV1)?.code;
+  const observationCore = {
+    fulfilled_continuity: "今あるものを否定せず、大切な部分は残したい",
+    growth_from_fulfillment: "今あるものを大切にしながら、さらに育てる方向へ動きたい",
+    misalignment_with_movement: "今の状態に残したい感覚は強くなく、変えたい部分はある",
+    misalignment_without_change_intent: "今の状態に残したい感覚も、今すぐ変えたい意向も強くはない",
+    approach_with_protection: "進みたい気持ちと、自分を守りたい気持ちの両方を無視したくない",
+  }[hypothesisCode];
+
+  if (!observationCore) {
+    return `今回の本音仮説は、あなたが${legacyCore}というものです。観測回答は一方向へ傾いていないため、その先の理由まではまだ決めつけません。`;
+  }
+  return `今回の本音仮説は、あなたが${legacyCore}一方で、${observationCore}というものです。二つの反応は、どちらか一方を打ち消すものではないのかもしれません。`;
+}
+
+function buildShortTakeaway(observationSnapshotV1) {
+  const hypothesisCode = getPrimaryObservationHypothesis(observationSnapshotV1)?.code;
+  return {
+    fulfilled_continuity: "今日は、変えない理由を探すより、今の中で本当に残したいものを一つだけ確かめてみてください。",
+    growth_from_fulfillment: "今日は、守りたいものと、さらに育てたいものを一つずつ分けて考えてみてください。変化は、今を否定することから始めなくても大丈夫です。",
+    misalignment_with_movement: "今日は、もう少し変えてみたいと思う部分を一つだけ言葉にしてみてください。",
+    misalignment_without_change_intent: "今日は、残したいものがすぐ浮かばないことと、今すぐ変えたいかどうかを分けて受け取ってください。結論を急ぐ必要はありません。",
+    approach_with_protection: "今日は、進みたい方向と、守っておきたい条件を一つずつ確かめてみてください。",
+  }[hypothesisCode] || "今日は、表に出た反応をすぐ結論に変えず、自分にとって事実だと思える部分だけを一つ持ち帰ってください。";
+}
+
+function getComparableObservationAxis(previousAxis, currentAxis) {
+  const previousScore = Number(previousAxis?.score);
+  const currentScore = Number(currentAxis?.score);
+  const previousStatus = previousAxis?.status;
+  const currentStatus = currentAxis?.status;
+  const previousSource = previousAxis?.evidenceSource;
+  const currentSource = currentAxis?.evidenceSource;
+  const invalidStatuses = new Set(["insufficient_evidence", null, undefined]);
+  const invalidSources = new Set(["none", null, undefined]);
+
+  if (!Number.isFinite(previousScore) || !Number.isFinite(currentScore)) return null;
+  if (invalidStatuses.has(previousStatus) || invalidStatuses.has(currentStatus)) return null;
+  if (invalidSources.has(previousSource) || invalidSources.has(currentSource)) return null;
+  if (previousSource !== currentSource) return null;
+
+  return {
+    previousScore,
+    currentScore,
+    previousStatus,
+    currentStatus,
+    evidenceSource: currentSource,
+    scoreDelta: Number((currentScore - previousScore).toFixed(2)),
+    statusChanged: previousStatus !== currentStatus,
+  };
+}
+
+function buildObservationAxisContinuitySentence(axisName, comparison) {
+  if (!comparison) return "";
+  const { previousStatus, currentStatus, scoreDelta, statusChanged } = comparison;
+  const directionChanged = statusChanged || Math.abs(scoreDelta) >= 1.5;
+
+  if (!directionChanged) {
+    if (axisName === "satisfaction" && currentStatus === "high") return "今の中に大切に残したいものがあるという反応は、前回から続いています。";
+    if (axisName === "satisfaction" && currentStatus === "low") return "今の中に大切に残したいものを見つけにくい反応は、前回から続いています。";
+    if (axisName === "changeMotivation" && currentStatus === "high") return "もう少し変えてみたい方向への反応は、前回から続いています。";
+    if (axisName === "changeMotivation" && currentStatus === "low") return "今すぐ変えたいという意向が強く出ていない点は、前回と共通しています。";
+    return "";
+  }
+
+  const stronger = scoreDelta > 0;
+  if (axisName === "satisfaction") {
+    return stronger
+      ? "前回より、今の中に大切に残したいものがある方向への反応が強く出ています。"
+      : "前回より、今の中に大切に残したいものがある方向への反応は弱く出ています。";
+  }
+  if (axisName === "changeMotivation") {
+    return stronger
+      ? "前回より、もう少し変えてみたい方向への反応が強く出ています。"
+      : "前回より、もう少し変えてみたい方向への反応は弱く出ています。";
+  }
+  if (axisName === "approachDrive") {
+    return stronger
+      ? "前回より、進む方向を探そうとする反応が強く出ています。"
+      : "前回より、進む方向を探そうとする反応は弱く出ています。";
+  }
+  if (axisName === "protectiveAvoidance") {
+    return stronger
+      ? "前回より、自分を守ろうとする反応が強く出ています。"
+      : "前回より、自分を守ろうとする反応は弱く出ています。";
+  }
+  return "";
+}
+
+function buildObservationContinuityNarrative(observationSnapshotV1, previousPatterns = []) {
+  const previousPattern = getLastPreviousPattern(previousPatterns);
+  const previousObservation = previousPattern?.observationV1 || previousPattern?.observationSnapshotV1;
+  const previousState = previousObservation?.currentState;
+  const currentState = observationSnapshotV1?.currentState;
+  if (!previousState || !currentState) return "";
+
+  const axisPriority = ["satisfaction", "changeMotivation", "approachDrive", "protectiveAvoidance"];
+  const sentences = [];
+  for (const axisName of axisPriority) {
+    const comparison = getComparableObservationAxis(previousState[axisName], currentState[axisName]);
+    const sentence = buildObservationAxisContinuitySentence(axisName, comparison);
+    if (sentence) sentences.push(sentence);
+    if (sentences.length >= 2) break;
+  }
+  return sentences.join("\n");
+}
+
+function buildShortFortune(compound, responsePattern = null, previousPatterns = [], observationSnapshotV1 = null) {
+  const observationContinuity = buildObservationContinuityNarrative(observationSnapshotV1, previousPatterns);
+  const generalHistoryNarrative = Array.isArray(previousPatterns) && previousPatterns.length > 0
+    ? `${buildRepeatSessionMemoryNarrative(responsePattern, previousPatterns)}${previousPatterns.length >= 2
+      ? `\n\n${buildSessionDriftSummary(responsePattern, compound, null, previousPatterns)}`
+      : ""}`
+    : "";
+  const preferredHistoryNarrative = observationContinuity || generalHistoryNarrative;
+  const historyNarrative = preferredHistoryNarrative
+    ? `
+
+【これまでの流れ】
+${preferredHistoryNarrative}`
+    : "";
+  const observationNarrative = buildShortObservationSection(observationSnapshotV1);
+  const integratedHypothesis = buildIntegratedShortHypothesis(compound, observationSnapshotV1);
+  const takeaway = buildShortTakeaway(observationSnapshotV1);
+
   return `【読みはじめ】
-${buildReadingLead(compound)}
+今回の回答に出ている反応と、今をどう感じているかを分けて読みます。
 
-【奥にある本音】
-${buildDynamicOpening(compound)}
+【今、表に出ている反応】
+${getShortLegacyReaction(compound, responsePattern)}
 
-【揺れているもの】
-${getContradiction(compound)}
+【その奥で同時に動いているもの】
+${observationNarrative}
 
-【言葉になる前の願い】
-${getUnspokenDesire(compound)}
+【今回の本音仮説】
+${integratedHypothesis}${historyNarrative}
 
-【本音の中心】
-${getNarrativeIntegration(compound)}
-
-【最後に】
-今は、無理に変わろうとするより、
-まず『今までかなり頑張ってきた』ことを、自分自身が少し認めてあげる時期なのかもしれません。
-
-【この先をさらに深く読むと】
-この読みは、まだあなたの本音の入口です。
-さらに深く読むことで、
-『なぜそこまで耐えてしまうのか』
-『心の奥で本当に怖れているもの』
-まで見えてくる可能性があります。
-
-【余韻】
-${getAfterglowMessage("short", compound)}`;
+【今日持ち帰るなら】
+${takeaway}`;
 }
 
 function buildStandardFortune(compound) {
@@ -4375,13 +4692,18 @@ function buildResidualAfterwaveNarrativeEn(responsePattern, compound, silencePat
   return buildAfterwaveOutput({ base: integrated, gravityLine: afterimageGravityLine });
 }
 
-function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null, previousPrimaryTrait = null, previousPatterns = [], expectedQuestionCount = 15, runtimeOverrideProfile = null) {
+function stablePaidFortune(score, answers = [], depth = "deep", previousResponseStyle = null, previousEmotionTone = null, previousPrimaryTrait = null, previousPatterns = [], expectedQuestionCount = 15, runtimeOverrideProfile = null, observationAnswers = []) {
   const categoryResult = getPrimaryCategory(answers);
   const traitResult = getPrimaryTrait(answers);
   const compound = buildCompoundInsight(categoryResult, traitResult);
   const responsePattern = analyzeResponsePattern(answers);
   const silencePattern = analyzeSilencePattern(answers, expectedQuestionCount);
   const emotionTone = getEmotionTone(compound);
+  const observationSnapshotV1 = buildObservationSnapshotV1(answers, observationAnswers);
+
+  if (!compound.hasDominantEvidence) {
+    return `${buildNoDominantEvidenceFortune()}${depth === "short" ? buildObservationShortNarrative(observationSnapshotV1) : ""}`;
+  }
   const finalRuntimeProfile = runtimeOverrideProfile
     ? {
         source: "runtime-override",
@@ -4440,7 +4762,7 @@ function stablePaidFortune(score, answers = [], depth = "deep", previousResponse
     null;
 
   if (depth === "short") {
-    return buildShortFortune(compound);
+    return buildShortFortune(compound, responsePattern, previousPatterns, observationSnapshotV1);
   }
 
   if (depth === "standard") {
@@ -4697,6 +5019,10 @@ function stablePaidFortuneEn(score, answers = [], depth = "deep", previousPatter
   const silencePattern = analyzeSilencePattern(answers, expectedQuestionCount);
   const emotionTone = getEmotionTone(compound);
 
+  if (!compound.hasDominantEvidence) {
+    return buildNoDominantEvidenceFortuneEn();
+  }
+
   const echoState = analyzeEmotionalEcho(responsePattern, compound, silencePattern, previousPatterns);
   const afterimageState = analyzeEmotionalAfterimage(responsePattern, compound, silencePattern, previousPatterns);
   const residueState = analyzeEmotionalResidue(responsePattern, compound, silencePattern, previousPatterns);
@@ -4901,10 +5227,25 @@ function buildFreeEssenceOpeningEn(unresolvedMovement, trait = "") {
   return "Something in you may be responding more quietly than it appears.";
 }
 
+function buildNoDominantEvidenceFortuneEn() {
+  return `[What This Reading Can See]
+Across the concerns covered by these fifteen questions, no single problem pattern received clear positive evidence.
+
+[What It Cannot Conclude]
+This does not prove that everything is happy, healthy, confident, or successful. These questions do not directly measure wellbeing or satisfaction.
+
+[For You Now]
+There is no need to invent a hidden struggle here. The safest reading is simply that this question set did not identify a dominant problem pattern today.`;
+}
+
 function stableFortuneEn(score, answers = []) {
   const categoryResult = getPrimaryCategory(answers || []);
   const traitResult = getPrimaryTrait(answers || []);
   const compound = buildCompoundInsight(categoryResult, traitResult);
+
+  if (!compound.hasDominantEvidence) {
+    return buildNoDominantEvidenceFortuneEn();
+  }
 
   const category = getCategoryLabelEn(compound.primaryCategory);
   const trait = compound.primaryTrait || "";
@@ -5049,13 +5390,16 @@ There may be more underneath this feeling than can be seen at once.`;
 }
 app.post("/fortune", async (req, res) => {
   const { score, locale, answers } = req.body || {};
+  const freeTraitResult = getPrimaryTrait(answers || []);
 
   res.json({
     ok: true,
     mode: "stable-template",
     phase: "stable-free-v1",
-    type: getScoreType(score || 0),
-    text: locale === "en" ? stableFortuneEn(score || 0, answers || []) : stableFortune(score || 0),
+    type: freeTraitResult.hasDominantEvidence
+      ? getScoreType(score || 0)
+      : NO_DOMINANT_EVIDENCE,
+    text: locale === "en" ? stableFortuneEn(score || 0, answers || []) : stableFortune(score || 0, answers || []),
   });
 });
 
@@ -6367,14 +6711,16 @@ function getRecommendedPrice(depth) {
 }
 
 app.post("/deep-fortune", async (req, res) => {
-  const { score, answers, depth, locale, previousResponseStyle, previousEmotionTone, previousPrimaryTrait, previousPatterns, expectedQuestionCount, audit } = req.body || {};
+  const { score, answers, observationAnswers, depth, locale, previousResponseStyle, previousEmotionTone, previousPrimaryTrait, previousPatterns, expectedQuestionCount, audit } = req.body || {};
   const safeAnswers = answers || [];
+  const safeObservationAnswers = Array.isArray(observationAnswers) ? observationAnswers : [];
 
   const categoryResult = getPrimaryCategory(safeAnswers);
   const traitResult = getPrimaryTrait(safeAnswers);
   const compound = buildCompoundInsight(categoryResult, traitResult);
   const responsePattern = analyzeResponsePattern(safeAnswers);
   const silencePattern = analyzeSilencePattern(safeAnswers, Number(expectedQuestionCount || 15));
+  const observationSnapshotV1 = buildObservationSnapshotV1(safeAnswers, safeObservationAnswers);
 
   const safePreviousPatterns = Array.isArray(previousPatterns) ? previousPatterns : [];
   const emotionTone = getEmotionTone(compound);
@@ -6649,11 +6995,11 @@ app.post("/deep-fortune", async (req, res) => {
 
   const originalNarrativeText = locale === "en"
     ? stablePaidFortuneEn(score || 0, safeAnswers, depth || "deep", safePreviousPatterns, Number(expectedQuestionCount || 15))
-    : stablePaidFortune(score || 0, safeAnswers, depth || "deep", previousResponseStyle || null, previousEmotionTone || null, previousPrimaryTrait || null, safePreviousPatterns, Number(expectedQuestionCount || 15), null);
+    : stablePaidFortune(score || 0, safeAnswers, depth || "deep", previousResponseStyle || null, previousEmotionTone || null, previousPrimaryTrait || null, safePreviousPatterns, Number(expectedQuestionCount || 15), null, safeObservationAnswers);
 
   const rebuiltNarrativeText = locale === "en"
     ? originalNarrativeText
-    : stablePaidFortune(score || 0, safeAnswers, depth || "deep", previousResponseStyle || null, previousEmotionTone || null, previousPrimaryTrait || null, safePreviousPatterns, Number(expectedQuestionCount || 15), finalRuntimeOverrideProfile);
+    : stablePaidFortune(score || 0, safeAnswers, depth || "deep", previousResponseStyle || null, previousEmotionTone || null, previousPrimaryTrait || null, safePreviousPatterns, Number(expectedQuestionCount || 15), finalRuntimeOverrideProfile, safeObservationAnswers);
 
   const narrativeComparison = {
     mode: "narrative-comparison",
@@ -7343,13 +7689,19 @@ app.post("/deep-fortune", async (req, res) => {
     fallback: false,
     model: "stable-template",
 
-    type: getScoreType(score || 0),
+    type: traitResult.hasDominantEvidence
+      ? getScoreType(score || 0)
+      : NO_DOMINANT_EVIDENCE,
 
     category: categoryResult.primary,
+    categoryHasDominantEvidence: categoryResult.hasDominantEvidence,
     categoryScores: categoryResult.scores,
 
     trait: traitResult.primary,
+    traitHasDominantEvidence: traitResult.hasDominantEvidence,
     traitScores: traitResult.scores,
+
+    observationSnapshotV1,
 
     responsePattern,
     silencePattern,
@@ -7520,8 +7872,6 @@ server.on("error", (error) => {
 });
 
 process.stdin.resume();
-
-
 
 
 

@@ -114,6 +114,111 @@ class HonneFortuneApi {
   }
 }
 
+class ObservationAnswer {
+  final String questionId;
+  final int value;
+
+  const ObservationAnswer({required this.questionId, required this.value});
+
+  Map<String, dynamic> toJson() => {'questionId': questionId, 'value': value};
+}
+
+const String _jaReadingHistoryKey = 'ja_reading_history_v1';
+const int _maxReadingHistoryCount = 2;
+
+Future<List<Map<String, dynamic>>> _loadJaReadingHistory(
+  SharedPreferences prefs,
+) async {
+  final encoded = prefs.getString(_jaReadingHistoryKey);
+  if (encoded == null || encoded.isEmpty) return [];
+
+  try {
+    final decoded = jsonDecode(encoded);
+    if (decoded is! List) return [];
+
+    final validHistory = decoded
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .where((item) => item['responseStyle'] is String)
+        .toList();
+    final start = validHistory.length > _maxReadingHistoryCount
+        ? validHistory.length - _maxReadingHistoryCount
+        : 0;
+    return validHistory.sublist(start);
+  } catch (_) {
+    return [];
+  }
+}
+
+Map<String, dynamic>? _buildReadingSnapshot(Map<String, dynamic> data) {
+  if (data['traitHasDominantEvidence'] == false) return null;
+
+  final responsePattern = data['responsePattern'];
+  final silencePattern = data['silencePattern'];
+  final observationSnapshot = data['observationSnapshotV1'];
+  if (responsePattern is! Map) return null;
+
+  final snapshot = <String, dynamic>{
+    'responseStyle': responsePattern['responseStyle'],
+    'temperature': responsePattern['temperature'],
+    'primaryTrait': data['primaryTrait'],
+    'emotionTone': data['emotionTone'],
+    'opennessState': data['opennessState'],
+    'trustDepthState': data['trustDepthState'],
+    'silenceStyle': silencePattern is Map
+        ? silencePattern['silenceStyle']
+        : null,
+  }..removeWhere((_, value) => value is! String || value.isEmpty);
+
+  if (observationSnapshot is Map &&
+      observationSnapshot['schemaVersion'] == 'honne-observation-v1' &&
+      observationSnapshot['currentState'] is Map) {
+    final currentState = observationSnapshot['currentState'] as Map;
+    final axes = <String, dynamic>{};
+    for (final axisName in const [
+      'approachDrive',
+      'protectiveAvoidance',
+      'satisfaction',
+      'changeMotivation',
+    ]) {
+      final axis = currentState[axisName];
+      if (axis is! Map) continue;
+      final status = axis['status'];
+      final evidenceSource = axis['evidenceSource'];
+      final score = axis['score'];
+      if (status is! String || evidenceSource is! String) continue;
+      axes[axisName] = {
+        'score': score is num ? score : null,
+        'status': status,
+        'evidenceSource': evidenceSource,
+      };
+    }
+    if (axes.isNotEmpty) {
+      snapshot['observationV1'] = {
+        'schemaVersion': 'honne-observation-v1',
+        'currentState': axes,
+      };
+    }
+  }
+
+  return snapshot['responseStyle'] is String ? snapshot : null;
+}
+
+Future<void> _appendJaReadingHistory(
+  SharedPreferences prefs,
+  Map<String, dynamic> data,
+  List<Map<String, dynamic>> previousPatterns,
+) async {
+  final snapshot = _buildReadingSnapshot(data);
+  if (snapshot == null) return;
+
+  final updated = [...previousPatterns, snapshot];
+  final retained = updated.length <= _maxReadingHistoryCount
+      ? updated
+      : updated.sublist(updated.length - _maxReadingHistoryCount);
+  await prefs.setString(_jaReadingHistoryKey, jsonEncode(retained));
+}
+
 Widget languageButton(BuildContext context) {
   final isJa = context.locale.languageCode == 'ja';
 
@@ -527,8 +632,9 @@ class _QuestionPageState extends State<QuestionPage> {
   int index = 0;
   int score = 0;
   final answers = <FortuneAnswer>[];
+  final observationAnswers = <ObservationAnswer>[];
 
-  final questions = const [
+  static const _legacyQuestions = [
     'q1',
     'q2',
     'q3',
@@ -545,18 +651,29 @@ class _QuestionPageState extends State<QuestionPage> {
     'q14',
     'q15',
   ];
+  static const _observationProbeQuestions = ['ov1_satisfaction', 'ov1_change'];
+  List<String> get questions => [
+    ..._legacyQuestions,
+    ..._observationProbeQuestions,
+  ];
 
   void answer(String answerKey, int value) {
-    answers.add(
-      FortuneAnswer(
-        index: index + 1,
-        questionKey: questions[index],
-        answerKey: answerKey,
-        value: value,
-      ),
-    );
-
-    score += value;
+    final questionKey = questions[index];
+    if (_observationProbeQuestions.contains(questionKey)) {
+      observationAnswers.add(
+        ObservationAnswer(questionId: questionKey, value: value),
+      );
+    } else {
+      answers.add(
+        FortuneAnswer(
+          index: answers.length + 1,
+          questionKey: questionKey,
+          answerKey: answerKey,
+          value: value,
+        ),
+      );
+      score += value;
+    }
 
     if (index < questions.length - 1) {
       setState(() => index++);
@@ -567,6 +684,9 @@ class _QuestionPageState extends State<QuestionPage> {
           builder: (_) => ReadingPage(
             score: score,
             answers: List<FortuneAnswer>.from(answers),
+            observationAnswers: List<ObservationAnswer>.from(
+              observationAnswers,
+            ),
           ),
         ),
       );
@@ -579,6 +699,7 @@ class _QuestionPageState extends State<QuestionPage> {
       index = 0;
       score = 0;
       answers.clear();
+      observationAnswers.clear();
     });
   }
 
@@ -820,8 +941,14 @@ class _QuestionPageState extends State<QuestionPage> {
 class ReadingPage extends StatefulWidget {
   final int score;
   final List<FortuneAnswer> answers;
+  final List<ObservationAnswer> observationAnswers;
 
-  const ReadingPage({super.key, required this.score, required this.answers});
+  const ReadingPage({
+    super.key,
+    required this.score,
+    required this.answers,
+    required this.observationAnswers,
+  });
 
   @override
   State<ReadingPage> createState() => _ReadingPageState();
@@ -903,6 +1030,7 @@ class _ReadingPageState extends State<ReadingPage>
         builder: (_) => ResultPage(
           score: widget.score,
           answers: widget.answers,
+          observationAnswers: widget.observationAnswers,
           generatedText: generatedText,
           usedFallback: usedFallback,
         ),
@@ -1095,6 +1223,7 @@ class _ReadingPageState extends State<ReadingPage>
 class ResultPage extends StatelessWidget {
   final int score;
   final List<FortuneAnswer> answers;
+  final List<ObservationAnswer> observationAnswers;
   final String? generatedText;
   final bool usedFallback;
 
@@ -1102,6 +1231,7 @@ class ResultPage extends StatelessWidget {
     super.key,
     required this.score,
     required this.answers,
+    required this.observationAnswers,
     this.generatedText,
     this.usedFallback = false,
   });
@@ -1277,30 +1407,56 @@ class ResultPage extends StatelessWidget {
                       label: 'paid_button'.tr(),
                       onTap: () async {
                         try {
+                          final locale = context.locale.languageCode;
+                          final prefs = await SharedPreferences.getInstance();
+                          final previousPatterns = locale == 'ja'
+                              ? await _loadJaReadingHistory(prefs)
+                              : <Map<String, dynamic>>[];
+                          final requestBody = <String, dynamic>{
+                            'score': score,
+                            'locale': locale,
+                            'answers': answers
+                                .map((answer) => answer.toJson())
+                                .toList(),
+                            'observationAnswers': observationAnswers
+                                .map((answer) => answer.toJson())
+                                .toList(),
+                          };
+
+                          if (locale == 'ja') {
+                            requestBody['depth'] = 'short';
+                            requestBody['previousPatterns'] = previousPatterns;
+                          }
+
                           final response = await http.post(
                             Uri.parse(HonneFortuneApi.deepFortuneEndpoint),
                             headers: {'Content-Type': 'application/json'},
-                            body: jsonEncode({
-                              'score': score,
-                              'locale': context.locale.languageCode,
-                              'answers': answers
-                                  .map((answer) => answer.toJson())
-                                  .toList(),
-                            }),
+                            body: jsonEncode(requestBody),
                           );
 
-                          final data =
-                              jsonDecode(response.body) as Map<String, dynamic>;
+                          if (response.statusCode < 200 ||
+                              response.statusCode >= 300) {
+                            throw Exception('Paid reading request failed.');
+                          }
+
+                          final decoded = jsonDecode(response.body);
+                          if (decoded is! Map<String, dynamic> ||
+                              decoded['ok'] != true) {
+                            throw Exception('Invalid paid reading response.');
+                          }
+                          final data = decoded;
 
                           final deepText = (data['text'] ?? '')
                               .toString()
                               .trim();
 
+                          if (deepText.isEmpty) {
+                            throw Exception('Empty paid reading response.');
+                          }
+
                           final readingId = (data['readingId'] ?? '')
                               .toString()
                               .trim();
-
-                          final prefs = await SharedPreferences.getInstance();
 
                           await prefs.setString('last_reading_id', readingId);
 
@@ -1312,6 +1468,14 @@ class ResultPage extends StatelessWidget {
                             'last_created_at',
                             DateTime.now().toIso8601String(),
                           );
+
+                          if (locale == 'ja') {
+                            await _appendJaReadingHistory(
+                              prefs,
+                              data,
+                              previousPatterns,
+                            );
+                          }
 
                           if (!context.mounted) return;
 

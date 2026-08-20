@@ -50,6 +50,8 @@
   "q13": "Do you smile to keep the peace, even when something feels wrong?",
   "q14": "Do you ever feel that your mind keeps working even when you are resting?",
   "q15": "Do you ever feel that your current role is drifting away from who you are?",
+  "ov1_satisfaction": "Are there parts of your life as it is now that you would like to preserve and value?",
+  "ov1_change": "Even if things could stay as they are, are there parts you would still like to change a little?",
   "previous_reading": "Previous Reading",
   "deep_reading_appbar": "Deep Reading",
   "deep_reading_title": "Your Deep Reading",
