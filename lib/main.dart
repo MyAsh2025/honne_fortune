@@ -127,6 +127,8 @@ const String _jaReadingHistoryKey = 'ja_reading_history_v1';
 const int _maxReadingHistoryCount = 2;
 const String _questionSelectionKey = 'question_selection_v1';
 const String _questionSelectionSchema = 'honne-question-selection-v1';
+const String _questionProgressKey = 'question_answer_progress_v1';
+const String _questionProgressSchema = 'honne-question-progress-v1';
 
 class QuestionSpec {
   final String questionId;
@@ -355,6 +357,147 @@ Future<void> _updateQuestionSelection(
     await prefs.setString(_questionSelectionKey, jsonEncode(updated));
   } catch (_) {
     return;
+  }
+}
+
+String _answerKeyForValue(int value) {
+  return const {
+        2: 'yes',
+        1: 'maybe_yes',
+        0: 'neutral',
+        -1: 'maybe_no',
+        -2: 'no',
+      }[value] ??
+      'neutral';
+}
+
+bool _sameStringList(List<String> left, List<String> right) {
+  if (left.length != right.length) return false;
+  for (var index = 0; index < left.length; index++) {
+    if (left[index] != right[index]) return false;
+  }
+  return true;
+}
+
+Future<void> _persistQuestionProgress(
+  SharedPreferences prefs,
+  List<String> sessionQuestionIds,
+  List<ObservationAnswer> savedAnswers,
+) async {
+  final selectionEncoded = prefs.getString(_questionSelectionKey);
+  if (selectionEncoded == null) return;
+  try {
+    final selection = jsonDecode(selectionEncoded);
+    if (selection is! Map ||
+        selection['schemaVersion'] != _questionSelectionSchema ||
+        selection['sessionComplete'] == true ||
+        selection['sessionFormId'] is! String) {
+      return;
+    }
+    await prefs.setString(
+      _questionProgressKey,
+      jsonEncode({
+        'schemaVersion': _questionProgressSchema,
+        'sessionFormId': selection['sessionFormId'],
+        'sessionQuestionIds': sessionQuestionIds,
+        'answeredQuestionIds': savedAnswers
+            .map((answer) => answer.questionId)
+            .toList(),
+        'answers': savedAnswers.map((answer) => answer.toJson()).toList(),
+        'currentPosition': savedAnswers.length,
+        'sessionComplete': false,
+        'updatedAt': DateTime.now().toUtc().toIso8601String(),
+      }),
+    );
+  } catch (_) {
+    return;
+  }
+}
+
+Future<List<ObservationAnswer>> _loadQuestionProgress(
+  SharedPreferences prefs,
+  List<String> selectedQuestionIds,
+) async {
+  final progressEncoded = prefs.getString(_questionProgressKey);
+  if (progressEncoded == null || progressEncoded.isEmpty) return [];
+  try {
+    final selectionEncoded = prefs.getString(_questionSelectionKey);
+    if (selectionEncoded == null) throw const FormatException();
+    final selection = jsonDecode(selectionEncoded);
+    final progress = jsonDecode(progressEncoded);
+    if (selection is! Map || progress is! Map) throw const FormatException();
+    if (selection['schemaVersion'] != _questionSelectionSchema ||
+        progress['schemaVersion'] != _questionProgressSchema ||
+        selection['sessionComplete'] == true ||
+        progress['sessionComplete'] == true) {
+      throw const FormatException();
+    }
+    final selectionFormId = selection['sessionFormId'];
+    if (selectionFormId is! String ||
+        progress['sessionFormId'] != selectionFormId) {
+      throw const FormatException();
+    }
+    final rotationState = selection['rotationState'];
+    final formIndex = rotationState is Map ? rotationState['formIndex'] : null;
+    final nextFormIndex = rotationState is Map
+        ? rotationState['nextFormIndex']
+        : null;
+    if (formIndex is! int ||
+        formIndex < 0 ||
+        formIndex >= _rotatingQuestionForms.length ||
+        selectionFormId != 'form-${formIndex + 1}' ||
+        nextFormIndex != (formIndex + 1) % _rotatingQuestionForms.length ||
+        selection['nextFormIndex'] != nextFormIndex) {
+      throw const FormatException();
+    }
+    final rawSelectionIds = selection['sessionQuestionIds'];
+    final rawProgressIds = progress['sessionQuestionIds'];
+    if (rawSelectionIds is! List ||
+        rawProgressIds is! List ||
+        !rawSelectionIds.every((id) => id is String) ||
+        !rawProgressIds.every((id) => id is String)) {
+      throw const FormatException();
+    }
+    final selectionIds = rawSelectionIds.cast<String>();
+    final progressIds = rawProgressIds.cast<String>();
+    if (!_sameStringList(selectionIds, selectedQuestionIds) ||
+        !_sameStringList(progressIds, selectedQuestionIds)) {
+      throw const FormatException();
+    }
+    final rawAnswers = progress['answers'];
+    final answeredIds = (progress['answeredQuestionIds'] as List?)
+        ?.whereType<String>()
+        .toList();
+    final currentPosition = progress['currentPosition'];
+    if (rawAnswers is! List ||
+        answeredIds == null ||
+        currentPosition is! int ||
+        currentPosition != rawAnswers.length ||
+        currentPosition != answeredIds.length ||
+        currentPosition < 0 ||
+        currentPosition >= selectedQuestionIds.length) {
+      throw const FormatException();
+    }
+    final restored = <ObservationAnswer>[];
+    for (var index = 0; index < rawAnswers.length; index++) {
+      final raw = rawAnswers[index];
+      if (raw is! Map) throw const FormatException();
+      final questionId = raw['questionId'];
+      final value = raw['value'];
+      if (questionId is! String ||
+          value is! int ||
+          !const {-2, -1, 0, 1, 2}.contains(value) ||
+          answeredIds[index] != questionId ||
+          selectedQuestionIds[index] != questionId ||
+          _questionSpec(questionId) == null) {
+        throw const FormatException();
+      }
+      restored.add(ObservationAnswer(questionId: questionId, value: value));
+    }
+    return restored;
+  } catch (_) {
+    await prefs.remove(_questionProgressKey);
+    return [];
   }
 }
 
@@ -883,8 +1026,33 @@ class _QuestionPageState extends State<QuestionPage> {
   Future<void> _initializeQuestionSelection() async {
     final prefs = await SharedPreferences.getInstance();
     final selected = await _selectSessionBaseQuestions(prefs);
+    final restored = await _loadQuestionProgress(prefs, selected);
     if (!mounted) return;
-    setState(() => _sessionQuestions = selected);
+    setState(() {
+      _sessionQuestions = selected;
+      for (final answer in restored) {
+        _recordAnswer(answer.questionId, answer.value);
+      }
+      index = restored.length;
+    });
+  }
+
+  void _recordAnswer(String questionId, int value) {
+    observationAnswers.add(
+      ObservationAnswer(questionId: questionId, value: value),
+    );
+    final spec = _questionSpec(questionId);
+    if (spec?.legacyQuestionKey != null) {
+      answers.add(
+        FortuneAnswer(
+          index: answers.length + 1,
+          questionKey: spec!.legacyQuestionKey!,
+          answerKey: _answerKeyForValue(value),
+          value: value,
+        ),
+      );
+      score += value;
+    }
   }
 
   List<String> _selectDomainQuestionIds() {
@@ -925,23 +1093,9 @@ class _QuestionPageState extends State<QuestionPage> {
         .toList();
   }
 
-  Future<void> answer(String answerKey, int value) async {
+  Future<void> answer(String _, int value) async {
     final questionKey = questions[index];
-    observationAnswers.add(
-      ObservationAnswer(questionId: questionKey, value: value),
-    );
-    final spec = _questionSpec(questionKey);
-    if (spec?.legacyQuestionKey != null) {
-      answers.add(
-        FortuneAnswer(
-          index: answers.length + 1,
-          questionKey: spec!.legacyQuestionKey!,
-          answerKey: answerKey,
-          value: value,
-        ),
-      );
-      score += value;
-    }
+    _recordAnswer(questionKey, value);
 
     if (index == 11 && questions.length == 12) {
       final completedQuestions = [...questions, ..._selectDomainQuestionIds()];
@@ -951,16 +1105,25 @@ class _QuestionPageState extends State<QuestionPage> {
         completedQuestions,
         complete: false,
       );
+      await _persistQuestionProgress(
+        prefs,
+        completedQuestions,
+        observationAnswers,
+      );
       if (!mounted) return;
       setState(() {
         _sessionQuestions = completedQuestions;
         index++;
       });
     } else if (index < questions.length - 1) {
+      final prefs = await SharedPreferences.getInstance();
+      await _persistQuestionProgress(prefs, questions, observationAnswers);
+      if (!mounted) return;
       setState(() => index++);
     } else {
       final prefs = await SharedPreferences.getInstance();
       await _updateQuestionSelection(prefs, questions, complete: true);
+      await prefs.remove(_questionProgressKey);
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -977,7 +1140,10 @@ class _QuestionPageState extends State<QuestionPage> {
     }
   }
 
-  void restartDiagnosis() {
+  Future<void> restartDiagnosis() async {
+    final prefs = await SharedPreferences.getInstance();
+    await _persistQuestionProgress(prefs, questions, const []);
+    if (!mounted) return;
     Navigator.pop(context);
     setState(() {
       index = 0;
